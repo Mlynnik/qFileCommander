@@ -1,0 +1,9 @@
+# ninja log v5
+1	374	7504413934855719	qFileCommander_autogen/timestamp	64fb11c87d769070
+1	374	7504413934855719	qFileCommander_autogen/mocs_compilation.cpp	64fb11c87d769070
+1	374	7504413934855719	C:/Program_Qt/project/qFileCommander/qFileCommander/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/qFileCommander_autogen/timestamp	64fb11c87d769070
+1	374	7504413934855719	C:/Program_Qt/project/qFileCommander/qFileCommander/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/qFileCommander_autogen/mocs_compilation.cpp	64fb11c87d769070
+375	1497	7504413946418685	CMakeFiles/qFileCommander.dir/qFileCommander_autogen/mocs_compilation.cpp.obj	edfa86f707c609b6
+377	1503	7504413946473711	CMakeFiles/qFileCommander.dir/main.cpp.obj	6778349576641e1f
+379	1542	7504413946874098	CMakeFiles/qFileCommander.dir/mainwindow.cpp.obj	db71165833e1d18
+1543	1681	7504413948218685	qFileCommander.exe	d2f13800dea2c141
