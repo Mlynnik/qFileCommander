@@ -251,6 +251,12 @@
 	"HEADERS" : 
 	[
 		[
+			"C:/Program_Qt/project/qFileCommander/qFileCommander/helperfunctions.h",
+			"MU",
+			"EWIEGA46WW/moc_helperfunctions.cpp",
+			null
+		],
+		[
 			"C:/Program_Qt/project/qFileCommander/qFileCommander/mainwindow.h",
 			"MU",
 			"EWIEGA46WW/moc_mainwindow.cpp",
@@ -333,6 +339,11 @@
 	"SETTINGS_FILE" : "C:/Program_Qt/project/qFileCommander/qFileCommander/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/CMakeFiles/qFileCommander_autogen.dir/AutogenUsed.txt",
 	"SOURCES" : 
 	[
+		[
+			"C:/Program_Qt/project/qFileCommander/qFileCommander/helperfunctions.cpp",
+			"MU",
+			null
+		],
 		[
 			"C:/Program_Qt/project/qFileCommander/qFileCommander/main.cpp",
 			"MU",
