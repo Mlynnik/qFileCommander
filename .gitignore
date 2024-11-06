@@ -6,5 +6,10 @@
 CMakeFiles/
 generic/
 qFileCommander_autogen/
+Testing/
 .ninja_log
+.ninja_deps
 build.ninja
+cmake_install.cmake
+qtcsettings.cmake
+CMakeCache.txt
