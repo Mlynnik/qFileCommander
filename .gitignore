@@ -3,3 +3,8 @@
 .qt/
 .qtc/
 .qtc_clangd/
+CMakeFiles/
+generic/
+qFileCommander_autogen/
+.ninja_log
+build.ninja
