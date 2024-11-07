@@ -13,3 +13,5 @@ build.ninja
 cmake_install.cmake
 qtcsettings.cmake
 CMakeCache.txt
+CMakeLists.txt.user
+CMakeCache.txt.prev
