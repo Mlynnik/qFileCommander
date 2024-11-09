@@ -8,6 +8,7 @@
 #include <QTimer>
 #include <QKeyEvent>
 #include <QStorageInfo>
+#include <QDesktopServices>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -35,6 +36,42 @@ MainWindow::MainWindow(QWidget *parent)
 
     MainWindow::setFont(main_font);
 
+    //левое дерево
+    treeWidget_l->setObjectName("treeWidget_l");
+    treeWidget_l->setGeometry(QRect(5, 100, 705, 580));
+    treeWidget_l->setMouseTracking(true);
+    QTreeWidgetItem *___qtreewidgetitem = treeWidget_l->headerItem();
+    ___qtreewidgetitem->setText(3, QCoreApplication::translate("MainWindow", "\320\224\320\260\321\202\320\260", nullptr));
+    ___qtreewidgetitem->setText(2, QCoreApplication::translate("MainWindow", "\320\240\320\260\320\267\320\274\320\265\321\200", nullptr));
+    ___qtreewidgetitem->setText(1, QCoreApplication::translate("MainWindow", "\320\242\320\270\320\277", nullptr));
+    ___qtreewidgetitem->setText(0, QCoreApplication::translate("MainWindow", "\320\230\320\274\321\217", nullptr));
+
+    treeWidget_l->setSelectionMode(QAbstractItemView::SingleSelection);
+    treeWidget_l->setDragDropMode(QAbstractItemView::DragDrop);
+    treeWidget_l->setRootIsDecorated(false);
+    treeWidget_l->setContextMenuPolicy(Qt::CustomContextMenu);
+    treeWidget_l->header()->setStyleSheet("QHeaderView::section {background: rgb(240,240,240);};");
+    treeWidget_l->header()->setSectionsMovable(false);
+    treeWidget_l->header()->setSectionsClickable(true);
+
+    //правое дерево
+    treeWidget_r->setObjectName("treeWidget_r");
+    treeWidget_r->setGeometry(QRect(715, 100, 705, 580));
+    QTreeWidgetItem *___qtreewidgetitem1 = treeWidget_r->headerItem();
+    ___qtreewidgetitem1->setText(3, QCoreApplication::translate("MainWindow", "\320\224\320\260\321\202\320\260", nullptr));
+    ___qtreewidgetitem1->setText(2, QCoreApplication::translate("MainWindow", "\320\240\320\260\320\267\320\274\320\265\321\200", nullptr));
+    ___qtreewidgetitem1->setText(1, QCoreApplication::translate("MainWindow", "\320\242\320\270\320\277", nullptr));
+    ___qtreewidgetitem1->setText(0, QCoreApplication::translate("MainWindow", "\320\230\320\274\321\217", nullptr));
+
+    treeWidget_r->setSelectionMode(QAbstractItemView::SingleSelection);
+    treeWidget_r->setDragDropMode(QAbstractItemView::DragDrop);
+    treeWidget_r->setRootIsDecorated(false);
+    treeWidget_r->setContextMenuPolicy(Qt::CustomContextMenu);
+    treeWidget_r->header()->setStyleSheet("QHeaderView::section {background: rgb(240,240,240);};");
+    treeWidget_r->header()->setSectionsMovable(false);
+    treeWidget_r->header()->setSectionsClickable(true);
+
+    //диски
     ui->horizontalLayout_l->setAlignment(Qt::AlignLeft);
     ui->horizontalLayout_r->setAlignment(Qt::AlignLeft);
     ui->horizontalLayout_free_size_l->setAlignment(Qt::AlignLeft);
@@ -51,16 +88,30 @@ MainWindow::MainWindow(QWidget *parent)
     ui->horizontalLayout_free_size_r->addWidget(disk_free_size_r, 4);
     connect(combobox_disk_r, SIGNAL(activated(int)), this, SLOT(combobox_disk_r_changed(int)));
     disk_progress_r->setFormat("");
+
+    //пути
     ui->path_l->setStyleSheet("QLineEdit {background: rgb(153, 180, 209);}");
     ui->path_l->setFocusPolicy(Qt::ClickFocus);
     ui->path_r->setStyleSheet("QLineEdit {background: rgb(153, 180, 209);}");
     ui->path_r->setFocusPolicy(Qt::ClickFocus);
+
+    //если в реестре ошибка, то замена на c:\\
+    if (last_path_l == "" || !QDir().exists(last_path_l))
+        last_path_l = "c:\\";
+    if (last_path_r == "" || !QDir().exists(last_path_r))
+        last_path_r = "c:\\";
+
+    ui->path_l->setText(last_path_l);
+    ui->path_r->setText(last_path_r);
 
 
     find_disk();
     QTimer *timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(find_disk()));
 
+    //TODO header
+    on_path_l_returnPressed();
+    on_path_r_returnPressed();
     timer->start(3000);
 }
 
@@ -290,11 +341,85 @@ void MainWindow::size_d_r(QString disk)
 //изменение левого пути
 void MainWindow::on_path_l_returnPressed()
 {
-    last_path_l = ui->path_l->text();
+    ui->path_l->setText(QDir::cleanPath(ui->path_l->text()).replace("/", "\\"));
+    QString new_disk = ui->path_l->text().split("\\").first();
+    ui->path_l->setText(ui->path_l->text().replace(new_disk, new_disk.toLower()));
+    new_disk = new_disk.toLower();
+    //ui->path_l->setText(ui->path_l->text().replace("/", "\\"));
+
+    if (!ui->path_l->text().endsWith("\\")) {
+        if (QFile(ui->path_l->text()).exists() && QFileInfo(ui->path_l->text()).isFile()) {
+            QDesktopServices::openUrl(QUrl::fromLocalFile(ui->path_l->text()));
+            ui->path_l->setText(ui->path_l->text().left(ui->path_l->text().lastIndexOf("\\")) +"\\");
+        } else
+            ui->path_l->setText(ui->path_l->text() + "\\");
+    }
+    QDir dir(ui->path_l->text());
+    if (dir.exists() && ui->path_l->text().endsWith("\\")) {
+        size_d_l(new_disk + "\\");
+        combobox_disk_l->setCurrentIndex(combobox_disk_l->findText(new_disk.removeLast()));
+        treeWidget_l->clear();
+
+
+        QString last_dir_l = "";
+        if (last_path_l.contains(ui->path_l->text())) {
+            last_dir_l = last_path_l.remove(ui->path_l->text()).replace("\\", "");
+        }
+
+        treeWidget_l->Fill(ui->path_l->text(), hidden_f, last_dir_l);
+
+        all_l_v = treeWidget_l->all_v;
+        all_f_l = treeWidget_l->all_f;
+        last_path_l = ui->path_l->text();
+        treeWidget_l->path = last_path_l;
+        all_l_v = round(all_l_v / 1024);
+
+        ui->inf_dir_l->setText("0 КБ из " + HelperFunctions::HelperFunctions::reformat_size(QString::number(all_l_v, 'g', 20)) + " КБ, файлов: 0 из " + QString::number(all_f_l));
+    } else {
+        v_error("Путь " % QString('"') % ui->path_l->text() % QString('"') % " не найден.");
+        ui->path_l->setText(last_path_l);
+    }
 }
 
 //изменение правого пути
 void MainWindow::on_path_r_returnPressed()
 {
-    last_path_r = ui->path_r->text();
+    ui->path_r->setText(QDir::cleanPath(ui->path_r->text()).replace("/", "\\"));
+    QString new_disk = ui->path_r->text().split("\\").first();
+    ui->path_r->setText(ui->path_r->text().replace(new_disk, new_disk.toLower()));
+    new_disk = new_disk.toLower();
+    //ui->path_r->setText(ui->path_r->text().replace("/", "\\"));
+
+    if (!ui->path_r->text().endsWith("\\")) {
+        if (QFile(ui->path_r->text()).exists() && QFileInfo(ui->path_r->text()).isFile()) {
+            QDesktopServices::openUrl(QUrl::fromLocalFile(ui->path_r->text()));
+            ui->path_r->setText(ui->path_r->text().left(ui->path_r->text().lastIndexOf("\\")) +"\\");
+        } else
+            ui->path_r->setText(ui->path_r->text() + "\\");
+    }
+    QDir dir(ui->path_r->text());
+    if (dir.exists() && ui->path_r->text().endsWith("\\")){
+        QString new_disk = ui->path_r->text().split("\\").first();
+        size_d_r(new_disk + "\\");
+        combobox_disk_r->setCurrentIndex(combobox_disk_r->findText(new_disk.removeLast()));
+        treeWidget_r->clear();
+
+        QString last_dir_r = "";
+        if (last_path_r.contains(ui->path_r->text())) {
+            last_dir_r = last_path_r.remove(ui->path_r->text()).replace("\\", "");
+        }
+
+        treeWidget_r->Fill(ui->path_r->text(), hidden_f, last_dir_r);
+
+        all_r_v = treeWidget_r->all_v;
+        all_f_r = treeWidget_r->all_f;
+        last_path_r = ui->path_r->text();
+        treeWidget_r->path = last_path_r;
+        all_r_v = round(all_r_v / 1024);
+
+        ui->inf_dir_r->setText("0 КБ из " + HelperFunctions::HelperFunctions::reformat_size(QString::number(all_r_v, 'g', 20)) + " КБ, файлов: 0 из " + QString::number(all_f_r));
+    } else {
+        v_error("Путь " + QString('"') + ui->path_r->text() + QString('"') + " не найден.");
+        ui->path_r->setText(last_path_r);
+    }
 }
