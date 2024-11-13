@@ -53,6 +53,16 @@ private:
     ///список выделенных item
     QList<bool> list_selected = *new QList<bool>();
 
+
+    QList<QString> suff_zip;
+    QList<QString> suff_temp;
+    QList<QString> suff_sys;
+
+    //drop menu
+    QMenu* drop_menu;
+    QAction *copy_action;
+    QAction *move_action;
+
 private slots:
     ///смена активного item
     void current_itemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
