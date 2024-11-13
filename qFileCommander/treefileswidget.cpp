@@ -68,7 +68,7 @@ void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, QString las
     }
 
 
-    if (dir_str.count("\\") > 1) {
+    if (dir_str.count("/") > 1) {
         QTreeWidgetItem *item0 = new QTreeWidgetItem(this);
         item0->setIcon(0, style()->standardIcon(QStyle::SP_FileDialogToParent));
         item0->setForeground(0, QColor(168,106,0));
@@ -103,6 +103,7 @@ void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, QString las
         }
         item->setIcon(0, IC_PR.icon(fileInfo));
         item->setText(0, fileInfo.fileName());
+        item->setData(0, Qt::UserRole, fileInfo.absoluteFilePath());
         item->setText(1, "<DIR>");
         item->setText(3, fileInfo.lastModified().toString("dd.MM.yyyy hh:mm"));
         item->setTextAlignment(2, Qt::AlignRight);
@@ -197,6 +198,8 @@ void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, QString las
 
         item->setIcon(0, IC_PR.icon(fileInfo));
         item->setText(0, fileInfo.fileName().left(fileInfo.fileName().lastIndexOf(".")));
+
+        item->setData(0, Qt::UserRole, fileInfo.absoluteFilePath());
 
         item->setText(1, fileInfo.suffix());
         all_v += fileInfo.size();

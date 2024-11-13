@@ -164,11 +164,11 @@ MainWindow::MainWindow(QWidget *parent)
     ui->path_r->setStyleSheet("QLineEdit {background: rgb(153, 180, 209);}");
     ui->path_r->setFocusPolicy(Qt::ClickFocus);
 
-    //если в реестре ошибка, то замена на "c:\\"
+    //если в реестре ошибка, то замена на "c:/"
     if (last_path_l == "" || !QDir().exists(last_path_l))
-        last_path_l = "c:\\";
+        last_path_l = "c:/";
     if (last_path_r == "" || !QDir().exists(last_path_r))
-        last_path_r = "c:\\";
+        last_path_r = "c:/";
 
     ui->path_l->setText(last_path_l);
     ui->path_r->setText(last_path_r);
@@ -273,7 +273,7 @@ void MainWindow::find_disk()
         r_l_buttons_disk.clear();
         md_old = mass_disk;
         QStringList list;
-        QString old_disk = last_path_l.split("\\").first().removeLast();
+        QString old_disk = last_path_l.split("/").first().removeLast();
 
         for (int i = 0; i < mass_disk.length(); i++)
             list << mass_disk[i].filePath().remove(":/").toLower();
@@ -317,12 +317,13 @@ void MainWindow::find_disk()
         }
         if (!list.contains(old_disk)) {
             v_error("Устройство было извлечено!");
-            ui->path_l->setText("c:\\");
+            ui->path_l->setText("c:/");
             on_path_l_returnPressed();
         }
+        old_disk = last_path_r.split("/").first().removeLast();
         if (!list.contains(old_disk)) {
             v_error("Устройство было извлечено!");
-            ui->path_r->setText("c:\\");
+            ui->path_r->setText("c:/");
             on_path_r_returnPressed();
         }
     }
@@ -336,11 +337,11 @@ void MainWindow::cl_on_disk_l(){
         combobox_disk_l->setCurrentIndex(combobox_disk_l->findText(button->text()));
     }
     else if(!last_path_l.startsWith(button->text())) {
-        ui->path_l->setText(button->text() + ":\\");
+        ui->path_l->setText(button->text() + ":/");
         combobox_disk_l->setCurrentIndex(combobox_disk_l->findText(button->text()));
     }
     on_path_l_returnPressed();
-    size_d_l(button->text() + ":\\");
+    size_d_l(button->text());
 }
 
 //нажатие на кнопку диска справа
@@ -351,7 +352,7 @@ void MainWindow::cl_on_disk_r(){
         combobox_disk_r->setCurrentIndex(combobox_disk_r->findText(button->text()));
     }
     else if(!last_path_r.startsWith(button->text())) {
-        ui->path_r->setText(button->text() + ":\\");
+        ui->path_r->setText(button->text() + ":/");
         combobox_disk_r->setCurrentIndex(combobox_disk_r->findText(button->text()));
     }
     on_path_r_returnPressed();
@@ -369,7 +370,7 @@ void MainWindow::combobox_disk_l_changed(int ind)
         combobox_disk_l->setCurrentIndex(combobox_disk_l->findText(new_disk));
     }
     else if(!last_path_l.startsWith(new_disk)) {
-        ui->path_l->setText(new_disk + ":\\");
+        ui->path_l->setText(new_disk + ":/");
         combobox_disk_l->setCurrentIndex(combobox_disk_l->findText(new_disk));
     }
     on_path_l_returnPressed();
@@ -387,7 +388,7 @@ void MainWindow::combobox_disk_r_changed(int ind)
         combobox_disk_r->setCurrentIndex(combobox_disk_r->findText(new_disk));
     }
     else if(!last_path_r.startsWith(new_disk)) {
-        ui->path_r->setText(new_disk + ":\\");
+        ui->path_r->setText(new_disk + ":/");
         combobox_disk_r->setCurrentIndex(combobox_disk_r->findText(new_disk));
     }
     on_path_r_returnPressed();
@@ -404,7 +405,7 @@ void MainWindow::size_d_l(QString disk)
             l_l_buttons_disk[i]->setChecked(false);
     }
 
-    disk += ":\\";
+    disk += ":/";
 
     QStorageInfo st_inf = QStorageInfo(disk);
     float av_b = st_inf.bytesAvailable();
@@ -414,7 +415,7 @@ void MainWindow::size_d_l(QString disk)
         disk_progress_l->setStyleSheet("QProgressBar::chunk {background-color: rgb(38,160,218);}");
     else
         disk_progress_l->setStyleSheet("QProgressBar::chunk {background-color: rgb(218,38,38);}");
-    disk_name_l->setText(st_inf.name() + "  (" + disk.remove("\\").toUpper() + ")");
+    disk_name_l->setText(st_inf.name() + "  (" + disk.remove("/").toUpper() + ")");
     disk_progress_l->setValue(occup_b);
     disk_free_size_l->setText(HelperFunctions::reformat_size(QString::number(round(float(av_b)/1024), 'g', 20)) + " КБ из " +
                               HelperFunctions::reformat_size(QString::number(round(float(all_b)/1024), 'g', 20)) + " КБ свободно");
@@ -431,7 +432,7 @@ void MainWindow::size_d_r(QString disk)
             r_l_buttons_disk[i]->setChecked(false);
     }
 
-    disk += ":\\";
+    disk += ":/";
 
     QStorageInfo st_inf = QStorageInfo(disk);
     float av_b = float(st_inf.bytesAvailable());
@@ -441,7 +442,7 @@ void MainWindow::size_d_r(QString disk)
         disk_progress_r->setStyleSheet("QProgressBar::chunk {background-color: rgb(38,160,218);}");
     else
         disk_progress_r->setStyleSheet("QProgressBar::chunk {background-color: rgb(218,38,38);}");
-    disk_name_r->setText(st_inf.name() + "  (" + disk.remove("\\").toUpper() + ")");
+    disk_name_r->setText(st_inf.name() + "  (" + disk.remove("/").toUpper() + ")");
     disk_progress_r->setValue(occup_b);
     disk_free_size_r->setText(HelperFunctions::reformat_size(QString::number(round(float(av_b)/1024), 'g', 20)) + " КБ из " +
                               HelperFunctions::reformat_size(QString::number(round(float(all_b)/1024), 'g', 20)) + " КБ свободно");
@@ -461,20 +462,22 @@ void MainWindow::update_widgets()
 //изменение левого пути
 void MainWindow::on_path_l_returnPressed()
 {
-    ui->path_l->setText(QDir::cleanPath(ui->path_l->text()).replace("/", "\\"));
-    QString new_disk = ui->path_l->text().split("\\").first();
+    ui->path_l->setText(QDir::cleanPath(ui->path_l->text()));
+    QString new_disk = ui->path_l->text().split("/").first();
     ui->path_l->setText(ui->path_l->text().replace(new_disk, new_disk.toLower()));
     new_disk = new_disk.toLower().removeLast();
 
-    if (!ui->path_l->text().endsWith("\\")) {
+    if (!ui->path_l->text().endsWith("/")) {
         if (QFile(ui->path_l->text()).exists() && QFileInfo(ui->path_l->text()).isFile()) {
             QDesktopServices::openUrl(QUrl::fromLocalFile(ui->path_l->text()));
-            ui->path_l->setText(ui->path_l->text().left(ui->path_l->text().lastIndexOf("\\")) +"\\");
+            ui->path_l->setText(ui->path_l->text().left(ui->path_l->text().lastIndexOf("/")) +"/");
         } else
-            ui->path_l->setText(ui->path_l->text() + "\\");
+            ui->path_l->setText(ui->path_l->text() + "/");
     }
     QDir dir(ui->path_l->text());
-    if (dir.exists() && ui->path_l->text().endsWith("\\")) {
+    //if (dir.exists() && ui->path_l->text().endsWith("/")) {
+    //TODO проверить
+    if (dir.exists()) {
         size_d_l(new_disk);
         combobox_disk_l->setCurrentIndex(combobox_disk_l->findText(new_disk));
         treeWidget_l->clear();
@@ -482,7 +485,7 @@ void MainWindow::on_path_l_returnPressed()
 
         QString last_dir_l = "";
         if (last_path_l.contains(ui->path_l->text())) {
-            last_dir_l = last_path_l.remove(ui->path_l->text()).replace("\\", "");
+            last_dir_l = last_path_l.remove(ui->path_l->text()).replace("/", "");
         }
 
         treeWidget_l->Fill(ui->path_l->text(), hidden_f, last_dir_l);
@@ -503,27 +506,29 @@ void MainWindow::on_path_l_returnPressed()
 //изменение правого пути
 void MainWindow::on_path_r_returnPressed()
 {
-    ui->path_r->setText(QDir::cleanPath(ui->path_r->text()).replace("/", "\\"));
-    QString new_disk = ui->path_r->text().split("\\").first();
+    ui->path_r->setText(QDir::cleanPath(ui->path_r->text()));
+    QString new_disk = ui->path_r->text().split("/").first();
     ui->path_r->setText(ui->path_r->text().replace(new_disk, new_disk.toLower()));
     new_disk = new_disk.toLower().removeLast();
 
-    if (!ui->path_r->text().endsWith("\\")) {
+    if (!ui->path_r->text().endsWith("/")) {
         if (QFile(ui->path_r->text()).exists() && QFileInfo(ui->path_r->text()).isFile()) {
             QDesktopServices::openUrl(QUrl::fromLocalFile(ui->path_r->text()));
-            ui->path_r->setText(ui->path_r->text().left(ui->path_r->text().lastIndexOf("\\")) +"\\");
+            ui->path_r->setText(ui->path_r->text().left(ui->path_r->text().lastIndexOf("/")) + "/");
         } else
-            ui->path_r->setText(ui->path_r->text() + "\\");
+            ui->path_r->setText(ui->path_r->text() + "/");
     }
     QDir dir(ui->path_r->text());
-    if (dir.exists() && ui->path_r->text().endsWith("\\")){
+    //if (dir.exists() && ui->path_r->text().endsWith("/")) {
+    //TODO проверить
+    if (dir.exists()){
         size_d_r(new_disk);
         combobox_disk_r->setCurrentIndex(combobox_disk_r->findText(new_disk));
         treeWidget_r->clear();
 
         QString last_dir_r = "";
         if (last_path_r.contains(ui->path_r->text())) {
-            last_dir_r = last_path_r.remove(ui->path_r->text()).replace("\\", "");
+            last_dir_r = last_path_r.remove(ui->path_r->text()).replace("/", "");
         }
 
         treeWidget_r->Fill(ui->path_r->text(), hidden_f, last_dir_r);
@@ -619,15 +624,15 @@ void MainWindow::treeWidget_l_itemActivated(QTreeWidgetItem *item, int column)
 {
     if (item->text(1) == "<DIR>"){
         if (item->text(0) == "..") {
-            QString str1 = last_path_l.left(last_path_l.lastIndexOf("\\"));
-            str1 = str1.left(str1.lastIndexOf("\\"));
-            ui->path_l->setText(str1 + "\\");
+            QString str1 = last_path_l.left(last_path_l.lastIndexOf("/"));
+            str1 = str1.left(str1.lastIndexOf("/"));
+            ui->path_l->setText(str1 + "/");
         } else {
-            ui->path_l->setText(last_path_l + item->text(0) + "\\");
+            ui->path_l->setText(item->data(0, Qt::UserRole).toString());
         }
         on_path_l_returnPressed();
-    } else if (QFileInfo(last_path_l + item->text(0) + "." + item->text(1)).isFile()) {
-        QDesktopServices::openUrl(QUrl::fromLocalFile(last_path_l + item->text(0) + "." + item->text(1)));
+    } else if (QFileInfo(item->data(0, Qt::UserRole).toString()).isFile()) {
+        QDesktopServices::openUrl(QUrl::fromLocalFile(item->data(0, Qt::UserRole).toString()));
     }
 }
 
@@ -636,15 +641,15 @@ void MainWindow::treeWidget_r_itemActivated(QTreeWidgetItem *item, int column)
 {
     if (item->text(1) == "<DIR>"){
         if (item->text(0) == "..") {
-            QString str1 = last_path_r.left(last_path_r.lastIndexOf("\\"));
-            str1 = str1.left(str1.lastIndexOf("\\"));
-            ui->path_r->setText(str1 + "\\");
+            QString str1 = last_path_r.left(last_path_r.lastIndexOf("/"));
+            str1 = str1.left(str1.lastIndexOf("/"));
+            ui->path_r->setText(str1 + "/");
         } else {
-            ui->path_r->setText(last_path_r + item->text(0) + "\\");
+            ui->path_r->setText(item->data(0, Qt::UserRole).toString());
         }
         on_path_r_returnPressed();
-    } else if (QFileInfo(last_path_r + item->text(0) + "." + item->text(1)).isFile()) {
-        QDesktopServices::openUrl(QUrl::fromLocalFile(last_path_r + item->text(0) + "." + item->text(1)));
+    } else if (QFileInfo(item->data(0, Qt::UserRole).toString()).isFile()) {
+        QDesktopServices::openUrl(QUrl::fromLocalFile(item->data(0, Qt::UserRole).toString()));
     }
 }
 
@@ -747,29 +752,23 @@ void MainWindow::drop_func(QStringList lst, bool remove_after, bool is_right)
 //изменяет по ссылке папки назначения, выбранные каталоги, выбранные файлы
 void MainWindow::mass_all_selected(QString& dir_to, QStringList& selected_dirs, QStringList& selected_files)
 {
+    //TODO проверить
+    QList<QTreeWidgetItem*> list;
     if (treeWidget_l->hasFocus()) {
-        QList<QTreeWidgetItem*> list = treeWidget_l->selectedItems();
+        list = treeWidget_l->selectedItems();
         dir_to = last_path_r;
-        for (int i = 0; i < list.size(); ++i) {
-            if (list[i]->text(1) == "<DIR>" && list[i]->text(0) == "..")
-                continue;
-            if (list[i]->text(1) == "<DIR>" && QDir().exists(last_path_l + list[i]->text(0))) {
-                selected_dirs << last_path_l % list[i]->text(0);
-            } else if (QFile(last_path_l % list[i]->text(0) % "." % list[i]->text(1)).exists()) {
-                selected_files << last_path_l % list[i]->text(0) % "." % list[i]->text(1);
-            }
-        }
     } else  if (treeWidget_r->hasFocus()) {
-        QList<QTreeWidgetItem*> list = treeWidget_r->selectedItems();
+        list = treeWidget_r->selectedItems();
         dir_to = last_path_l;
-        for (int i = 0; i < list.size(); ++i) {
-            if (list[i]->text(1) == "<DIR>" && list[i]->text(0) == "..")
-                continue;
-            if (list[i]->text(1) == "<DIR>" && QDir().exists(last_path_r + list[i]->text(0))) {
-                selected_dirs << last_path_r % list[i]->text(0);
-            } else if (QFile(last_path_r % list[i]->text(0) % "." % list[i]->text(1)).exists()) {
-                selected_files << last_path_r % list[i]->text(0) % "." % list[i]->text(1);
-            }
+    }
+    for (int i = 0; i < list.size(); ++i) {
+        if (list[i]->text(1) == "<DIR>" && list[i]->text(0) == "..")
+            continue;
+        //if (list[i]->text(1) == "<DIR>" && QDir(list[i]->data(0, Qt::UserRole).toString()).exists()) { //TODO проверить
+        if (list[i]->text(1) == "<DIR>") {
+            selected_dirs << list[i]->data(0, Qt::UserRole).toString();
+        } else {/*if (QFile(list[i]->data(0, Qt::UserRole).toString()).exists())*/
+            selected_files << list[i]->data(0, Qt::UserRole).toString();
         }
     }
 }
