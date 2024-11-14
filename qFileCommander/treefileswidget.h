@@ -16,6 +16,8 @@ public:
     QString path;
     ///0 - Name, 1 - Type, 2- Size, 3 - Date
     short index_sort = 0;
+    ///обратный порядок заполнения
+    bool is_reverse = false;
     ///общий размер файлов в активной директории
     double all_v = 0;
     ///кол-во файлов в активной директории

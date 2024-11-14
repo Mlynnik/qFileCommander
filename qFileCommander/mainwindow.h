@@ -10,6 +10,7 @@
 #include <QDir>
 #include <QProgressBar>
 #include <QPushButton>
+#include <QFileIconProvider>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -39,6 +40,8 @@ private:
     TreeFilesWidget *treeWidget_l;
     //правое дерево
     TreeFilesWidget *treeWidget_r;
+
+    QFileIconProvider ic_pr;
 
     //меню
     QMenu* cust_menu;
@@ -100,6 +103,7 @@ private:
 
 private slots:
     void resizeEvent(QResizeEvent *event);
+    void keyPressEvent(QKeyEvent *event);
     void closeEvent(QCloseEvent *event);
 
 
@@ -173,6 +177,21 @@ private slots:
     void menu_open_with_wind();
     //открывает проводник в активной директории
     void on_pushButton_open_in_exp_clicked();
+
+    //открывает блокнот
+    void on_pushButton_notepad_clicked();
+    //окно выбора шрифта
+    void change_font();
+
+
+    //Lister
+    //просмотр файла
+    void on_pushButton_f3_clicked();
+
+
+    //Find Widget
+    //поиск файла
+    void on_pushButton_find_clicked();
 
 };
 #endif // MAINWINDOW_H

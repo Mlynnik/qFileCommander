@@ -14,6 +14,8 @@
 #include <QMenu>
 #include <QInputDialog>
 #include <QClipboard>
+#include <QToolTip>
+#include <QFontDialog>
 #pragma comment(lib, "Shell32.lib")
 
 MainWindow::MainWindow(QWidget *parent)
@@ -25,7 +27,7 @@ MainWindow::MainWindow(QWidget *parent)
     treeWidget_l = new TreeFilesWidget(this);
     treeWidget_r = new TreeFilesWidget(this);
 
-    //меню
+    //контекстное меню
     cust_menu = new QMenu(this);
     menu_f4 = new QAction("Переименовать", this);
     menu_open = new QAction("Открыть с помощью", this);
@@ -73,6 +75,16 @@ MainWindow::MainWindow(QWidget *parent)
     main_font.fromString(settings.value("/Settings/Main_Font", "Times New Roman,12,-1,5,700,0,0,0,0,0,0,0,0,0,0,1").toString());
 
     MainWindow::setFont(main_font);
+
+    QPalette palette = QToolTip::palette();
+    palette.setColor(QPalette::Inactive,QPalette::ToolTipBase,Qt::white);
+    palette.setColor(QPalette::Inactive,QPalette::ToolTipText,QColor(102, 102, 102, 255));
+    QToolTip::setPalette(palette);
+    QToolTip::setFont(main_font);
+
+    QPalette palette_header = QToolTip::palette();
+    palette_header.setColor(QPalette::Inactive,QPalette::ToolTipBase,Qt::white);
+    palette_header.setColor(QPalette::Inactive,QPalette::ToolTipText,QColor(240,240,240));
 
     //левое дерево
     treeWidget_l->setObjectName("treeWidget_l");
@@ -158,6 +170,18 @@ MainWindow::MainWindow(QWidget *parent)
     ui->toolButton->setFocusPolicy(Qt::NoFocus);
     ui->toolButton->setPopupMode(QToolButton::InstantPopup);
 
+    //иконки кнопок
+    ui->pushButton_open_in_exp->setIcon(QIcon(style()->standardIcon(QStyle::SP_DialogOpenButton)));
+    ui->pushButton_find->setIcon(QIcon(style()->standardIcon(QStyle::SP_FileDialogContentsView)));
+    if (QFile("C:\\Windows\\notepad.exe").exists())
+        ui->pushButton_notepad->setIcon(ic_pr.icon(QFileInfo("C:\\Windows\\notepad.exe")));
+    ui->pushButton_create_file->setText("+");
+    ui->pushButton_admin->setIcon(QIcon(style()->standardIcon(QStyle::SP_VistaShield)));
+    if(IsUserAnAdmin()) {
+        ui->pushButton_admin->setEnabled(false);
+        ui->pushButton_admin->setCheckable(false);
+    }
+
     //пути
     ui->path_l->setStyleSheet("QLineEdit {background: rgb(153, 180, 209);}");
     ui->path_l->setFocusPolicy(Qt::ClickFocus);
@@ -183,6 +207,12 @@ MainWindow::MainWindow(QWidget *parent)
         menu_show_hidden->setChecked(false);
     ui->toolButton->addAction(menu_show_hidden);
     connect(menu_show_hidden, SIGNAL(triggered()), this, SLOT(show_hidden_func()));
+
+    //Изменить шрифт
+    QAction *menu_change_font = new QAction("Изменить шрифт", this);
+    menu_change_font->setCheckable(false);
+    ui->toolButton->addAction(menu_change_font);
+    connect(menu_change_font, SIGNAL(triggered()), this, SLOT(change_font()));
 
 
     //запуск таймера на обновление
@@ -238,6 +268,45 @@ void MainWindow::resizeEvent(QResizeEvent *event) {
     ui->inf_dir_l->setGeometry(round(w_now*1), round(h_now*745 - (h-h_now)*60), round(w_now*650), round(h*22));
     ui->inf_dir_r->setGeometry(round(w_now*770), round(h_now*745 - (h-h_now)*60), round(w_now*650), round(h*22));
     ui->horizontalLayoutWidget_3->setGeometry(round(w_now*1), round(h_now*770 - (h-h_now)*35), round(w_now*1535), round(h*35));
+}
+
+void MainWindow::keyPressEvent(QKeyEvent *event) {
+    if (event->modifiers() == Qt::ShiftModifier) {
+        if (event->key() == Qt::Key_Delete)
+            shift_del_f();
+    } else if (event->modifiers() == Qt::ControlModifier) {
+        if (event->key() == Qt::Key_F)
+            on_pushButton_find_clicked();
+    } else {
+        switch (event->key()){
+        case Qt::Key_Tab:
+            if (treeWidget_l->hasFocus())
+                treeWidget_r->setFocus();
+            else
+                treeWidget_l->setFocus();
+            break;
+        case Qt::Key_Delete:
+            on_pushButton_f8_clicked();
+            break;
+        case Qt::Key_F3:
+            on_pushButton_f3_clicked();
+            break;
+        case Qt::Key_F4:
+            on_pushButton_f4_clicked();
+            break;
+        case Qt::Key_F5:
+            on_pushButton_f5_clicked();
+            break;
+        case Qt::Key_F6:
+            on_pushButton_f6_clicked();
+            break;
+        case Qt::Key_F7:
+            on_pushButton_f7_clicked();
+            break;
+        case Qt::Key_F8:
+            on_pushButton_f8_clicked();
+        }
+    }
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -476,7 +545,6 @@ void MainWindow::on_path_l_returnPressed()
     }
     QDir dir(ui->path_l->text());
     //if (dir.exists() && ui->path_l->text().endsWith("/")) {
-    //TODO проверить
     if (dir.exists()) {
         size_d_l(new_disk);
         combobox_disk_l->setCurrentIndex(combobox_disk_l->findText(new_disk));
@@ -520,7 +588,6 @@ void MainWindow::on_path_r_returnPressed()
     }
     QDir dir(ui->path_r->text());
     //if (dir.exists() && ui->path_r->text().endsWith("/")) {
-    //TODO проверить
     if (dir.exists()){
         size_d_r(new_disk);
         combobox_disk_r->setCurrentIndex(combobox_disk_r->findText(new_disk));
@@ -552,27 +619,35 @@ void MainWindow::header_clicked_l(int col)
     QTreeWidgetItem *hi = treeWidget_l->headerItem();
     if (hi->text(col) == "Имя" or hi->text(col) == "↓Имя") {
         treeWidget_l->index_sort = 0;
+        treeWidget_l->is_reverse = false;
         hi->setText(col, "↑Имя");
     } else if (hi->text(col) == "↑Имя") {
         treeWidget_l->index_sort = 0;
+        treeWidget_l->is_reverse = true;
         hi->setText(col, "↓Имя");
     } else if (hi->text(col) == "Тип" or hi->text(col) == "↓Тип") {
         treeWidget_l->index_sort = 1;
+        treeWidget_l->is_reverse = false;
         hi->setText(col, "↑Тип");
     } else if (hi->text(col) == "↑Тип") {
         treeWidget_l->index_sort = 1;
+        treeWidget_l->is_reverse = true;
         hi->setText(col, "↓Тип");
     } else if (hi->text(col) == "Размер" or hi->text(col) == "↑Размер") {
         treeWidget_l->index_sort = 2;
+        treeWidget_l->is_reverse = false;
         hi->setText(col, "↓Размер");
     } else if (hi->text(col) == "↓Размер") {
         treeWidget_l->index_sort = 2;
+        treeWidget_l->is_reverse = true;
         hi->setText(col, "↑Размер");
     } else if (hi->text(col) == "Дата" or hi->text(col) == "↑Дата") {
         treeWidget_l->index_sort = 3;
+        treeWidget_l->is_reverse = false;
         hi->setText(col, "↓Дата");
     } else if (hi->text(col) == "↓Дата") {
         treeWidget_l->index_sort = 3;
+        treeWidget_l->is_reverse = true;
         hi->setText(col, "↑Дата");
     }
     for (int i = 0; i < 4; i ++) {
@@ -588,27 +663,35 @@ void MainWindow::header_clicked_r(int col)
     QTreeWidgetItem *hi = treeWidget_r->headerItem();
     if (hi->text(col) == "Имя" or hi->text(col) == "↓Имя") {
         treeWidget_r->index_sort = 0;
+        treeWidget_r->is_reverse = false;
         hi->setText(col, "↑Имя");
     } else if (hi->text(col) == "↑Имя") {
         treeWidget_r->index_sort = 0;
+        treeWidget_r->is_reverse = true;
         hi->setText(col, "↓Имя");
     } else if (hi->text(col) == "Тип" or hi->text(col) == "↓Тип") {
         treeWidget_r->index_sort = 1;
+        treeWidget_r->is_reverse = false;
         hi->setText(col, "↑Тип");
     } else if (hi->text(col) == "↑Тип") {
         treeWidget_r->index_sort = 1;
+        treeWidget_r->is_reverse = true;
         hi->setText(col, "↓Тип");
     } else if (hi->text(col) == "Размер" or hi->text(col) == "↑Размер") {
         treeWidget_r->index_sort = 2;
+        treeWidget_r->is_reverse = false;
         hi->setText(col, "↓Размер");
     } else if (hi->text(col) == "↓Размер") {
         treeWidget_r->index_sort = 2;
+        treeWidget_r->is_reverse = true;
         hi->setText(col, "↑Размер");
     } else if (hi->text(col) == "Дата" or hi->text(col) == "↑Дата") {
         treeWidget_r->index_sort = 3;
+        treeWidget_r->is_reverse = false;
         hi->setText(col, "↓Дата");
     } else if (hi->text(col) == "↓Дата") {
         treeWidget_r->index_sort = 3;
+        treeWidget_r->is_reverse = true;
         hi->setText(col, "↑Дата");
     }
     for (int i = 0; i < 4; i ++) {
@@ -752,7 +835,6 @@ void MainWindow::drop_func(QStringList lst, bool remove_after, bool is_right)
 //изменяет по ссылке папки назначения, выбранные каталоги, выбранные файлы
 void MainWindow::mass_all_selected(QString& dir_to, QStringList& selected_dirs, QStringList& selected_files)
 {
-    //TODO проверить
     QList<QTreeWidgetItem*> list;
     if (treeWidget_l->hasFocus()) {
         list = treeWidget_l->selectedItems();
@@ -764,7 +846,7 @@ void MainWindow::mass_all_selected(QString& dir_to, QStringList& selected_dirs, 
     for (int i = 0; i < list.size(); ++i) {
         if (list[i]->text(1) == "<DIR>" && list[i]->text(0) == "..")
             continue;
-        //if (list[i]->text(1) == "<DIR>" && QDir(list[i]->data(0, Qt::UserRole).toString()).exists()) { //TODO проверить
+        //if (list[i]->text(1) == "<DIR>" && QDir(list[i]->data(0, Qt::UserRole).toString()).exists()) {
         if (list[i]->text(1) == "<DIR>") {
             selected_dirs << list[i]->data(0, Qt::UserRole).toString();
         } else {/*if (QFile(list[i]->data(0, Qt::UserRole).toString()).exists())*/
@@ -793,14 +875,14 @@ void MainWindow::copy_as_path_clicked()
     QString res;
 
     for (int i = 0; i < selected_dirs.length(); ++i) {
-        res.append("\"" % selected_dirs[i] % "\"\n ");
+        res.append("\"" % selected_dirs[i] % "\"\n");
     }
     for (int i = 0; i < selected_files.length(); ++i) {
-        res.append("\"" % selected_files[i] % "\"\n ");
+        res.append("\"" % selected_files[i] % "\"\n");
     }
 
     if (res.length() > 0)
-        QApplication::clipboard()->setText(res);
+        QApplication::clipboard()->setText(res.removeLast().replace("/", "\\"));
 }
 
 //копирование/перемещение
@@ -925,3 +1007,35 @@ void MainWindow::on_pushButton_open_in_exp_clicked()
         nam_dir = last_path_r;
     QDesktopServices::openUrl(QUrl::fromLocalFile(nam_dir));
 }
+
+
+//открывает блокнот
+void MainWindow::on_pushButton_notepad_clicked()
+{
+    if (QFile("C:\\Windows\\notepad.exe").exists())
+        QDesktopServices::openUrl(QUrl::fromLocalFile("C:\\Windows\\notepad.exe"));
+}
+
+
+//окно выбора шрифта
+void MainWindow::change_font()
+{
+    bool ok;
+    QFont font = QFontDialog::getFont(
+        &ok, main_font, this);
+    if (ok) {
+        main_font = font;
+        MainWindow::setFont(main_font);
+        QToolTip::setFont(main_font);
+        treeWidget_l->header()->setFont(main_font);
+        treeWidget_r->header()->setFont(main_font);
+        ui->path_l->setFont(main_font);
+        ui->path_r->setFont(main_font);
+    }
+}
+
+//просмотр файла
+void MainWindow::on_pushButton_f3_clicked() {}
+
+//поиск файла
+void MainWindow::on_pushButton_find_clicked() {}

@@ -63,7 +63,7 @@ void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, QString las
             list = dir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
     }
 
-    if (((index_sort == 0) || (index_sort == 3)) && (this->headerItem()->text(0).startsWith("↓") || this->headerItem()->text(3).startsWith("↓"))) {
+    if (is_reverse && ((index_sort == 0) || (index_sort == 3))) {
         std::reverse(list.begin(), list.end());
     }
 
@@ -160,12 +160,8 @@ void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, QString las
         break;
     }
 
-
-    for (int i = 0; i < 4; ++i) {
-        if (this->headerItem()->text(i).startsWith("↓")) {
-            std::reverse(list.begin(), list.end());
-            break;
-        }
+    if (is_reverse) {
+        std::reverse(list.begin(), list.end());
     }
 
     QDateTime time_now = QDateTime::currentDateTime();
@@ -393,13 +389,11 @@ void TreeFilesWidget::keyPressEvent(QKeyEvent *event)
 
             const QList<QTreeWidgetItem *> &items = this->selectedItems();
             QList<QUrl> urls;
-            for (int i = 0; i < items.length(); ++i) {
-                if ((items[i]->text(0) == "..") && (items[i]->text(1) == "<DIR>"))
-                    continue;
-                QString suffics = "";
-                if (items[i]->text(1) != "<DIR>")
-                    suffics = "." % items[i]->text(1);
-                urls << QUrl::fromLocalFile(path % items[i]->text(0) % suffics);
+            int i = 0;
+            if ((items[0]->text(0) == "..") && (items[0]->text(1) == "<DIR>"))
+                ++i;
+            for (; i < items.length(); ++i) {
+                urls << QUrl::fromLocalFile(items[i]->data(0, Qt::UserRole).toString());
             }
             mimeData->setUrls(urls);
 
@@ -461,6 +455,10 @@ void TreeFilesWidget::keyPressEvent(QKeyEvent *event)
         }
         emit this->itemSelectionChanged();
         return;
+    } else if (event->key() == Qt::Key_Backspace) {
+        if ((topLevelItem(0)->text(0) == "..") && (topLevelItem(0)->text(1) == "<DIR>"))
+            emit itemActivated(topLevelItem(0), 0);
+        return;
     }
     QTreeWidget::keyPressEvent(event);
 }
@@ -474,13 +472,11 @@ QStringList TreeFilesWidget::mimeTypes() const
 QMimeData* TreeFilesWidget::mimeData(const QList<QTreeWidgetItem *> &items) const
 {
     QList<QUrl> urls;
-    for (int i = 0; i < items.length(); ++i) {
-        if ((items[i]->text(0) == "..") && (items[i]->text(1) == "<DIR>"))
-            continue;
-        QString suffics = "";
-        if (items[i]->text(1) != "<DIR>")
-            suffics = "." % items[i]->text(1);
-        urls << QUrl::fromLocalFile(path % items[i]->text(0) % suffics);
+    int i = 0;
+    if ((items[0]->text(0) == "..") && (items[0]->text(1) == "<DIR>"))
+        ++i;
+    for (; i < items.length(); ++i) {
+        urls << QUrl::fromLocalFile(items[i]->data(0, Qt::UserRole).toString());
     }
     QMimeData* data = new QMimeData();
     data->setUrls(urls);
@@ -557,6 +553,5 @@ void TreeFilesWidget::dropEvent(QDropEvent* event)
 void TreeFilesWidget::drop_func_signal(QStringList lst, bool remove_after)
 {
     emit drop_signal(lst, remove_after);
-    //TODO signal to mainwindow
 }
 
