@@ -25,6 +25,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         ${PROJECT_SOURCES}
         treefileswidget.h treefileswidget.cpp
         helperfunctions.h helperfunctions.cpp
+        copy_files.cpp copy_files.h copy_process.cpp copy_process.h
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET qFileCommander APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR

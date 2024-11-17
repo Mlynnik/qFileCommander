@@ -101,6 +101,14 @@ private:
     //label занятого места правого диска
     QLabel *disk_free_size_r = new QLabel();
 
+
+    //кол-во активных файловых процессов
+    int count_copy_proc = 0;
+
+public slots:
+    //срабытывает при завершении операции с файлами (обновляет виджеты)
+    void end_copy();
+
 private slots:
     void resizeEvent(QResizeEvent *event);
     void keyPressEvent(QKeyEvent *event);

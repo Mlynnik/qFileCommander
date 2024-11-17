@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 #include "helperfunctions.h"
+#include "copy_files.h"
 #include <windows.h>
 #include <shlobj.h>
 #include <QHeaderView>
@@ -312,6 +313,11 @@ void MainWindow::keyPressEvent(QKeyEvent *event) {
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     event->ignore();
+
+    if (count_copy_proc > 0) {
+        v_error("Не все процессы еще завершены!");
+        return;
+    }
 
     QSettings settings;
     settings.setValue("/Settings/L_Path", last_path_l);
@@ -827,8 +833,28 @@ void MainWindow::treeWidget_r_itemSelectionChanged()
 //drop файла в указанную директорию
 void MainWindow::drop_func(QStringList lst, bool remove_after, bool is_right)
 {
-    qDebug() << lst;
-    qDebug() << remove_after;
+    if (lst.length() < 1)
+        return;
+    QString dir_to = is_right ? last_path_r : last_path_l;
+
+    if (QFileInfo(lst.first()).absoluteDir() == QDir(dir_to))
+        return;
+
+    QStringList selected_dirs, selected_files;
+    for (int i = 0; i < lst.length(); ++i) {
+        if (QFileInfo(lst[i]).isFile())
+            selected_files << lst[i].replace("\\", "/");
+        else if(QFileInfo(lst[i]).isDir())
+            selected_dirs << lst[i].replace("\\", "/");
+    }
+
+    if (selected_dirs.length() + selected_files.length() > 0) {
+        Copy_files *cp = new Copy_files();
+        connect(cp, SIGNAL(end_operation()), this, SLOT(end_copy()));
+        cp->main_font = main_font;
+        cp->Work(dir_to, selected_dirs, selected_files, remove_after);
+        count_copy_proc++;
+    }
 }
 
 
@@ -885,19 +911,37 @@ void MainWindow::copy_as_path_clicked()
         QApplication::clipboard()->setText(res.removeLast().replace("/", "\\"));
 }
 
+
+//срабытывает при завершении операции с файлами (обновляет виджеты)
+void MainWindow::end_copy()
+{
+    update_widgets();
+    count_copy_proc--;
+}
+
 //копирование/перемещение
-void MainWindow::f5_f6_func(bool remove_after) {}
+void MainWindow::f5_f6_func(bool remove_after)
+{
+    QString dir_to; QStringList selected_dirs, selected_files;
+    mass_all_selected(dir_to, selected_dirs, selected_files);
+
+    if (selected_dirs.length() + selected_files.length() > 0) {
+        Copy_files *cp = new Copy_files();
+        connect(cp, SIGNAL(end_operation()), this, SLOT(end_copy()));
+        cp->main_font = main_font;
+        cp->Work(dir_to, selected_dirs, selected_files, remove_after);
+        count_copy_proc++;
+    }
+}
 
 //копирование
 void MainWindow::on_pushButton_f5_clicked() {
-    qDebug() << "f5";
     f5_f6_func(false);
 }
 
 //перемещение
 void MainWindow::on_pushButton_f6_clicked()
 {
-    qDebug() << "f6";
     f5_f6_func(true);
 }
 
