@@ -82,6 +82,11 @@ void Copy_files::Work(QString dir_to, QStringList selected_dirs, QStringList sel
         connect(this, SIGNAL(cancel_clicked_first()), cd, SLOT(cancel_clicked_first()), Qt::DirectConnection);
         connect(this, SIGNAL(cancel_unclicked_first()), cd, SLOT(cancel_unclicked_first()), Qt::DirectConnection);
 
+        connect(cd, SIGNAL(cant_copy(QString)), this, SLOT(cant_copy(QString)));
+        connect(this, SIGNAL(change_cant_copy_ind(int)), cd, SLOT(change_cant_copy_ind(int)), Qt::DirectConnection);
+        connect(cd, SIGNAL(cant_del(QString)), this, SLOT(cant_del(QString)));
+        connect(this, SIGNAL(change_cant_del_ind(int)), cd, SLOT(change_cant_del_ind(int)), Qt::DirectConnection);
+
         connect(th, SIGNAL(started()), cd, SLOT(Copy()));
         connect(th, SIGNAL(finished()), this, SLOT(end_copy()));
 
@@ -151,6 +156,32 @@ void Copy_files::v_error(QString str_error) {
     v_err.setText(str_error);
     v_err.setTextInteractionFlags(Qt::TextSelectableByMouse);
     v_err.exec();
+}
+
+
+void Copy_files::cant_copy(QString str_error) {
+    QMessageBox v_err;
+    v_err.setFont(main_font);
+    v_err.setIcon(QMessageBox::Warning);
+    v_err.setWindowTitle("Ошибка !");
+    v_err.setText(str_error);
+    v_err.addButton("Пропустить", QMessageBox::YesRole);
+    v_err.addButton("Пропустить все", QMessageBox::YesRole);
+    v_err.addButton("Отмена", QMessageBox::NoRole);
+    emit change_cant_copy_ind(v_err.exec());
+}
+
+void Copy_files::cant_del(QString str_error)
+{
+    QMessageBox v_err;
+    v_err.setFont(main_font);
+    v_err.setIcon(QMessageBox::Warning);
+    v_err.setWindowTitle("Ошибка !");
+    v_err.setText("Не удалось удалить: " + str_error);
+    v_err.addButton("Пропустить", QMessageBox::YesRole);
+    v_err.addButton("Пропустить все", QMessageBox::YesRole);
+    v_err.addButton("Отмена", QMessageBox::NoRole);
+    emit change_cant_del_ind(v_err.exec());
 }
 
 void Copy_files::end_copy()

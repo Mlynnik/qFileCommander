@@ -881,6 +881,7 @@ void MainWindow::mass_all_selected(QString& dir_to, QStringList& selected_dirs, 
     }
 }
 
+
 //переименование файла/каталога
 void MainWindow::on_pushButton_f4_clicked()
 {
@@ -888,7 +889,81 @@ void MainWindow::on_pushButton_f4_clicked()
     mass_all_selected(dir_to, selected_dirs, selected_files);
 
     if (selected_files.length() + selected_dirs.length() == 1) {
-        qDebug() << "f4";
+        QString path_new = last_path_l;
+        if (dir_to == last_path_l)
+            path_new = last_path_r;
+
+        bool flag_dir = false;
+
+        QInputDialog id;
+        id.setFont(main_font);
+        id.resize(QSize(400, 60));
+        id.setCancelButtonText("Отмена");
+        id.setLabelText("Переименование:");
+
+        QString past_name;
+        QString new_name;
+
+        if (selected_dirs.length() == 1) {
+            past_name = selected_dirs.first().split("/").last();
+            flag_dir = true;
+        }
+        else {
+            past_name = selected_files.first().split("/").last();
+        }
+
+        id.setTextValue(past_name);
+
+
+        /*QByteArray t_arr = id.textValue().toLatin1();
+        for (int i = 0; i < t_arr.size(); ++i) {
+            if (t_arr[i] < 31)
+                v_error("недопустимое название");
+        }*/
+
+        QList<char> ban_symb { '<', '>', ':', '"', '/', '\\', '|', '?', '*'};
+        bool flag = false;
+
+        while (id.exec()) {
+            new_name = id.textValue();
+            if (new_name.size() > 260) {
+                v_error("Имя файла ограничено 260 символами");
+                continue;
+            }
+
+            while (new_name.endsWith(".") || new_name.endsWith(" "))
+                new_name.removeLast();
+            if (new_name.size() < 1) {
+                continue;
+            }
+            for (int i = 0; i < new_name.size(); ++i) {
+                if (ban_symb.contains(new_name[i])) {
+                    v_error("В названии не могут содержаться знаки: '<, >, :, \", /, \\, |, ?, *");
+                    flag = true;
+                    break;
+                }
+            }
+
+            if (flag) {
+                flag = false;
+                continue;
+            }
+
+            if (past_name == new_name) {
+                update_widgets();
+                break;
+            }
+            if (flag_dir && QDir(path_new + new_name).exists()) {
+                v_error("Папка с именем " % new_name % " уже существует.");
+            } else if (!flag_dir && QFile(path_new + new_name).exists()) {
+                v_error("Файл с именем " % new_name % " уже существует.");
+            } else {
+                if (!(QDir(path_new).rename(past_name, new_name)))
+                    v_error("Не удалось переименовать!");
+                update_widgets();
+                break;
+            }
+        }
     }
 }
 
@@ -948,37 +1023,58 @@ void MainWindow::on_pushButton_f6_clicked()
 //создание каталога
 void MainWindow::on_pushButton_f7_clicked()
 {
+    QString path_new;
     if (treeWidget_l->hasFocus()) {
-        QInputDialog id;
-        id.setFont(main_font);
-        id.resize(QSize(400, 60));
-        id.setCancelButtonText("Отмена");
-        id.setLabelText("Создать новый каталог:");
-        while (id.exec()) {
-            if (QDir(last_path_l + id.textValue()).exists()) {
-                v_error("Папка с именем " % id.textValue() % " уже существует.");
-            } else {
-                QDir dir_n(last_path_l + id.textValue());
-                dir_n.mkpath(".");
-                update_widgets();
+        path_new = last_path_l;
+    } else if (treeWidget_r->hasFocus()) {
+        path_new = last_path_r;
+    } else {
+        return;
+    }
+
+    QInputDialog id;
+    id.setFont(main_font);
+    id.resize(QSize(400, 60));
+    id.setCancelButtonText("Отмена");
+    id.setLabelText("Создать новый каталог:");
+
+    QString new_name;
+    QList<char> ban_symb { '<', '>', ':', '"', '/', '\\', '|', '?', '*'};
+    bool flag = false;
+
+    while (id.exec()) {
+        new_name = id.textValue();
+        if (new_name.size() > 260) {
+            v_error("Имя файла ограничено 260 символами");
+            continue;
+        }
+
+        while (new_name.endsWith(".") || new_name.endsWith(" "))
+            new_name.removeLast();
+        if (new_name.size() < 1) {
+            continue;
+        }
+        for (int i = 0; i < new_name.size(); ++i) {
+            if (ban_symb.contains(new_name[i])) {
+                v_error("В названии не могут содержаться знаки: '<, >, :, \", /, \\, |, ?, *");
+                flag = true;
                 break;
             }
         }
-    } else if (treeWidget_r->hasFocus()) {
-        QInputDialog id;
-        id.setFont(main_font);
-        id.resize(QSize(400, 60));
-        id.setCancelButtonText("Отмена");
-        id.setLabelText("Создать новый каталог:");
-        while (id.exec()) {
-            if (QDir(last_path_r + id.textValue()).exists()) {
-                v_error("Папка с именем " % id.textValue() % " уже существует.");
-            } else {
-                QDir dir_n(last_path_r + id.textValue());
-                dir_n.mkpath(".");
-                update_widgets();
-                break;
-            }
+
+        if (flag) {
+            flag = false;
+            continue;
+        }
+
+        if (QDir(path_new + new_name).exists()) {
+            v_error("Папка с именем " % new_name % " уже существует.");
+        } else {
+            QDir dir_n(path_new + new_name);
+            if (!dir_n.mkpath("."))
+                v_error("Не удалось переименовать!");
+            update_widgets();
+            break;
         }
     }
 }
@@ -1012,7 +1108,46 @@ void MainWindow::show_properties()
     mass_all_selected(dir_to, selected_dirs, selected_files);
     selected_files.append(selected_dirs);
     if (selected_files.length() > 0) {
-        qDebug() << "show_properties";
+        if (selected_files.length() == 1) {
+            SHELLEXECUTEINFO info = {0};
+            info.cbSize = sizeof info;
+            info.lpFile = (const wchar_t*) selected_files.first().utf16();
+            info.nShow = SW_SHOW;
+            info.fMask = SEE_MASK_INVOKEIDLIST;
+            info.lpVerb = L"properties";
+            ShellExecuteEx(&info);
+        } else {
+            int nrFiles = selected_files.length();
+            LPITEMIDLIST *pidlDrives = (LPITEMIDLIST *)malloc(sizeof(LPITEMIDLIST)*nrFiles);
+            IShellFolder* psfDesktop;
+            IDataObject* pdata;
+            HRESULT hr;
+            ULONG chEaten=0, dwAttributes=0;
+            int i=0;
+            hr = SHGetSpecialFolderLocation(NULL, CSIDL_DRIVES, pidlDrives);
+            if (SUCCEEDED(hr))
+            {
+                hr = SHGetDesktopFolder(&psfDesktop);
+                for (int i = 0; i < nrFiles; i ++)
+                    psfDesktop->ParseDisplayName(NULL, NULL, (wchar_t*)selected_files[i].utf16(), &chEaten, (LPITEMIDLIST*)&pidlDrives[i], &dwAttributes);
+                if (SUCCEEDED(hr))
+                {
+                    hr = psfDesktop->GetUIObjectOf(NULL, nrFiles, (LPCITEMIDLIST*)pidlDrives, IID_IDataObject, NULL, (void**)&pdata);
+                    if (SUCCEEDED(hr))
+                    {
+                        CoInitialize(NULL);
+                        //hr=SHMultiFileProperties(pdata,0);
+                        SHMultiFileProperties(pdata,0);
+                        pdata->Release();
+                        CoUninitialize();
+                    }
+                    psfDesktop->Release();
+                }
+                for(i=0; i < nrFiles; i++)
+                    ILFree(pidlDrives[i]);
+            }
+            free(pidlDrives);
+        }
     }
 }
 

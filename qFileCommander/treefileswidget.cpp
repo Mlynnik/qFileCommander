@@ -27,7 +27,7 @@ TreeFilesWidget::TreeFilesWidget(QWidget *parent) : QTreeWidget{parent}
 
 QList<QTreeWidgetItem *> TreeFilesWidget::selectedItems() const
 {
-    QList<QTreeWidgetItem *> res = *new QList<QTreeWidgetItem *>();
+    QList<QTreeWidgetItem*> res;
     for (int i = 0; i < this->topLevelItemCount(); ++i) {
         if (list_selected[i])
             res.append(this->topLevelItem(i));
@@ -387,7 +387,7 @@ void TreeFilesWidget::keyPressEvent(QKeyEvent *event)
         } else if ((event->key() == Qt::Key_C) || (event->key() == Qt::Key_X)) {
             auto mimeData = new QMimeData;
 
-            const QList<QTreeWidgetItem *> &items = this->selectedItems();
+            const QList<QTreeWidgetItem*> &items = this->selectedItems();
             QList<QUrl> urls;
             int i = 0;
             if ((items[0]->text(0) == "..") && (items[0]->text(1) == "<DIR>"))
@@ -486,7 +486,7 @@ QMimeData* TreeFilesWidget::mimeData(const QList<QTreeWidgetItem *> &items) cons
 void TreeFilesWidget::startDrag(Qt::DropActions supportedActions)
 {
     if(supportedActions){
-        QList<QTreeWidgetItem *> m_items = selectedItems();
+        QList<QTreeWidgetItem*> m_items = selectedItems();
         if(m_items.isEmpty())
             return;
         QMimeData *data = mimeData(m_items);

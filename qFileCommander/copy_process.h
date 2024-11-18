@@ -34,6 +34,14 @@ private:
     ///4 - заменить, 5 - заменить все, 6 - отмена
     int yet_exists_ind = 0;
 
+    ///действия при невозможности копирования
+    /// 0 - пропустить, 1 - пропустить все, 2 - прекратить все операции
+    int cant_copy_ind = 0;
+
+    ///действия при невозможности удаления
+    /// 0 - пропустить, 1 - пропустить все, 2 - прекратить все операции
+    int cant_del_ind = 0;
+
     ///отмена операции
     bool wasCanceled = false;
     ///первичная отмена (приостановка)
@@ -44,9 +52,15 @@ public: signals:
     void update_value_copy(int val);
     ///начато копирование нового файла -> передано имя
     void update_name_copy(QString name);
+
     ///папка/файл уже существует
     void yet_exists(QString name);
-    ///отправить в петлю (пауза)
+    ///не удалось выполнить копирование
+    void cant_copy(QString str_error);
+    ///не удалось выполнить удаление
+    void cant_del(QString str_error);
+
+    ///выйти из петли (снятие с паузы)
     void signal_loop();
     ///фатальная ошибка
     void error_operation(QString str_error);
@@ -58,6 +72,10 @@ public slots:
     void copy_Cancel_clicked();
     ///изменение поведения при совпадении в папке назначения
     void change_yet_exists_ind(int val);
+    ///изменение поведения при невозможности копирования
+    void change_cant_copy_ind(int val);
+    ///изменение поведения при невозможности удаления
+    void change_cant_del_ind(int val);
     ///петля (пауза)
     void func_loop();
     ///первичное нажатие отмена -> пауза
@@ -65,11 +83,16 @@ public slots:
     ///снятие с паузы
     void cancel_unclicked_first();
 
+
 private slots:
     ///собирает информацию о директории
     void get_dir_info(QString dir);
     ///копирование конкретного файла
     int copy_file(QString past_name, QString new_name);
+    ///рекурсивное удаление папки
+    bool removeDir(const QString & dirName);
+    ///проход по каталогу
+    void dir_iter(QString dir, QString dir_to, bool remove_after);
 };
 
 #endif // COPY_PROCESS_H

@@ -27,6 +27,10 @@ signals:
     void cancel_clicked_first();
     ///снятие с паузы
     void cancel_unclicked_first();
+    ///изменение поведения при невозможности копирования
+    void change_cant_copy_ind(int);
+    ///изменение поведения при невозможности удаления
+    void change_cant_del_ind(int);
 
     ///полное завершение операции (copy_process)
     void end_operation();
@@ -38,6 +42,10 @@ public slots:
     void update_name_progress(QString val);
     ///окно с ошибкой
     void v_error(QString str_error);
+    ///не удалось выполнить копирование
+    void cant_copy(QString str_error);
+    ///не удалось выполнить удаление
+    void cant_del(QString str_error);
 
 private slots:
     ///отмена операции
