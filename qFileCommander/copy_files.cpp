@@ -24,7 +24,7 @@ void Copy_files::update_value_progress(int val)
     qpd->setValue(val);
 }
 
-void Copy_files::Work(QString dir_to, QStringList selected_dirs, QStringList selected_files, bool remove_after)
+void Copy_files::Work(QString dir_to, const QStringList& selected_dirs, const QStringList& selected_files, bool remove_after)
 {
     if (selected_dirs.length() + selected_files.length() > 0) {
         if (!dir_to.endsWith("/"))

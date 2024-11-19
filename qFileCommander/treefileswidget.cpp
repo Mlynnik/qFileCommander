@@ -32,12 +32,16 @@ QList<QTreeWidgetItem *> TreeFilesWidget::selectedItems() const
         if (list_selected[i])
             res.append(this->topLevelItem(i));
     }
-    if ((res.length() < 1) && (this->topLevelItemCount() > 0))
-        res.append(this->currentItem());
+    if ((res.length() < 1) && (this->topLevelItemCount() > 0)) {
+        if (indexOfTopLevelItem(currentItem()) > -1)
+            res.append(this->currentItem());
+        else
+            res.append(topLevelItem(0));
+    }
     return res;
 }
 
-void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, QString last_dir_l)
+void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, const QString &last_dir_l)
 {
     QDir dir(dir_str);
     QFileIconProvider IC_PR;
@@ -50,6 +54,8 @@ void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, QString las
     list_colors.clear();
     list_selected.clear();
 
+    previous_item_ind = 0;
+    begin_shift = 0;
 
     if (index_sort == 3) {
         if (hidden_file)
@@ -113,8 +119,11 @@ void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, QString las
         item->setToolTip(1, tool_tip);
         item->setToolTip(2, tool_tip);
         item->setToolTip(3, tool_tip);
-        if (fileInfo.fileName() == last_dir_l)
+        if (fileInfo.fileName() == last_dir_l) {
             this->setCurrentItem(item);
+            begin_shift = i;
+            previous_item_ind = i;
+        }
 
         item->setForeground(0, color);
         item->setForeground(1, color);
@@ -218,6 +227,9 @@ void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, QString las
         list_colors.append(color);
         list_selected.append(false);
     }
+
+    if ((indexOfTopLevelItem(currentItem()) < 0) && (topLevelItemCount() > 0))
+        setCurrentItem(topLevelItem(0));
 }
 
 
@@ -307,6 +319,10 @@ void TreeFilesWidget::widget_itemClicked(QTreeWidgetItem *item, int column)
         flag_shift = false;
         if (count_selected() > 0)
             this->unselected_all();
+    }
+
+    if (!item->isSelected()) {
+        item->setSelected(true);
     }
     previous_item_ind = this->indexOfTopLevelItem(item);
     emit this->itemSelectionChanged();
@@ -550,7 +566,7 @@ void TreeFilesWidget::dropEvent(QDropEvent* event)
     }
 }
 
-void TreeFilesWidget::drop_func_signal(QStringList lst, bool remove_after)
+void TreeFilesWidget::drop_func_signal(const QStringList& lst, bool remove_after)
 {
     emit drop_signal(lst, remove_after);
 }

@@ -528,10 +528,24 @@ void MainWindow::size_d_r(QString disk)
 //обновляет виджеты главного экрана
 void MainWindow::update_widgets()
 {
+    int l_ind = treeWidget_l->indexOfTopLevelItem(treeWidget_l->currentItem());
+    int r_ind = treeWidget_r->indexOfTopLevelItem(treeWidget_r->currentItem());
+
     ui->path_l->setText(last_path_l);
     on_path_l_returnPressed();
     ui->path_r->setText(last_path_r);
     on_path_r_returnPressed();
+
+    if ((l_ind > -1) && (l_ind < treeWidget_l->topLevelItemCount())) {
+        treeWidget_l->setCurrentItem(treeWidget_l->topLevelItem(l_ind));
+        treeWidget_l->previous_item_ind = l_ind;
+        treeWidget_l->begin_shift = l_ind;
+    }
+    if ((r_ind > -1) && (r_ind < treeWidget_r->topLevelItemCount())) {
+        treeWidget_r->setCurrentItem(treeWidget_r->topLevelItem(r_ind));
+        treeWidget_r->previous_item_ind = r_ind;
+        treeWidget_r->begin_shift = r_ind;
+    }
 }
 
 //изменение левого пути
@@ -872,10 +886,9 @@ void MainWindow::mass_all_selected(QString& dir_to, QStringList& selected_dirs, 
     for (int i = 0; i < list.size(); ++i) {
         if (list[i]->text(1) == "<DIR>" && list[i]->text(0) == "..")
             continue;
-        //if (list[i]->text(1) == "<DIR>" && QDir(list[i]->data(0, Qt::UserRole).toString()).exists()) {
         if (list[i]->text(1) == "<DIR>") {
             selected_dirs << list[i]->data(0, Qt::UserRole).toString();
-        } else {/*if (QFile(list[i]->data(0, Qt::UserRole).toString()).exists())*/
+        } else {
             selected_files << list[i]->data(0, Qt::UserRole).toString();
         }
     }

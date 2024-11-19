@@ -6,7 +6,7 @@
 #include <QThread>
 #include <shlobj.h>
 
-CopyProcess::CopyProcess(QString dir_to, QStringList selected_dirs, QStringList selected_files, bool remove_after)
+CopyProcess::CopyProcess(const QString &dir_to, const QStringList &selected_dirs, const QStringList &selected_files, bool remove_after)
     :dir_to(dir_to), selected_dirs(selected_dirs), selected_files(selected_files), remove_after(remove_after)
 {
     wasCanceled = false;
@@ -550,7 +550,7 @@ bool CopyProcess::removeDir(const QString & dirName)
     return result;
 }
 
-void CopyProcess::dir_iter(QString dir, QString dir_to, bool remove_after)
+void CopyProcess::dir_iter(const QString &dir, QString dir_to, bool remove_after)
 {
     if (QDir().exists(dir)) {
         QDirIterator it(dir, QDir::Dirs | QDir::Files | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
@@ -648,7 +648,7 @@ void CopyProcess::cancel_unclicked_first()
     emit signal_loop();
 }
 
-void CopyProcess::get_dir_info(QString dir)
+void CopyProcess::get_dir_info(const QString &dir)
 {
     if (QDir().exists(dir)) {
         if (QDir(dir_to).absolutePath().append("/").contains(QDir(dir).absolutePath().append("/"))) {
@@ -666,7 +666,7 @@ void CopyProcess::get_dir_info(QString dir)
     }
 }
 
-int CopyProcess::copy_file(QString past_name, QString new_name)
+int CopyProcess::copy_file(const QString &past_name, const QString &new_name)
 {
     emit update_name_copy(past_name);
 

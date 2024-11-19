@@ -11,7 +11,7 @@ class Copy_files : public QObject
 
 public:
     Copy_files();
-    void Work(QString dir_to, QStringList selected_dirs, QStringList selected_files, bool remove_after);
+    void Work(QString dir_to, const QStringList& selected_dirs, const QStringList& selected_files, bool remove_after);
     QFont main_font;
 
 signals:

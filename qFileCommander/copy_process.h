@@ -8,7 +8,7 @@ class CopyProcess : public QObject
 {
     Q_OBJECT
 public:
-    CopyProcess(QString dir_to, QStringList selected_dirs, QStringList selected_files, bool remove_after);
+    CopyProcess(const QString& dir_to, const QStringList& selected_dirs, const QStringList& selected_files, bool remove_after);
 
 private:
     ///куда
@@ -86,13 +86,13 @@ public slots:
 
 private slots:
     ///собирает информацию о директории
-    void get_dir_info(QString dir);
+    void get_dir_info(const QString& dir);
     ///копирование конкретного файла
-    int copy_file(QString past_name, QString new_name);
+    int copy_file(const QString& past_name, const QString& new_name);
     ///рекурсивное удаление папки
     bool removeDir(const QString & dirName);
     ///проход по каталогу
-    void dir_iter(QString dir, QString dir_to, bool remove_after);
+    void dir_iter(const QString& dir, QString dir_to, bool remove_after);
 };
 
 #endif // COPY_PROCESS_H
