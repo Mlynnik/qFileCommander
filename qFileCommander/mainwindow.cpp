@@ -1152,7 +1152,7 @@ void MainWindow::on_pushButton_f7_clicked()
     while (id.exec()) {
         new_name = id.textValue();
         if (new_name.size() > 260) {
-            v_error("Имя файла ограничено 260 символами");
+            v_error("Имя папки ограничено 260 символами");
             continue;
         }
 
@@ -1179,7 +1179,7 @@ void MainWindow::on_pushButton_f7_clicked()
         } else {
             QDir dir_n(path_new + new_name);
             if (!dir_n.mkpath("."))
-                v_error("Не удалось переименовать!");
+                v_error("Не удалось создать каталог!");
             update_widgets();
             break;
         }
@@ -1294,6 +1294,69 @@ void MainWindow::on_pushButton_open_in_exp_clicked()
     QDesktopServices::openUrl(QUrl::fromLocalFile(nam_dir));
 }
 
+//создает новый файл в активной папке
+void MainWindow::on_pushButton_create_file_clicked()
+{
+    QString path_new;
+    if (treeWidget_l->hasFocus()) {
+        path_new = last_path_l;
+    } else if (treeWidget_r->hasFocus()) {
+        path_new = last_path_r;
+    } else {
+        return;
+    }
+
+
+    QInputDialog id;
+    id.setFont(main_font);
+    id.resize(QSize(400, 60));
+    id.setCancelButtonText("Отмена");
+    id.setLabelText("Создать новый файл:");
+
+    QString new_name;
+    QList<char> ban_symb { '<', '>', ':', '"', '/', '\\', '|', '?', '*'};
+    bool flag = false;
+
+    while (id.exec()) {
+        new_name = id.textValue();
+        if (new_name.size() > 260) {
+            v_error("Имя файла ограничено 260 символами");
+            continue;
+        }
+
+        while (new_name.endsWith(".") || new_name.endsWith(" "))
+            new_name.removeLast();
+        if (new_name.size() < 1) {
+            continue;
+        }
+        for (int i = 0; i < new_name.size(); ++i) {
+            if (ban_symb.contains(new_name[i])) {
+                v_error("В названии не могут содержаться знаки: '<, >, :, \", /, \\, |, ?, *");
+                flag = true;
+                break;
+            }
+        }
+
+        if (flag) {
+            flag = false;
+            continue;
+        }
+
+        if (QFile(path_new + new_name).exists()) {
+            v_error("Файл с именем " % new_name % " уже существует.");
+        } else {
+            QFile file(path_new + new_name);
+            if (file.open(QIODevice::WriteOnly)) {
+                file.close();
+                update_widgets();
+                break;
+            } else
+                v_error("Не удалось создать файл!");
+            update_widgets();
+            break;
+        }
+    }
+}
 
 //открывает блокнот
 void MainWindow::on_pushButton_notepad_clicked()

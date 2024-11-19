@@ -197,6 +197,9 @@ private slots:
     //открывает проводник в активной директории
     void on_pushButton_open_in_exp_clicked();
 
+    //создает новый файл в активной папке
+    void on_pushButton_create_file_clicked();
+
     //открывает блокнот
     void on_pushButton_notepad_clicked();
     //окно выбора шрифта
