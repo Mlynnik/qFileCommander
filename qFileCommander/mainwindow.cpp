@@ -60,6 +60,7 @@ MainWindow::MainWindow(QWidget *parent)
     cust_menu->addSeparator();
     cust_menu->addAction(menu_properties);
 
+
     MainWindow::setGeometry(0, 0, round(w*1536), round(h*800));
     MainWindow::showMaximized();
     w_max = MainWindow::width();
@@ -68,14 +69,28 @@ MainWindow::MainWindow(QWidget *parent)
     //MainWindow::setWindowIcon(QIcon(style()->standardIcon(QStyle::SP_DirIcon)));
     MainWindow::setWindowTitle("qFileCommander");
 
+
     QSettings settings;
     last_path_l = settings.value("/Settings/L_Path", "").toString();
     last_path_r = settings.value("/Settings/R_Path", "").toString();
     hidden_f = settings.value("/Settings/Hidden_F", false).toBool();
 
     main_font.fromString(settings.value("/Settings/Main_Font", "Times New Roman,12,-1,5,700,0,0,0,0,0,0,0,0,0,0,1").toString());
-
     MainWindow::setFont(main_font);
+
+    {
+        QList<QVariant> widthColumns = settings.value("/Settings/L_Col_W").toList();
+        if (!widthColumns.empty() && (widthColumns.size() == 4)) {
+            for(int i = 0; i < 4; ++i)
+                w_col_l[i] = widthColumns[i].toInt();
+        }
+        widthColumns.clear();
+        widthColumns = settings.value("/Settings/R_Col_W").toList();
+        if (!widthColumns.empty() && (widthColumns.size() == 4)) {
+            for(int i = 0; i < 4; ++i)
+                w_col_r[i] = widthColumns[i].toInt();
+        }
+    }
 
     QPalette palette = QToolTip::palette();
     palette.setColor(QPalette::Inactive,QPalette::ToolTipBase,Qt::white);
@@ -90,13 +105,13 @@ MainWindow::MainWindow(QWidget *parent)
     //левое дерево
     treeWidget_l->setObjectName("treeWidget_l");
     treeWidget_l->setGeometry(QRect(5, 100, 705, 580));
-    treeWidget_l->setMouseTracking(true);
-    QTreeWidgetItem *___qtreewidgetitem = treeWidget_l->headerItem();
-    ___qtreewidgetitem->setText(3, QCoreApplication::translate("MainWindow", "\320\224\320\260\321\202\320\260", nullptr));
-    ___qtreewidgetitem->setText(2, QCoreApplication::translate("MainWindow", "\320\240\320\260\320\267\320\274\320\265\321\200", nullptr));
-    ___qtreewidgetitem->setText(1, QCoreApplication::translate("MainWindow", "\320\242\320\270\320\277", nullptr));
-    ___qtreewidgetitem->setText(0, QCoreApplication::translate("MainWindow", "\320\230\320\274\321\217", nullptr));
+    //treeWidget_l->setMouseTracking(true);
+    treeWidget_l->headerItem()->setText(0, "Имя");
+    treeWidget_l->headerItem()->setText(1, "Тип");
+    treeWidget_l->headerItem()->setText(2, "Размер");
+    treeWidget_l->headerItem()->setText(3, "Дата");
 
+    treeWidget_l->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     treeWidget_l->setSelectionMode(QAbstractItemView::SingleSelection);
     treeWidget_l->setDragDropMode(QAbstractItemView::DragDrop);
     treeWidget_l->setRootIsDecorated(false);
@@ -115,12 +130,12 @@ MainWindow::MainWindow(QWidget *parent)
     //правое дерево
     treeWidget_r->setObjectName("treeWidget_r");
     treeWidget_r->setGeometry(QRect(715, 100, 705, 580));
-    QTreeWidgetItem *___qtreewidgetitem1 = treeWidget_r->headerItem();
-    ___qtreewidgetitem1->setText(3, QCoreApplication::translate("MainWindow", "\320\224\320\260\321\202\320\260", nullptr));
-    ___qtreewidgetitem1->setText(2, QCoreApplication::translate("MainWindow", "\320\240\320\260\320\267\320\274\320\265\321\200", nullptr));
-    ___qtreewidgetitem1->setText(1, QCoreApplication::translate("MainWindow", "\320\242\320\270\320\277", nullptr));
-    ___qtreewidgetitem1->setText(0, QCoreApplication::translate("MainWindow", "\320\230\320\274\321\217", nullptr));
+    treeWidget_r->headerItem()->setText(0, "Имя");
+    treeWidget_r->headerItem()->setText(1, "Тип");
+    treeWidget_r->headerItem()->setText(2, "Размер");
+    treeWidget_r->headerItem()->setText(3, "Дата");
 
+    treeWidget_r->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     treeWidget_r->setSelectionMode(QAbstractItemView::SingleSelection);
     treeWidget_r->setDragDropMode(QAbstractItemView::DragDrop);
     treeWidget_r->setRootIsDecorated(false);
@@ -222,8 +237,38 @@ MainWindow::MainWindow(QWidget *parent)
     connect(timer, SIGNAL(timeout()), this, SLOT(find_disk()));
 
 
-    emit treeWidget_l->header()->sectionClicked(0);
-    emit treeWidget_r->header()->sectionClicked(0);
+
+    //вспоминаем сортировку
+    int ind_sort = settings.value("/Settings/Sort_L", 0).toInt();
+    if ((ind_sort > -1) && (ind_sort < 8)) {
+        if (ind_sort > 3) {
+            ind_sort -= 4;
+            if ((ind_sort == 0) || (ind_sort == 1))
+                treeWidget_l->headerItem()->setText(ind_sort, "↑" + treeWidget_l->headerItem()->text(ind_sort));
+            else
+                treeWidget_l->headerItem()->setText(ind_sort, "↓" + treeWidget_l->headerItem()->text(ind_sort));
+        }
+    } else {
+        ind_sort = 0;
+    }
+    emit treeWidget_l->header()->sectionClicked(ind_sort);
+
+    ind_sort = settings.value("/Settings/Sort_R", 0).toInt();
+    if ((ind_sort > -1) && (ind_sort < 8)) {
+        if (ind_sort > 3) {
+            ind_sort -= 4;
+            if ((ind_sort == 0) || (ind_sort == 1))
+                treeWidget_r->headerItem()->setText(ind_sort, "↑" + treeWidget_r->headerItem()->text(ind_sort));
+            else
+                treeWidget_r->headerItem()->setText(ind_sort, "↓" + treeWidget_r->headerItem()->text(ind_sort));
+        }
+    } else
+        ind_sort = 0;
+    emit treeWidget_r->header()->sectionClicked(ind_sort);
+
+    connect(treeWidget_l->header(), &QHeaderView::sectionResized, this, [this](int logicalIndex, int oldSize, int newSize) {change_w_col_l(logicalIndex, oldSize, newSize);});
+    connect(treeWidget_r->header(), &QHeaderView::sectionResized, this, [this](int logicalIndex, int oldSize, int newSize) {change_w_col_r(logicalIndex, oldSize, newSize);});
+
     timer->start(3000);
 }
 
@@ -233,18 +278,28 @@ MainWindow::~MainWindow()
 }
 
 void MainWindow::resizeEvent(QResizeEvent *event) {
-    float w_now = float(w) * float(MainWindow::width()) / float(w_max);
-    float h_now = float(h) * float(MainWindow::height()) / float(h_max);
+    w_now = float(w) * float(MainWindow::width()) / float(w_max);
+    h_now = float(h) * float(MainWindow::height()) / float(h_max);
+    treeWidget_l->header()->blockSignals(true);
+    treeWidget_r->header()->blockSignals(true);
     treeWidget_l->setGeometry(round(w_now*1), round(h*80), round(w_now*765), round(h_now*665 - (h-h_now)*140));
-    treeWidget_l->header()->resizeSection(0, round(w_now*435));
-    treeWidget_l->header()->resizeSection(1, round(w_now*65));
-    treeWidget_l->header()->resizeSection(2, round(w_now*120));
-    treeWidget_l->header()->resizeSection(3, round(w_now*125));
+    // treeWidget_l->header()->resizeSection(0, round(w_now*435));
+    // treeWidget_l->header()->resizeSection(1, round(w_now*65));
+    // treeWidget_l->header()->resizeSection(2, round(w_now*120));
+    // treeWidget_l->header()->resizeSection(3, round(w_now*125));
+    treeWidget_l->header()->resizeSection(0, round(w_now*w_col_l[0]));
+    treeWidget_l->header()->resizeSection(1, round(w_now*w_col_l[1]));
+    treeWidget_l->header()->resizeSection(2, round(w_now*w_col_l[2]));
+    treeWidget_l->header()->resizeSection(3, round(w_now*w_col_l[3]));
     treeWidget_r->setGeometry(round(w_now*770), round(h*80), round(w_now*765), round(h_now*665 - (h-h_now)*140));
-    treeWidget_r->header()->resizeSection(0, round(w_now*430));
-    treeWidget_r->header()->resizeSection(1, round(w_now*65));
-    treeWidget_r->header()->resizeSection(2, round(w_now*120));
-    treeWidget_r->header()->resizeSection(3, round(w_now*125));
+    // treeWidget_r->header()->resizeSection(0, round(w_now*430));
+    // treeWidget_r->header()->resizeSection(1, round(w_now*65));
+    // treeWidget_r->header()->resizeSection(2, round(w_now*120));
+    // treeWidget_r->header()->resizeSection(3, round(w_now*125));
+    treeWidget_r->header()->resizeSection(0, round(w_now*w_col_r[0]));
+    treeWidget_r->header()->resizeSection(1, round(w_now*w_col_r[1]));
+    treeWidget_r->header()->resizeSection(2, round(w_now*w_col_r[2]));
+    treeWidget_r->header()->resizeSection(3, round(w_now*w_col_r[3]));
     ui->horizontalLayoutWidget->setGeometry(round(w_now*1), 0, round(w_now*325), round(h*20));
     ui->horizontalLayoutWidget_2->setGeometry(round(w_now*770), 0, round(w_now*325), round(h*20));
     ui->pushButton_create_file->setGeometry(round(w_now*1385 - (w-w_now)*150), 0, round(w*25), round(h*25));
@@ -269,6 +324,9 @@ void MainWindow::resizeEvent(QResizeEvent *event) {
     ui->inf_dir_l->setGeometry(round(w_now*1), round(h_now*745 - (h-h_now)*60), round(w_now*650), round(h*22));
     ui->inf_dir_r->setGeometry(round(w_now*770), round(h_now*745 - (h-h_now)*60), round(w_now*650), round(h*22));
     ui->horizontalLayoutWidget_3->setGeometry(round(w_now*1), round(h_now*770 - (h-h_now)*35), round(w_now*1535), round(h*35));
+
+    treeWidget_l->header()->blockSignals(false);
+    treeWidget_r->header()->blockSignals(false);
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *event) {
@@ -325,7 +383,43 @@ void MainWindow::closeEvent(QCloseEvent *event)
     settings.setValue("/Settings/Main_Font", main_font.toString());
     settings.setValue("/Settings/Hidden_F", hidden_f);
 
+    QList<QVariant> widthColumns;
+    for(int i = 0; i < 4; ++i)
+        widthColumns << w_col_l[i];
+    settings.setValue("/Settings/L_Col_W", widthColumns);
+
+    widthColumns.clear();
+    for(int i = 0; i < 4; ++i)
+        widthColumns << w_col_r[i];
+    settings.setValue("/Settings/R_Col_W", widthColumns);
+
+    // settings.setValue("/Settings/L_Col_W", QString::number(w_col_l[0]) + " " + QString::number(w_col_l[1])
+    //                                            + " " + QString::number(w_col_l[2]) + " " + QString::number(w_col_l[3]));
+    //settings.setValue("/Settings/R_Col_W", QString::number(w_col_r[0]) + " " + QString::number(w_col_r[1])
+      //                                         + " " + QString::number(w_col_r[2]) + " " + QString::number(w_col_r[3]));
+
+    int ind_sort = treeWidget_l->index_sort;
+    if (treeWidget_l->is_reverse)
+        ind_sort += 4;
+    settings.setValue("/Settings/Sort_L", ind_sort);
+
+    ind_sort = treeWidget_r->index_sort;
+    if (treeWidget_r->is_reverse)
+        ind_sort += 4;
+    settings.setValue("/Settings/Sort_R", ind_sort);
+
+
     event->accept();
+}
+
+void MainWindow::change_w_col_l(int logicalIndex, int oldSize, int newSize)
+{
+    w_col_l[logicalIndex] = trunc(newSize/w_now);
+}
+
+void MainWindow::change_w_col_r(int logicalIndex, int oldSize, int newSize)
+{
+    w_col_r[logicalIndex] = trunc(newSize/w_now);
 }
 
 //вызвает окно ошибки с переданным текстом

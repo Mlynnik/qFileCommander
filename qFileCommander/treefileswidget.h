@@ -14,7 +14,7 @@ public:
     explicit TreeFilesWidget(QWidget *parent = nullptr);
     ///активная директория
     QString path;
-    ///0 - Name, 1 - Type, 2- Size, 3 - Date
+    ///0 - Name, 1 - Type, 2 - Size, 3 - Date
     short index_sort = 0;
     ///обратный порядок заполнения
     bool is_reverse = false;

@@ -36,10 +36,17 @@ private:
     //высота экрана
     int h_max;
 
+    float w_now = w;
+    float h_now = h;
+
     //левое дерево
     TreeFilesWidget *treeWidget_l;
+    //ширина колонок левого дерева
+    int w_col_l[4] {435, 65, 120, 125};
     //правое дерево
     TreeFilesWidget *treeWidget_r;
+    //ширина колонок правого дерева
+    int w_col_r[4] {430, 65, 120, 125};
 
     QFileIconProvider ic_pr;
 
@@ -114,6 +121,10 @@ private slots:
     void keyPressEvent(QKeyEvent *event);
     void closeEvent(QCloseEvent *event);
 
+    //изменилась геометрия левого заголовка
+    void change_w_col_l(int logicalIndex, int oldSize, int newSize);
+    //изменилась геометрия правого заголовка
+    void change_w_col_r(int logicalIndex, int oldSize, int newSize);
 
     //вызвает окно ошибки с переданным текстом
     void v_error(QString str_error);
