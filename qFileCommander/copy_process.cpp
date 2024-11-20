@@ -24,7 +24,8 @@ void CopyProcess::Copy()
         }
     }
 
-    all_size /= 100;
+    emit set_all_size(all_size);
+    emit set_all_count(all_count);
     if (all_size == 0)
         all_size = 1;
     if (all_count == 0)
@@ -43,8 +44,10 @@ void CopyProcess::Copy()
 
 
     //операция перемещение на одном диске
-    if (remove_after && (dir_to.split("/").first() == path_old.split("/").first())) {
-        int all_count_replace = (selected_dirs.length() + selected_files.length())*100;
+    if (remove_after && (dir_to.split("/").first().toCaseFolded().toLower() == path_old.split("/").first().toLower())) {
+        int all_count_replace = selected_dirs.length() + selected_files.length();
+        emit set_all_size(0);
+        emit set_all_count(all_count_replace);
         int now_count_replace = 0;
         for (int i = 0; i < selected_dirs.length(); i++) {
             past_name = selected_dirs[i].split("/").last();
@@ -136,12 +139,12 @@ void CopyProcess::Copy()
 
             QDir().rename(selected_dirs[i], new_name);
 
-            if (QDir(past_name).exists()) {
-                SetFileAttributesA(past_name.toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
+            if (QDir(selected_dirs[i]).exists()) {
+                SetFileAttributesA(selected_dirs[i].toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
                 //QDir(past_name).removeRecursively();
-                if (!removeDir(past_name)) {
+                if (!removeDir(selected_dirs[i])) {
                     if (cant_del_ind == 0) {
-                        emit cant_del(new_name);
+                        emit cant_del(selected_dirs[i]);
                         func_loop();
                     }
                     if (cant_del_ind == 2)
@@ -150,7 +153,7 @@ void CopyProcess::Copy()
                 }
             }
             now_count_replace++;
-            emit update_value_copy(now_count_replace/all_count_replace);
+            emit set_comp_count(now_count_replace);
         }
 
         for (int i = 0; i < selected_files.length(); i++) {
@@ -247,10 +250,10 @@ void CopyProcess::Copy()
 
             QFile().rename(selected_files[i], new_name);
 
-            if (QFile(past_name).exists()) {
-                SetFileAttributesA(past_name.toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
+            if (QFile(selected_files[i]).exists()) {
+                SetFileAttributesA(selected_files[i].toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
                 //QFile(past_name).remove();
-                if (!QFile(past_name).remove()) {
+                if (!QFile(selected_files[i]).remove()) {
                     if (cant_del_ind == 0) {
                         emit cant_del(selected_files[i]);
                         func_loop();
@@ -260,7 +263,7 @@ void CopyProcess::Copy()
                 }
             }
             now_count_replace++;
-            emit update_value_copy(now_count_replace/all_count_replace);
+            emit set_comp_count(now_count_replace);
         }
 
         this->deleteLater();
@@ -682,7 +685,7 @@ int CopyProcess::copy_file(const QString &past_name, const QString &new_name)
             return 1;
 
         --all_count;
-        all_size -= (dest.size() / 100);
+        all_size -= file.size();
         if (all_size < 1)
             all_size = 1;
         if (all_count < 1)
@@ -697,7 +700,7 @@ int CopyProcess::copy_file(const QString &past_name, const QString &new_name)
         }
 
         --all_count;
-        all_size -= (dest.size() / 100);
+        all_size -= file.size();
         if (all_size < 1)
             all_size = 1;
         if (all_count < 1)
@@ -715,7 +718,7 @@ int CopyProcess::copy_file(const QString &past_name, const QString &new_name)
     {
         dest.write(buf);
         complited_size += buf.size();
-        emit update_value_copy(complited_size/all_size);
+        emit set_comp_size(complited_size);
 
         if (wasCanceled_first)
             func_loop();
@@ -726,6 +729,8 @@ int CopyProcess::copy_file(const QString &past_name, const QString &new_name)
             return 1;
         }
     }
+    ++complited_count;
+    emit set_comp_count(complited_count);
     file.close();
     dest.close();
     DWORD dw_attr = GetFileAttributesA(past_name.toLocal8Bit().data());

@@ -1,8 +1,10 @@
 #ifndef COPY_FILES_H
 #define COPY_FILES_H
 
-#include <QProgressDialog>
 #include <QMessageBox>
+#include <QDialog>
+#include <QProgressBar>
+#include <QLabel>
 #include "copy_process.h"
 
 class Copy_files : public QObject
@@ -37,7 +39,7 @@ signals:
 
 public slots:
     ///обновляем значение progress-bar
-    void update_value_progress(int val);
+    void update_value_progress();
     ///обновляет имя текущего копирования
     void update_name_progress(QString val);
     ///окно с ошибкой
@@ -48,6 +50,12 @@ public slots:
     void cant_del(QString str_error);
 
 private slots:
+    ///моментальная отмена операции
+    void hard_cancel_clicked();
+    ///пауза/старт
+    void pause_operation();
+    ///В фоне
+    void minimize_clicked();
     ///отмена операции
     void cancel_clicked();
     ///изменение поведения при совпадении в папке назначения
@@ -55,11 +63,28 @@ private slots:
     ///полное завершение операции
     void end_copy();
 
+    QString reformat_size_2(double num_0);
+    QString reformat_size(QString str);
+
 private:
     QThread *th;
     CopyProcess *cd;
-    ///отображает текущий процент копирования
-    QProgressDialog *qpd;
+
+
+    QDialog *w_progress;
+    QProgressBar *pb;
+    QLabel *lab_name;
+    QLabel *lab_files;
+    QLabel *lab_size;
+    QPushButton *b_pause;
+    QPushButton *b_minimize;
+    QPushButton *b_cancel;
+
+    long long int all_size = 0;
+    long long int all_count = 0;
+    long long int comp_size = 0;
+    long long int comp_count = 0;
+
     ///вызывается при наличии дубликата папки/файла в дикертории назначения
     QMessageBox msgBox;
 };

@@ -20,13 +20,13 @@ private:
     ///удалять после копирования
     bool remove_after;
     ///объем копирования
-    unsigned long long int all_size = 0;
+    long long int all_size = 0;
     ///кол-во файлов
-    unsigned long long int all_count = 0;
+    long long int all_count = 0;
     ///скопированный объем
-    unsigned long long int complited_size = 0;
+    long long int complited_size = 0;
     ///кол-во скопированных файлов
-    unsigned long long int complited_count = 0;
+    long long int complited_count = 0;
 
     ///файл уже существует
     ///0 - переименовать, 1 - переименовать все,
@@ -48,8 +48,16 @@ private:
     bool wasCanceled_first = false;
 
 public: signals:
-    ///сигнал передает текущий процент копии
-    void update_value_copy(int val);
+    ///устанавливает размер файлов
+    void set_all_size(long long int);
+    ///устанавливает кол-во файлов
+    void set_all_count(long long int);
+
+    ///устанавливает compiled размер файлов
+    void set_comp_size(long long int);
+    ///устанавливает compiled кол-во файлов
+    void set_comp_count(long long int);
+
     ///начато копирование нового файла -> передано имя
     void update_name_copy(QString name);
 
