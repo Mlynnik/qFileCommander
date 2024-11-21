@@ -625,26 +625,43 @@ void MainWindow::update_widgets()
     int l_ind = treeWidget_l->indexOfTopLevelItem(treeWidget_l->currentItem());
     int r_ind = treeWidget_r->indexOfTopLevelItem(treeWidget_r->currentItem());
 
-    ui->path_l->setText(last_path_l);
-    on_path_l_returnPressed();
-    ui->path_r->setText(last_path_r);
-    on_path_r_returnPressed();
+    if (QDir(last_path_l).exists()) {
+        ui->path_l->setText(last_path_l);
+        on_path_l_returnPressed();
+        if ((l_ind > -1) && (l_ind < treeWidget_l->topLevelItemCount())) {
+            treeWidget_l->setCurrentItem(treeWidget_l->topLevelItem(l_ind));
+            treeWidget_l->previous_item_ind = l_ind;
+            treeWidget_l->begin_shift = l_ind;
+        }
+    } else {
+        ui->path_l->setText("c:/");
+        on_path_l_returnPressed();
+    }
 
-    if ((l_ind > -1) && (l_ind < treeWidget_l->topLevelItemCount())) {
-        treeWidget_l->setCurrentItem(treeWidget_l->topLevelItem(l_ind));
-        treeWidget_l->previous_item_ind = l_ind;
-        treeWidget_l->begin_shift = l_ind;
+    if (QDir(last_path_r).exists()) {
+        ui->path_r->setText(last_path_r);
+        on_path_r_returnPressed();
+        if ((r_ind > -1) && (r_ind < treeWidget_r->topLevelItemCount())) {
+            treeWidget_r->setCurrentItem(treeWidget_r->topLevelItem(r_ind));
+            treeWidget_r->previous_item_ind = r_ind;
+            treeWidget_r->begin_shift = r_ind;
+        }
+    } else {
+        ui->path_r->setText("c:/");
+        on_path_r_returnPressed();
     }
-    if ((r_ind > -1) && (r_ind < treeWidget_r->topLevelItemCount())) {
-        treeWidget_r->setCurrentItem(treeWidget_r->topLevelItem(r_ind));
-        treeWidget_r->previous_item_ind = r_ind;
-        treeWidget_r->begin_shift = r_ind;
-    }
+
+
 }
 
 //изменение левого пути
 void MainWindow::on_path_l_returnPressed()
 {
+    if (ui->path_l->text().isEmpty()) {
+        ui->path_l->setText(last_path_l);
+        on_path_l_returnPressed();
+        return;
+    }
     ui->path_l->setText(QDir::cleanPath(ui->path_l->text()));
     QString new_disk = ui->path_l->text().split("/").first();
     ui->path_l->setText(ui->path_l->text().replace(new_disk, new_disk.toLower()));
@@ -688,6 +705,11 @@ void MainWindow::on_path_l_returnPressed()
 //изменение правого пути
 void MainWindow::on_path_r_returnPressed()
 {
+    if (ui->path_r->text().isEmpty()) {
+        ui->path_r->setText(last_path_r);
+        on_path_r_returnPressed();
+        return;
+    }
     ui->path_r->setText(QDir::cleanPath(ui->path_r->text()));
     QString new_disk = ui->path_r->text().split("/").first();
     ui->path_r->setText(ui->path_r->text().replace(new_disk, new_disk.toLower()));

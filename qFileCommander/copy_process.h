@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QStringList>
+#include <QStorageInfo>
 
 class CopyProcess : public QObject
 {
@@ -19,6 +20,11 @@ private:
     QStringList selected_files;
     ///удалять после копирования
     bool remove_after;
+
+    QString past_disk;
+    QString new_disk;
+    QStorageInfo st_inf;
+
     ///объем копирования
     long long int all_size = 0;
     ///кол-во файлов
@@ -100,7 +106,7 @@ private slots:
     ///рекурсивное удаление папки
     bool removeDir(const QString & dirName);
     ///проход по каталогу
-    void dir_iter(const QString& dir, QString dir_to, bool remove_after);
+    int dir_iter(const QString& dir, QString dir_to, bool remove_after);
 };
 
 #endif // COPY_PROCESS_H

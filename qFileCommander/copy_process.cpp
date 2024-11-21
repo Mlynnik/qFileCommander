@@ -42,9 +42,20 @@ void CopyProcess::Copy()
     else
         path_old = selected_files[0].left(selected_files[0].lastIndexOf("/")) + "/";
 
+    past_disk = path_old.split("/").first().toLower();
+    new_disk = dir_to.split("/").first().toCaseFolded().toLower();
+
+    st_inf = QStorageInfo(new_disk);
+    {
+        long long int av_s = st_inf.bytesAvailable();
+        if (av_s < all_size) {
+            emit error_operation("Недостаточно свободного места!");
+            goto lab_end;
+        }
+    }
 
     //операция перемещение на одном диске
-    if (remove_after && (dir_to.split("/").first().toCaseFolded().toLower() == path_old.split("/").first().toLower())) {
+    if (remove_after && (past_disk == new_disk)) {
         int all_count_replace = selected_dirs.length() + selected_files.length();
         emit set_all_size(0);
         emit set_all_count(all_count_replace);
@@ -137,7 +148,12 @@ void CopyProcess::Copy()
                 }
             }
 
-            QDir().rename(selected_dirs[i], new_name);
+            if (!QDir().rename(selected_dirs[i], new_name)) {
+                if (!QDir(past_disk).exists() || !QDir(new_disk).exists()) {
+                    emit error_operation("Операция прервана!\nУстройство извлечено!");
+                    goto lab_end;
+                }
+            }
 
             if (QDir(selected_dirs[i]).exists()) {
                 SetFileAttributesA(selected_dirs[i].toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
@@ -248,7 +264,12 @@ void CopyProcess::Copy()
                 }
             }
 
-            QFile().rename(selected_files[i], new_name);
+            if (!QFile().rename(selected_files[i], new_name)) {
+                if (!QDir(past_disk).exists() || !QDir(new_disk).exists()) {
+                    emit error_operation("Операция прервана!\nУстройство извлечено!");
+                    goto lab_end;
+                }
+            }
 
             if (QFile(selected_files[i]).exists()) {
                 SetFileAttributesA(selected_files[i].toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
@@ -359,12 +380,18 @@ void CopyProcess::Copy()
             }
         }
 
-        QDir().mkdir(new_name);
+        if (!QDir().mkdir(new_name)) {
+            if (!QDir(past_disk).exists() || !QDir(new_disk).exists()) {
+                emit error_operation("Операция прервана!\nУстройство извлечено!");
+                goto lab_end;
+            }
+        }
         //TODO v_error exist
         //TODO v_error
 
 
-        dir_iter(selected_dirs[i], new_name, remove_after);
+        if (dir_iter(selected_dirs[i], new_name, remove_after))
+            goto lab_end;
 
 
         if (wasCanceled || (cant_copy_ind == 2) || (cant_del_ind == 2))
@@ -553,20 +580,24 @@ bool CopyProcess::removeDir(const QString & dirName)
     return result;
 }
 
-void CopyProcess::dir_iter(const QString &dir, QString dir_to, bool remove_after)
+int CopyProcess::dir_iter(const QString &dir, QString dir_to, bool remove_after)
 {
     if (QDir().exists(dir)) {
         QDirIterator it(dir, QDir::Dirs | QDir::Files | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
         QString past_name;
         QString new_name;
 
+        QDir pd(past_disk);
+        QDir nd(new_disk);
+
         if (dir_to.endsWith("/"))
             dir_to.remove("/");
 
-        emit update_name_copy(past_name);
+        emit update_name_copy(dir);
         while (it.hasNext()) {
             if (wasCanceled || (cant_copy_ind == 2) || (cant_del_ind == 2))
-                return;
+                return 1;
+
 
             it.next();
             if (it.fileInfo().isDir()) {
@@ -581,12 +612,15 @@ void CopyProcess::dir_iter(const QString &dir, QString dir_to, bool remove_after
                             func_loop();
                         }
                         if (cant_del_ind == 2)
-                            return;
+                            return 1;
                         continue;
                     }
                 }
 
-                QDir().mkdir(new_name);
+                if (!QDir().mkdir(new_name)) {
+                    if (!pd.exists() || !nd.exists())
+                        return 1;
+                }
                 //TODO v_error exist
                 //TODO v_error
             } else if (it.fileInfo().isFile()) {
@@ -600,12 +634,14 @@ void CopyProcess::dir_iter(const QString &dir, QString dir_to, bool remove_after
                             func_loop();
                         }
                         if (cant_del_ind == 2)
-                            return;
+                            return 1;
                         continue;
                         //return;
                     }
                 }
-                if (copy_file(past_name, new_name))
+                if (copy_file(past_name, new_name) == 2)
+                    return 1;
+                if (copy_file(past_name, new_name) == 1)
                     continue;
                 //TODO v_error
 
@@ -617,7 +653,7 @@ void CopyProcess::dir_iter(const QString &dir, QString dir_to, bool remove_after
                             func_loop();
                         }
                         if (cant_del_ind == 2)
-                            return;
+                            return 1;
                         continue;
                     }
                 }
@@ -625,6 +661,7 @@ void CopyProcess::dir_iter(const QString &dir, QString dir_to, bool remove_after
 
         }
     }
+    return 0;
 }
 
 void CopyProcess::change_cant_del_ind(int val)
@@ -676,6 +713,11 @@ int CopyProcess::copy_file(const QString &past_name, const QString &new_name)
     QFile file(past_name);
     QFile dest(new_name);
     if (!file.open(QIODevice::ReadOnly)) {
+        if (!QDir(past_name.split("/").first()).exists()) {
+            emit error_operation("Операция прервана!\nУстройство извлечено!");
+            return 2;
+        }
+
         if (cant_copy_ind == 0) {
             emit cant_copy("Не могу открыть: " + file.fileName());
             func_loop();
@@ -694,6 +736,12 @@ int CopyProcess::copy_file(const QString &past_name, const QString &new_name)
         return 0;
     }
     if (!dest.open(QIODevice::WriteOnly)) {
+        file.close();
+        if (!QDir(new_name.split("/").first()).exists()) {
+            emit error_operation("Операция прервана!\nУстройство извлечено!");
+            return 2;
+        }
+
         if (cant_copy_ind == 0) {
             emit cant_copy("Не могу записать: " + dest.fileName());
             func_loop();
@@ -706,7 +754,6 @@ int CopyProcess::copy_file(const QString &past_name, const QString &new_name)
         if (all_count < 1)
             all_count = 1;
 
-        file.close();
         if (cant_copy_ind == 2)
             return 1;
         return 0;
@@ -729,6 +776,11 @@ int CopyProcess::copy_file(const QString &past_name, const QString &new_name)
             return 1;
         }
     }
+
+    if (!file.exists() || !dest.exists()) {
+        emit error_operation("Операция прервана!\nУстройство извлечено!");
+        return 2;
+    }
     ++complited_count;
     emit set_comp_count(complited_count);
     file.close();
@@ -739,5 +791,12 @@ int CopyProcess::copy_file(const QString &past_name, const QString &new_name)
         SetFileAttributesA(past_name.toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
         file.remove();
     }
+
+    long long int av_s = st_inf.bytesAvailable();
+    if (av_s < 1048576) {
+        emit error_operation("Недостаточно свободного места!");
+        return 1;
+    }
+
     return 0;
 }
