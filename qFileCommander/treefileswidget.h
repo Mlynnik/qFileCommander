@@ -14,7 +14,7 @@ public:
     explicit TreeFilesWidget(QWidget *parent = nullptr);
     ///активная директория
     QString path;
-    ///0 - Name, 1 - Type, 2- Size, 3 - Date
+    ///0 - Name, 1 - Type, 2 - Size, 3 - Date
     short index_sort = 0;
     ///обратный порядок заполнения
     bool is_reverse = false;
@@ -22,6 +22,11 @@ public:
     double all_v = 0;
     ///кол-во файлов в активной директории
     int all_f = 0;
+
+    ///индекс предыдущего (по времени выделения) item
+    int previous_item_ind = 0;
+    ///индекс, который был перед (shift + clickItem)
+    int begin_shift = 0;
 
     ///выделенные item
     QList<QTreeWidgetItem *> selectedItems() const;
@@ -31,19 +36,15 @@ signals:
 
 public slots:
     ///заполнение дерева по директории
-    void Fill(const QString &dir_str, bool hidden_file, QString last_dir_l);
+    void Fill(const QString &dir_str, bool hidden_file, const QString& last_dir_l);
     ///кол-во выделенных item
     int count_selected();
 
 private:
     ///true - move file, false - copy
     bool is_r_move = true;
-    ///индекс предыдущего (по времени выделения) item
-    int previous_item_ind;
     ///является ли shift-выделением
     bool flag_shift = false;
-    ///индекс, который был перед (shift + clickItem)
-    int begin_shift;
 
     QStringList mimeTypes() const override;
     QMimeData* mimeData(const QList<QTreeWidgetItem *> &items) const override;
@@ -51,9 +52,9 @@ private:
 
 
     ///список с цветами файлов
-    QList<QColor> list_colors = *new QList<QColor>();
+    QList<QColor> list_colors;
     ///список выделенных item
-    QList<bool> list_selected = *new QList<bool>();
+    QList<bool> list_selected;
 
 
     QList<QString> suff_zip;
@@ -77,7 +78,7 @@ private slots:
 
     void keyPressEvent(QKeyEvent *event) override;
 
-    void drop_func_signal(QStringList lst, bool remove_after);
+    void drop_func_signal(const QStringList &lst, bool remove_after);
 
     void dragEnterEvent(QDragEnterEvent* event) override;
     void dragMoveEvent(QDragMoveEvent* event) override;

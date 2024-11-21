@@ -36,10 +36,17 @@ private:
     //высота экрана
     int h_max;
 
+    float w_now = w;
+    float h_now = h;
+
     //левое дерево
     TreeFilesWidget *treeWidget_l;
+    //ширина колонок левого дерева
+    int w_col_l[4] {435, 65, 120, 125};
     //правое дерево
     TreeFilesWidget *treeWidget_r;
+    //ширина колонок правого дерева
+    int w_col_r[4] {430, 65, 120, 125};
 
     QFileIconProvider ic_pr;
 
@@ -101,11 +108,23 @@ private:
     //label занятого места правого диска
     QLabel *disk_free_size_r = new QLabel();
 
+
+    //кол-во активных файловых процессов
+    int count_proc = 0;
+
+public slots:
+    //срабытывает при завершении операции с файлами (обновляет виджеты)
+    void end_operation();
+
 private slots:
     void resizeEvent(QResizeEvent *event);
     void keyPressEvent(QKeyEvent *event);
     void closeEvent(QCloseEvent *event);
 
+    //изменилась геометрия левого заголовка
+    void change_w_col_l(int logicalIndex, int oldSize, int newSize);
+    //изменилась геометрия правого заголовка
+    void change_w_col_r(int logicalIndex, int oldSize, int newSize);
 
     //вызвает окно ошибки с переданным текстом
     void v_error(QString str_error);
@@ -177,6 +196,9 @@ private slots:
     void menu_open_with_wind();
     //открывает проводник в активной директории
     void on_pushButton_open_in_exp_clicked();
+
+    //создает новый файл в активной папке
+    void on_pushButton_create_file_clicked();
 
     //открывает блокнот
     void on_pushButton_notepad_clicked();
