@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 #include "helperfunctions.h"
+#include "delete_files.h"
 #include "copy_files.h"
 #include <windows.h>
 #include <shlobj.h>
@@ -372,7 +373,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 {
     event->ignore();
 
-    if (count_copy_proc > 0) {
+    if (count_proc > 0) {
         v_error("Не все процессы еще завершены!");
         return;
     }
@@ -980,10 +981,10 @@ void MainWindow::drop_func(QStringList lst, bool remove_after, bool is_right)
 
     if (selected_dirs.length() + selected_files.length() > 0) {
         Copy_files *cp = new Copy_files();
-        connect(cp, SIGNAL(end_operation()), this, SLOT(end_copy()));
+        connect(cp, SIGNAL(end_operation()), this, SLOT(end_operation()));
         cp->main_font = main_font;
         cp->Work(dir_to, selected_dirs, selected_files, remove_after);
-        count_copy_proc++;
+        count_proc++;
     }
 }
 
@@ -1117,10 +1118,10 @@ void MainWindow::copy_as_path_clicked()
 
 
 //срабытывает при завершении операции с файлами (обновляет виджеты)
-void MainWindow::end_copy()
+void MainWindow::end_operation()
 {
     update_widgets();
-    count_copy_proc--;
+    count_proc--;
 }
 
 //копирование/перемещение
@@ -1131,10 +1132,10 @@ void MainWindow::f5_f6_func(bool remove_after)
 
     if (selected_dirs.length() + selected_files.length() > 0) {
         Copy_files *cp = new Copy_files();
-        connect(cp, SIGNAL(end_operation()), this, SLOT(end_copy()));
+        connect(cp, SIGNAL(end_operation()), this, SLOT(end_operation()));
         cp->main_font = main_font;
         cp->Work(dir_to, selected_dirs, selected_files, remove_after);
-        count_copy_proc++;
+        count_proc++;
     }
 }
 
@@ -1215,7 +1216,11 @@ void MainWindow::on_pushButton_f8_clicked()
     mass_all_selected(dir_to, selected_dirs, selected_files);
 
     if (selected_dirs.length() + selected_files.length() > 0) {
-
+        Delete_Files *df = new Delete_Files();
+        connect(df, SIGNAL(end_operation()), this, SLOT(end_operation()));
+        df->main_font = main_font;
+        df->Work(selected_dirs, selected_files, false);
+        count_proc++;
     }
     update_widgets();
 }
@@ -1226,7 +1231,11 @@ void MainWindow::shift_del_f()
     QString dir_to; QStringList selected_dirs, selected_files;
     mass_all_selected(dir_to, selected_dirs, selected_files);
     if (selected_dirs.length() + selected_files.length() > 0) {
-
+        Delete_Files *df = new Delete_Files();
+        connect(df, SIGNAL(end_operation()), this, SLOT(end_operation()));
+        df->main_font = main_font;
+        df->Work(selected_dirs, selected_files, true);
+        count_proc++;
     }
 }
 

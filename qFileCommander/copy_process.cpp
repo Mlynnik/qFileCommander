@@ -159,6 +159,11 @@ void CopyProcess::Copy()
                 SetFileAttributesA(selected_dirs[i].toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
                 //QDir(past_name).removeRecursively();
                 if (!removeDir(selected_dirs[i])) {
+                    if (wasCanceled_first)
+                        func_loop();
+                    if (wasCanceled || (cant_del_ind == 2))
+                        goto lab_end;
+
                     if (cant_del_ind == 0) {
                         emit cant_del(selected_dirs[i]);
                         func_loop();
@@ -168,6 +173,13 @@ void CopyProcess::Copy()
                     continue;
                 }
             }
+
+            if (wasCanceled_first)
+                func_loop();
+
+            if (wasCanceled || (cant_copy_ind == 2) || (cant_del_ind == 2))
+                goto lab_end;
+
             now_count_replace++;
             emit set_comp_count(now_count_replace);
         }
@@ -275,6 +287,11 @@ void CopyProcess::Copy()
                 SetFileAttributesA(selected_files[i].toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
                 //QFile(past_name).remove();
                 if (!QFile(selected_files[i]).remove()) {
+                    if (wasCanceled_first)
+                        func_loop();
+                    if (wasCanceled || (cant_del_ind == 2))
+                        goto lab_end;
+
                     if (cant_del_ind == 0) {
                         emit cant_del(selected_files[i]);
                         func_loop();
@@ -283,6 +300,13 @@ void CopyProcess::Copy()
                         goto lab_end;
                 }
             }
+
+            if (wasCanceled_first)
+                func_loop();
+
+            if (wasCanceled || (cant_copy_ind == 2) || (cant_del_ind == 2))
+                goto lab_end;
+
             now_count_replace++;
             emit set_comp_count(now_count_replace);
         }
@@ -567,6 +591,15 @@ bool CopyProcess::removeDir(const QString & dirName)
             }
 
             if (!result) {
+                if (wasCanceled_first)
+                    func_loop();
+                if (wasCanceled || (cant_del_ind == 2))
+                    return false;
+
+                if (!QDir(dirName.split("/").first()).exists()) {
+                    emit error_operation("Операция прервана!\nУстройство извлечено!");
+                    return false;
+                }
                 if (cant_del_ind == 0) {
                     emit cant_del(info.absoluteFilePath());
                     func_loop();
@@ -607,6 +640,11 @@ int CopyProcess::dir_iter(const QString &dir, QString dir_to, bool remove_after)
                     SetFileAttributesA(new_name.toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
 
                     if (!removeDir(new_name)) {
+                        if (wasCanceled_first)
+                            func_loop();
+                        if (wasCanceled || (cant_del_ind == 2))
+                            return 1;
+
                         if (cant_del_ind == 0) {
                             emit cant_del(new_name);
                             func_loop();
@@ -629,6 +667,11 @@ int CopyProcess::dir_iter(const QString &dir, QString dir_to, bool remove_after)
                 if (QFile().exists(new_name)) {
                     SetFileAttributesA(new_name.toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
                     if (!QFile(new_name).remove()) {
+                        if (wasCanceled_first)
+                            func_loop();
+                        if (wasCanceled || (cant_del_ind == 2))
+                            return 1;
+
                         if (cant_del_ind == 0) {
                             emit cant_del(new_name);
                             func_loop();
@@ -648,6 +691,11 @@ int CopyProcess::dir_iter(const QString &dir, QString dir_to, bool remove_after)
                 if (remove_after) {
                     SetFileAttributesA(past_name.toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
                     if (!QFile(past_name).remove()) {
+                        if (wasCanceled_first)
+                            func_loop();
+                        if (wasCanceled || (cant_del_ind == 2))
+                            return 1;
+
                         if (cant_del_ind == 0) {
                             emit cant_del(past_name);
                             func_loop();

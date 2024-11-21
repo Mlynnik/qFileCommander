@@ -110,11 +110,11 @@ private:
 
 
     //кол-во активных файловых процессов
-    int count_copy_proc = 0;
+    int count_proc = 0;
 
 public slots:
     //срабытывает при завершении операции с файлами (обновляет виджеты)
-    void end_copy();
+    void end_operation();
 
 private slots:
     void resizeEvent(QResizeEvent *event);
