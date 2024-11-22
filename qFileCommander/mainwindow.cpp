@@ -271,6 +271,11 @@ MainWindow::MainWindow(QWidget *parent)
     connect(treeWidget_r->header(), &QHeaderView::sectionResized, this, [this](int logicalIndex, int oldSize, int newSize) {change_w_col_r(logicalIndex, oldSize, newSize);});
 
     timer->start(3000);
+
+
+    find_wid = new FindWidget(nullptr, w, h);
+    find_wid->setFont(main_font);
+    connect(find_wid, SIGNAL(open_find_fid_signal(QString)), this, SLOT(open_find_fid(QString)));
 }
 
 MainWindow::~MainWindow()
@@ -394,11 +399,6 @@ void MainWindow::closeEvent(QCloseEvent *event)
         widthColumns << w_col_r[i];
     settings.setValue("/Settings/R_Col_W", widthColumns);
 
-    // settings.setValue("/Settings/L_Col_W", QString::number(w_col_l[0]) + " " + QString::number(w_col_l[1])
-    //                                            + " " + QString::number(w_col_l[2]) + " " + QString::number(w_col_l[3]));
-    //settings.setValue("/Settings/R_Col_W", QString::number(w_col_r[0]) + " " + QString::number(w_col_r[1])
-      //                                         + " " + QString::number(w_col_r[2]) + " " + QString::number(w_col_r[3]));
-
     int ind_sort = treeWidget_l->index_sort;
     if (treeWidget_l->is_reverse)
         ind_sort += 4;
@@ -409,6 +409,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
         ind_sort += 4;
     settings.setValue("/Settings/Sort_R", ind_sort);
 
+
+    find_wid->close_wid();
 
     event->accept();
 }
@@ -1307,7 +1309,7 @@ void MainWindow::menu_open_with_wind()
     mass_all_selected(dir_to, selected_dirs, selected_files);
     if (selected_files.length() == 1) {
         OPENASINFO info = {0};
-        info.pcszFile = (const wchar_t*) selected_files.first().utf16();
+        info.pcszFile = (const wchar_t*) selected_files.first().replace("/", "\\").utf16();
         info.pcszClass = NULL;
         info.oaifInFlags = OAIF_ALLOW_REGISTRATION | OAIF_EXEC;
         SHOpenWithDialog(NULL, &info);
@@ -1414,8 +1416,46 @@ void MainWindow::change_font()
     }
 }
 
+void MainWindow::on_pushButton_admin_clicked()
+{
+    if(IsUserAnAdmin()) {
+        ui->pushButton_admin->setEnabled(false);
+        ui->pushButton_admin->setCheckable(false);
+    }
+    else if ((int)(size_t)ShellExecute(NULL, L"runas", L"qFileCommander.exe", 0, 0, SW_SHOWNORMAL) > 32) {
+        //>32 - значит даны права админа
+        //передать данные и
+        close();
+    }
+}
+
 //просмотр файла
 void MainWindow::on_pushButton_f3_clicked() {}
 
 //поиск файла
-void MainWindow::on_pushButton_find_clicked() {}
+void MainWindow::on_pushButton_find_clicked()
+{
+    if (treeWidget_l->hasFocus()) {
+        find_lr = true;
+        find_wid->set_dir(last_path_l);
+    } else {
+        find_lr = false;
+        find_wid->set_dir(last_path_r);
+    }
+    find_wid->show();
+}
+
+//открывает директорию найденного файла
+void MainWindow::open_find_fid(QString f_name)
+{
+    f_name = f_name.replace("/", "\\");
+    f_name = f_name.left(f_name.lastIndexOf("\\")) + "\\";
+    if (find_lr) {
+        ui->path_l->setText(f_name);
+        on_path_l_returnPressed();
+    } else {
+        ui->path_r->setText(f_name);
+        on_path_r_returnPressed();
+    }
+    MainWindow::activateWindow();
+}

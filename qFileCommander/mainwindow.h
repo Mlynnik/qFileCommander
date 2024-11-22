@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include "treefileswidget.h"
+#include "findwidget.h"
 #include <QMainWindow>
 #include <QGuiApplication>
 #include <QScreen>
@@ -108,9 +109,15 @@ private:
     //label занятого места правого диска
     QLabel *disk_free_size_r = new QLabel();
 
-
     //кол-во активных файловых процессов
     int count_proc = 0;
+
+
+    //виджет поиска файлов
+    FindWidget *find_wid;
+    //в какой директории открыть виджет поиска
+    //true - правая, false - левая
+    bool find_lr = true;
 
 public slots:
     //срабытывает при завершении операции с файлами (обновляет виджеты)
@@ -204,6 +211,8 @@ private slots:
     void on_pushButton_notepad_clicked();
     //окно выбора шрифта
     void change_font();
+    //перезапустить приложение от имени администратора
+    void on_pushButton_admin_clicked();
 
 
     //Lister
@@ -214,6 +223,8 @@ private slots:
     //Find Widget
     //поиск файла
     void on_pushButton_find_clicked();
+    //открывает директорию найденного файла
+    void open_find_fid(QString f_name);
 
 };
 #endif // MAINWINDOW_H
