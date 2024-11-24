@@ -226,5 +226,7 @@ private slots:
     //открывает директорию найденного файла
     void open_find_fid(QString f_name);
 
+    //групповое переименование
+    void on_pushButton_mass_rename_clicked();
 };
 #endif // MAINWINDOW_H

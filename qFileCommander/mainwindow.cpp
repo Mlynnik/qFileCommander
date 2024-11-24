@@ -3,6 +3,7 @@
 #include "helperfunctions.h"
 #include "delete_files.h"
 #include "copy_files.h"
+#include "renamewidget.h"
 #include <windows.h>
 #include <shlobj.h>
 #include <QHeaderView>
@@ -186,6 +187,8 @@ MainWindow::MainWindow(QWidget *parent)
     combobox_disk_r->setFocusPolicy(Qt::NoFocus);
     ui->toolButton->setFocusPolicy(Qt::NoFocus);
     ui->toolButton->setPopupMode(QToolButton::InstantPopup);
+    ui->pushButton_mass_rename->setFocusPolicy(Qt::NoFocus);
+    ui->pushButton_mass_rename->setText("A");
 
     //иконки кнопок
     ui->pushButton_open_in_exp->setIcon(QIcon(style()->standardIcon(QStyle::SP_DialogOpenButton)));
@@ -289,25 +292,18 @@ void MainWindow::resizeEvent(QResizeEvent *event) {
     treeWidget_l->header()->blockSignals(true);
     treeWidget_r->header()->blockSignals(true);
     treeWidget_l->setGeometry(round(w_now*1), round(h*80), round(w_now*765), round(h_now*665 - (h-h_now)*140));
-    // treeWidget_l->header()->resizeSection(0, round(w_now*435));
-    // treeWidget_l->header()->resizeSection(1, round(w_now*65));
-    // treeWidget_l->header()->resizeSection(2, round(w_now*120));
-    // treeWidget_l->header()->resizeSection(3, round(w_now*125));
     treeWidget_l->header()->resizeSection(0, round(w_now*w_col_l[0]));
     treeWidget_l->header()->resizeSection(1, round(w_now*w_col_l[1]));
     treeWidget_l->header()->resizeSection(2, round(w_now*w_col_l[2]));
     treeWidget_l->header()->resizeSection(3, round(w_now*w_col_l[3]));
     treeWidget_r->setGeometry(round(w_now*770), round(h*80), round(w_now*765), round(h_now*665 - (h-h_now)*140));
-    // treeWidget_r->header()->resizeSection(0, round(w_now*430));
-    // treeWidget_r->header()->resizeSection(1, round(w_now*65));
-    // treeWidget_r->header()->resizeSection(2, round(w_now*120));
-    // treeWidget_r->header()->resizeSection(3, round(w_now*125));
     treeWidget_r->header()->resizeSection(0, round(w_now*w_col_r[0]));
     treeWidget_r->header()->resizeSection(1, round(w_now*w_col_r[1]));
     treeWidget_r->header()->resizeSection(2, round(w_now*w_col_r[2]));
     treeWidget_r->header()->resizeSection(3, round(w_now*w_col_r[3]));
     ui->horizontalLayoutWidget->setGeometry(round(w_now*1), 0, round(w_now*325), round(h*20));
     ui->horizontalLayoutWidget_2->setGeometry(round(w_now*770), 0, round(w_now*325), round(h*20));
+    ui->pushButton_mass_rename->setGeometry(round(w_now*1360 - (w-w_now)*175), 0, round(w*25), round(h*25));
     ui->pushButton_create_file->setGeometry(round(w_now*1385 - (w-w_now)*150), 0, round(w*25), round(h*25));
     ui->pushButton_notepad->setGeometry(round(w_now*1410 - (w-w_now)*125), 0, round(w*25), round(h*25));
     ui->pushButton_open_in_exp->setGeometry(round(w_now*1435 - (w-w_now)*100), 0, round(w*25), round(h*25));
@@ -1021,9 +1017,11 @@ void MainWindow::on_pushButton_f4_clicked()
     mass_all_selected(dir_to, selected_dirs, selected_files);
 
     if (selected_files.length() + selected_dirs.length() == 1) {
-        QString path_new = last_path_l;
+        QString path_new;
         if (dir_to == last_path_l)
             path_new = last_path_r;
+        else
+            path_new = last_path_l;
 
         bool flag_dir = false;
 
@@ -1459,3 +1457,24 @@ void MainWindow::open_find_fid(QString f_name)
     }
     MainWindow::activateWindow();
 }
+
+//групповое переименование
+void MainWindow::on_pushButton_mass_rename_clicked()
+{
+    QString dir_to; QStringList selected_dirs, selected_files;
+    mass_all_selected(dir_to, selected_dirs, selected_files);
+
+    if (selected_dirs.length() + selected_files.length() > 0) {
+        if (selected_dirs.length() > 0)
+            dir_to = selected_dirs[0].left(selected_dirs[0].lastIndexOf("/")) + "/";
+        else
+            dir_to = selected_files[0].left(selected_files[0].lastIndexOf("/")) + "/";
+        Rename_Widget *rw = new Rename_Widget(main_font, w, h, this);
+        rw->Fill(dir_to, selected_dirs, selected_files);
+        rw->setWindowModality(Qt::WindowModal);
+        rw->show();
+        connect(rw, SIGNAL(end_operation()), this, SLOT(end_operation()));
+        count_proc++;
+    }
+}
+
