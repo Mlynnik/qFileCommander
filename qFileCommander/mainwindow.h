@@ -61,6 +61,8 @@ private:
     QAction * menu_f8;
     QAction * menu_properties;
 
+    QString cust_menu_tree;
+
     //текущий шрифт
     QFont main_font;
 

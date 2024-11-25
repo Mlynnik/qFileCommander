@@ -876,11 +876,23 @@ void MainWindow::treeWidget_l_customContextMenuRequested(const QPoint &pos)
 {
     QTreeWidgetItem *item = treeWidget_l->itemAt(pos);
     if (item == NULL) {
+        menu_f4->setVisible(false);
+        menu_open->setVisible(false);
+        menu_f5->setVisible(false);
+        menu_f6->setVisible(false);
+        menu_f8->setVisible(false);
+        cust_menu_tree = last_path_l;
+        cust_menu->popup(treeWidget_l->viewport()->mapToGlobal(pos));
         return;
     }
+    cust_menu_tree = "";
 
     QList<QTreeWidgetItem*> list = treeWidget_l->selectedItems();
     if (list.length() >= 1) {
+        menu_f5->setVisible(true);
+        menu_f6->setVisible(true);
+        menu_f8->setVisible(true);
+
         if (list.length() == 1) {
             menu_f4->setVisible(true);
             if (item->text(1) != "<DIR>")
@@ -899,10 +911,23 @@ void MainWindow::treeWidget_r_customContextMenuRequested(const QPoint &pos)
 {
     QTreeWidgetItem *item = treeWidget_r->itemAt(pos);
     if (item == NULL) {
+        menu_f4->setVisible(false);
+        menu_open->setVisible(false);
+        menu_f5->setVisible(false);
+        menu_f6->setVisible(false);
+        menu_f8->setVisible(false);
+        cust_menu_tree = last_path_r;
+        cust_menu->popup(treeWidget_r->viewport()->mapToGlobal(pos));
         return;
     }
+    cust_menu_tree = "";
+
     QList<QTreeWidgetItem*> list = treeWidget_r->selectedItems();
     if (list.length() >= 1) {
+        menu_f5->setVisible(true);
+        menu_f6->setVisible(true);
+        menu_f8->setVisible(true);
+
         if (list.length() == 1) {
             menu_f4->setVisible(true);
             if (item->text(1) != "<DIR>")
@@ -1100,17 +1125,21 @@ void MainWindow::on_pushButton_f4_clicked()
 //копировать как путь
 void MainWindow::copy_as_path_clicked()
 {
-    QString dir_to; QStringList selected_dirs, selected_files;
-    mass_all_selected(dir_to, selected_dirs, selected_files);
-
     QString res;
 
-    for (int i = 0; i < selected_dirs.length(); ++i) {
-        res.append("\"" % selected_dirs[i] % "\"\n");
-    }
-    for (int i = 0; i < selected_files.length(); ++i) {
-        res.append("\"" % selected_files[i] % "\"\n");
-    }
+    if (cust_menu_tree.isEmpty() || !QDir(cust_menu_tree).exists()) {
+        QString dir_to; QStringList selected_dirs, selected_files;
+        mass_all_selected(dir_to, selected_dirs, selected_files);
+        for (int i = 0; i < selected_dirs.length(); ++i) {
+            res.append("\"" % selected_dirs[i] % "\"\n");
+        }
+        for (int i = 0; i < selected_files.length(); ++i) {
+            res.append("\"" % selected_files[i] % "\"\n");
+        }
+
+    } else
+        res = "\"" % cust_menu_tree % "\"\n";
+    cust_menu_tree = "";
 
     if (res.length() > 0)
         QApplication::clipboard()->setText(res.removeLast().replace("/", "\\"));
@@ -1242,10 +1271,21 @@ void MainWindow::shift_del_f()
 //отображение свойств файла/папки (файлов/папок)
 void MainWindow::show_properties()
 {
-    QString dir_to; QStringList selected_dirs, selected_files;
-    mass_all_selected(dir_to, selected_dirs, selected_files);
-    selected_files.append(selected_dirs);
+    QStringList selected_files;
+
+    if (cust_menu_tree.isEmpty() || !QDir(cust_menu_tree).exists()) {
+        QString dir_to; QStringList selected_dirs;
+        mass_all_selected(dir_to, selected_dirs, selected_files);
+        selected_files.append(selected_dirs);
+    } else
+        selected_files.append(cust_menu_tree);
+    cust_menu_tree = "";
+
     if (selected_files.length() > 0) {
+        for (int i = 0; i < selected_files.length(); ++i) {
+            selected_files[i].replace("/", "\\");
+        }
+
         if (selected_files.length() == 1) {
             SHELLEXECUTEINFO info = {0};
             info.cbSize = sizeof info;

@@ -151,7 +151,7 @@ Rename_Widget::Rename_Widget(const QFont& _main_font, float _w, float _h, QWidge
     verticalLayout->addWidget(pushButton_work);
 
     Rename_Widget::setCentralWidget(centralwidget);
-    Rename_Widget::setWindowTitle("Массовое переименование");
+    Rename_Widget::setWindowTitle("Групповое переименование");
     pushButton_type_cnt->setText("[C] - счетчик");
     pushButton_name->setText("[N] - имя");
     label_cnt->setText("Счетчик");
@@ -242,7 +242,6 @@ void Rename_Widget::Fill(const QString &_dir, QStringList selected_dirs, QString
 
 Rename_Widget::~Rename_Widget()
 {
-    qpd->deleteLater();
     emit end_operation();
 }
 
