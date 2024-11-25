@@ -3,6 +3,7 @@
 #include "helperfunctions.h"
 #include "delete_files.h"
 #include "copy_files.h"
+#include "renamewidget.h"
 #include <windows.h>
 #include <shlobj.h>
 #include <QHeaderView>
@@ -186,6 +187,8 @@ MainWindow::MainWindow(QWidget *parent)
     combobox_disk_r->setFocusPolicy(Qt::NoFocus);
     ui->toolButton->setFocusPolicy(Qt::NoFocus);
     ui->toolButton->setPopupMode(QToolButton::InstantPopup);
+    ui->pushButton_mass_rename->setFocusPolicy(Qt::NoFocus);
+    ui->pushButton_mass_rename->setText("A");
 
     //иконки кнопок
     ui->pushButton_open_in_exp->setIcon(QIcon(style()->standardIcon(QStyle::SP_DialogOpenButton)));
@@ -271,6 +274,11 @@ MainWindow::MainWindow(QWidget *parent)
     connect(treeWidget_r->header(), &QHeaderView::sectionResized, this, [this](int logicalIndex, int oldSize, int newSize) {change_w_col_r(logicalIndex, oldSize, newSize);});
 
     timer->start(3000);
+
+
+    find_wid = new FindWidget(nullptr, w, h);
+    find_wid->setFont(main_font);
+    connect(find_wid, SIGNAL(open_find_fid_signal(QString)), this, SLOT(open_find_fid(QString)));
 }
 
 MainWindow::~MainWindow()
@@ -284,25 +292,18 @@ void MainWindow::resizeEvent(QResizeEvent *event) {
     treeWidget_l->header()->blockSignals(true);
     treeWidget_r->header()->blockSignals(true);
     treeWidget_l->setGeometry(round(w_now*1), round(h*80), round(w_now*765), round(h_now*665 - (h-h_now)*140));
-    // treeWidget_l->header()->resizeSection(0, round(w_now*435));
-    // treeWidget_l->header()->resizeSection(1, round(w_now*65));
-    // treeWidget_l->header()->resizeSection(2, round(w_now*120));
-    // treeWidget_l->header()->resizeSection(3, round(w_now*125));
     treeWidget_l->header()->resizeSection(0, round(w_now*w_col_l[0]));
     treeWidget_l->header()->resizeSection(1, round(w_now*w_col_l[1]));
     treeWidget_l->header()->resizeSection(2, round(w_now*w_col_l[2]));
     treeWidget_l->header()->resizeSection(3, round(w_now*w_col_l[3]));
     treeWidget_r->setGeometry(round(w_now*770), round(h*80), round(w_now*765), round(h_now*665 - (h-h_now)*140));
-    // treeWidget_r->header()->resizeSection(0, round(w_now*430));
-    // treeWidget_r->header()->resizeSection(1, round(w_now*65));
-    // treeWidget_r->header()->resizeSection(2, round(w_now*120));
-    // treeWidget_r->header()->resizeSection(3, round(w_now*125));
     treeWidget_r->header()->resizeSection(0, round(w_now*w_col_r[0]));
     treeWidget_r->header()->resizeSection(1, round(w_now*w_col_r[1]));
     treeWidget_r->header()->resizeSection(2, round(w_now*w_col_r[2]));
     treeWidget_r->header()->resizeSection(3, round(w_now*w_col_r[3]));
     ui->horizontalLayoutWidget->setGeometry(round(w_now*1), 0, round(w_now*325), round(h*20));
     ui->horizontalLayoutWidget_2->setGeometry(round(w_now*770), 0, round(w_now*325), round(h*20));
+    ui->pushButton_mass_rename->setGeometry(round(w_now*1360 - (w-w_now)*175), 0, round(w*25), round(h*25));
     ui->pushButton_create_file->setGeometry(round(w_now*1385 - (w-w_now)*150), 0, round(w*25), round(h*25));
     ui->pushButton_notepad->setGeometry(round(w_now*1410 - (w-w_now)*125), 0, round(w*25), round(h*25));
     ui->pushButton_open_in_exp->setGeometry(round(w_now*1435 - (w-w_now)*100), 0, round(w*25), round(h*25));
@@ -394,11 +395,6 @@ void MainWindow::closeEvent(QCloseEvent *event)
         widthColumns << w_col_r[i];
     settings.setValue("/Settings/R_Col_W", widthColumns);
 
-    // settings.setValue("/Settings/L_Col_W", QString::number(w_col_l[0]) + " " + QString::number(w_col_l[1])
-    //                                            + " " + QString::number(w_col_l[2]) + " " + QString::number(w_col_l[3]));
-    //settings.setValue("/Settings/R_Col_W", QString::number(w_col_r[0]) + " " + QString::number(w_col_r[1])
-      //                                         + " " + QString::number(w_col_r[2]) + " " + QString::number(w_col_r[3]));
-
     int ind_sort = treeWidget_l->index_sort;
     if (treeWidget_l->is_reverse)
         ind_sort += 4;
@@ -409,6 +405,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
         ind_sort += 4;
     settings.setValue("/Settings/Sort_R", ind_sort);
 
+
+    find_wid->close_wid();
 
     event->accept();
 }
@@ -878,11 +876,23 @@ void MainWindow::treeWidget_l_customContextMenuRequested(const QPoint &pos)
 {
     QTreeWidgetItem *item = treeWidget_l->itemAt(pos);
     if (item == NULL) {
+        menu_f4->setVisible(false);
+        menu_open->setVisible(false);
+        menu_f5->setVisible(false);
+        menu_f6->setVisible(false);
+        menu_f8->setVisible(false);
+        cust_menu_tree = last_path_l;
+        cust_menu->popup(treeWidget_l->viewport()->mapToGlobal(pos));
         return;
     }
+    cust_menu_tree = "";
 
     QList<QTreeWidgetItem*> list = treeWidget_l->selectedItems();
     if (list.length() >= 1) {
+        menu_f5->setVisible(true);
+        menu_f6->setVisible(true);
+        menu_f8->setVisible(true);
+
         if (list.length() == 1) {
             menu_f4->setVisible(true);
             if (item->text(1) != "<DIR>")
@@ -901,10 +911,23 @@ void MainWindow::treeWidget_r_customContextMenuRequested(const QPoint &pos)
 {
     QTreeWidgetItem *item = treeWidget_r->itemAt(pos);
     if (item == NULL) {
+        menu_f4->setVisible(false);
+        menu_open->setVisible(false);
+        menu_f5->setVisible(false);
+        menu_f6->setVisible(false);
+        menu_f8->setVisible(false);
+        cust_menu_tree = last_path_r;
+        cust_menu->popup(treeWidget_r->viewport()->mapToGlobal(pos));
         return;
     }
+    cust_menu_tree = "";
+
     QList<QTreeWidgetItem*> list = treeWidget_r->selectedItems();
     if (list.length() >= 1) {
+        menu_f5->setVisible(true);
+        menu_f6->setVisible(true);
+        menu_f8->setVisible(true);
+
         if (list.length() == 1) {
             menu_f4->setVisible(true);
             if (item->text(1) != "<DIR>")
@@ -1019,9 +1042,11 @@ void MainWindow::on_pushButton_f4_clicked()
     mass_all_selected(dir_to, selected_dirs, selected_files);
 
     if (selected_files.length() + selected_dirs.length() == 1) {
-        QString path_new = last_path_l;
+        QString path_new;
         if (dir_to == last_path_l)
             path_new = last_path_r;
+        else
+            path_new = last_path_l;
 
         bool flag_dir = false;
 
@@ -1100,17 +1125,21 @@ void MainWindow::on_pushButton_f4_clicked()
 //копировать как путь
 void MainWindow::copy_as_path_clicked()
 {
-    QString dir_to; QStringList selected_dirs, selected_files;
-    mass_all_selected(dir_to, selected_dirs, selected_files);
-
     QString res;
 
-    for (int i = 0; i < selected_dirs.length(); ++i) {
-        res.append("\"" % selected_dirs[i] % "\"\n");
-    }
-    for (int i = 0; i < selected_files.length(); ++i) {
-        res.append("\"" % selected_files[i] % "\"\n");
-    }
+    if (cust_menu_tree.isEmpty() || !QDir(cust_menu_tree).exists()) {
+        QString dir_to; QStringList selected_dirs, selected_files;
+        mass_all_selected(dir_to, selected_dirs, selected_files);
+        for (int i = 0; i < selected_dirs.length(); ++i) {
+            res.append("\"" % selected_dirs[i] % "\"\n");
+        }
+        for (int i = 0; i < selected_files.length(); ++i) {
+            res.append("\"" % selected_files[i] % "\"\n");
+        }
+
+    } else
+        res = "\"" % cust_menu_tree % "\"\n";
+    cust_menu_tree = "";
 
     if (res.length() > 0)
         QApplication::clipboard()->setText(res.removeLast().replace("/", "\\"));
@@ -1242,10 +1271,21 @@ void MainWindow::shift_del_f()
 //отображение свойств файла/папки (файлов/папок)
 void MainWindow::show_properties()
 {
-    QString dir_to; QStringList selected_dirs, selected_files;
-    mass_all_selected(dir_to, selected_dirs, selected_files);
-    selected_files.append(selected_dirs);
+    QStringList selected_files;
+
+    if (cust_menu_tree.isEmpty() || !QDir(cust_menu_tree).exists()) {
+        QString dir_to; QStringList selected_dirs;
+        mass_all_selected(dir_to, selected_dirs, selected_files);
+        selected_files.append(selected_dirs);
+    } else
+        selected_files.append(cust_menu_tree);
+    cust_menu_tree = "";
+
     if (selected_files.length() > 0) {
+        for (int i = 0; i < selected_files.length(); ++i) {
+            selected_files[i].replace("/", "\\");
+        }
+
         if (selected_files.length() == 1) {
             SHELLEXECUTEINFO info = {0};
             info.cbSize = sizeof info;
@@ -1307,7 +1347,7 @@ void MainWindow::menu_open_with_wind()
     mass_all_selected(dir_to, selected_dirs, selected_files);
     if (selected_files.length() == 1) {
         OPENASINFO info = {0};
-        info.pcszFile = (const wchar_t*) selected_files.first().utf16();
+        info.pcszFile = (const wchar_t*) selected_files.first().replace("/", "\\").utf16();
         info.pcszClass = NULL;
         info.oaifInFlags = OAIF_ALLOW_REGISTRATION | OAIF_EXEC;
         SHOpenWithDialog(NULL, &info);
@@ -1414,8 +1454,67 @@ void MainWindow::change_font()
     }
 }
 
+void MainWindow::on_pushButton_admin_clicked()
+{
+    if(IsUserAnAdmin()) {
+        ui->pushButton_admin->setEnabled(false);
+        ui->pushButton_admin->setCheckable(false);
+    }
+    else if ((int)(size_t)ShellExecute(NULL, L"runas", L"qFileCommander.exe", 0, 0, SW_SHOWNORMAL) > 32) {
+        //>32 - значит даны права админа
+        //передать данные и
+        close();
+    }
+}
+
 //просмотр файла
 void MainWindow::on_pushButton_f3_clicked() {}
 
 //поиск файла
-void MainWindow::on_pushButton_find_clicked() {}
+void MainWindow::on_pushButton_find_clicked()
+{
+    if (treeWidget_l->hasFocus()) {
+        find_lr = true;
+        find_wid->set_dir(last_path_l);
+    } else {
+        find_lr = false;
+        find_wid->set_dir(last_path_r);
+    }
+    find_wid->show();
+}
+
+//открывает директорию найденного файла
+void MainWindow::open_find_fid(QString f_name)
+{
+    f_name = f_name.replace("/", "\\");
+    f_name = f_name.left(f_name.lastIndexOf("\\")) + "\\";
+    if (find_lr) {
+        ui->path_l->setText(f_name);
+        on_path_l_returnPressed();
+    } else {
+        ui->path_r->setText(f_name);
+        on_path_r_returnPressed();
+    }
+    MainWindow::activateWindow();
+}
+
+//групповое переименование
+void MainWindow::on_pushButton_mass_rename_clicked()
+{
+    QString dir_to; QStringList selected_dirs, selected_files;
+    mass_all_selected(dir_to, selected_dirs, selected_files);
+
+    if (selected_dirs.length() + selected_files.length() > 0) {
+        if (selected_dirs.length() > 0)
+            dir_to = selected_dirs[0].left(selected_dirs[0].lastIndexOf("/")) + "/";
+        else
+            dir_to = selected_files[0].left(selected_files[0].lastIndexOf("/")) + "/";
+        Rename_Widget *rw = new Rename_Widget(main_font, w, h, this);
+        rw->Fill(dir_to, selected_dirs, selected_files);
+        rw->setWindowModality(Qt::WindowModal);
+        rw->show();
+        connect(rw, SIGNAL(end_operation()), this, SLOT(end_operation()));
+        count_proc++;
+    }
+}
+

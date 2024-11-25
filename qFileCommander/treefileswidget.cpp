@@ -511,7 +511,8 @@ void TreeFilesWidget::startDrag(Qt::DropActions supportedActions)
         drag->setPixmap(pixmap);
         drag->setMimeData(data);
         drag->setHotSpot(pixmap.rect().center());
-        drag->exec();
+        drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::CopyAction);
+        //drag->exec();
     }
     else
         QTreeWidget::startDrag(supportedActions);
