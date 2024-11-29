@@ -29,6 +29,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         delete_files.h delete_files.cpp
         findwidget.h findwidget.cpp
         renamewidget.cpp renamewidget.h
+        lister.cpp lister.h
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET qFileCommander APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
