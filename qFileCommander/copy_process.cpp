@@ -24,12 +24,13 @@ void CopyProcess::Copy()
         }
     }
 
-    emit set_all_size(all_size);
-    emit set_all_count(all_count);
     if (all_size == 0)
         all_size = 1;
     if (all_count == 0)
         all_count = 1;
+
+    emit set_all_size(all_size);
+    emit set_all_count(all_count);
 
     QString past_name;
     QString new_name;
@@ -39,8 +40,10 @@ void CopyProcess::Copy()
     QString path_old;
     if (selected_dirs.length() > 0)
         path_old = selected_dirs[0].left(selected_dirs[0].lastIndexOf("/")) + "/";
-    else
+    else if (selected_files.length() > 0)
         path_old = selected_files[0].left(selected_files[0].lastIndexOf("/")) + "/";
+    else
+        goto lab_end;
 
     past_disk = path_old.split("/").first().toLower();
     new_disk = dir_to.split("/").first().toCaseFolded().toLower();

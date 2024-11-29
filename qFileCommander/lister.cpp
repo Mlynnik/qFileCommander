@@ -352,14 +352,6 @@ void Lister::f3_cod_img()
         label_all_size->hide();
         verticalSlider->hide();
         image_area->show();
-        if (file->isOpen())
-            file->close();
-
-        QImage image = QImageReader(f_name).read();
-        image = image.scaled(image.size(), Qt::KeepAspectRatio);
-
-        label_image->setFixedSize(image.size());
-        label_image->setPixmap(QPixmap::fromImage(image));
     }
 }
 
