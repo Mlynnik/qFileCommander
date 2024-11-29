@@ -4,6 +4,7 @@
 #include "delete_files.h"
 #include "copy_files.h"
 #include "renamewidget.h"
+#include "lister.h"
 #include <windows.h>
 #include <shlobj.h>
 #include <QHeaderView>
@@ -1468,7 +1469,18 @@ void MainWindow::on_pushButton_admin_clicked()
 }
 
 //просмотр файла
-void MainWindow::on_pushButton_f3_clicked() {}
+void MainWindow::on_pushButton_f3_clicked()
+{
+    QStringList selected_files;
+    {
+        QString dir_to; QStringList selected_dirs;
+        mass_all_selected(dir_to, selected_dirs, selected_files);
+    }
+    for (int i = 0; i < selected_files.length(); ++i) {
+        Lister *lister = new Lister(selected_files[i], this);
+        lister->show();
+    }
+}
 
 //поиск файла
 void MainWindow::on_pushButton_find_clicked()
