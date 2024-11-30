@@ -135,6 +135,7 @@ void FindWidget::end_of_search(int n_f, int n_d)
 
 void FindWidget::cancel_clicked()
 {
+    find_file->setText("Поиск");
     emit stop_find();
     tree_find->clear();
     find_res_1->clear();
@@ -189,6 +190,7 @@ void FindWidget::tree_find_customContextMenuRequested(const QPoint &pos)
 void FindWidget::closeEvent(QCloseEvent *event)
 {
     event->ignore();
+    find_file->setText("Поиск");
     emit stop_find();
     if (is_close) {
         event->accept();
@@ -234,12 +236,13 @@ void Find_Process::Work()
     QStringList filter;
     if (!file_name.isEmpty())
         filter << file_name;
-    QDirIterator it(path, filter, QDir::AllEntries | QDir::NoSymLinks | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+    QDirIterator it(path, filter, QDir::AllEntries | QDir::System | QDir::Hidden | QDir::NoSymLinks | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
     float n_f = 0;
     float n_d = 0;
     if (f_cont.isEmpty()) {
         while (it.hasNext()) {
-            emit add_item(it.next(), it.fileInfo());
+            it.next();
+            emit add_item(it.filePath(), it.fileInfo());
             if (it.fileInfo().isDir())
                 ++n_d;
             else
