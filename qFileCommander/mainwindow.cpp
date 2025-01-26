@@ -38,6 +38,7 @@ MainWindow::MainWindow(QWidget *parent)
     menu_f5 = new QAction("Копировать", this);
     copy_as_path = new QAction("Копировать как путь", this);
     menu_f6 = new QAction("Переместить", this);
+    menu_create_file = new QAction("Создать файл", this);
     menu_f8 = new QAction("Удалить", this);
     menu_properties = new QAction("Свойства", this);
 
@@ -48,6 +49,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(menu_f6, SIGNAL(triggered()), this, SLOT(on_pushButton_f6_clicked()));
     connect(menu_f8, SIGNAL(triggered()), this, SLOT(on_pushButton_f8_clicked()));
     connect(menu_properties, SIGNAL(triggered()), this, SLOT(show_properties()));
+    connect(menu_create_file, SIGNAL(triggered()), this, SLOT(on_pushButton_create_file_clicked()));
 
     cust_menu->addAction(menu_f4);
     cust_menu->addSeparator();
@@ -61,6 +63,8 @@ MainWindow::MainWindow(QWidget *parent)
     cust_menu->addSeparator();
     cust_menu->addAction(menu_f8);
     cust_menu->addSeparator();
+    cust_menu->addAction(menu_create_file);
+    cust_menu->addSeparator();
     cust_menu->addAction(menu_properties);
 
 
@@ -69,7 +73,6 @@ MainWindow::MainWindow(QWidget *parent)
     w_max = MainWindow::width();
     h_max = MainWindow::height();
     MainWindow::setWindowIcon(QIcon("appIcon.png"));
-    //MainWindow::setWindowIcon(QIcon(style()->standardIcon(QStyle::SP_DirIcon)));
     MainWindow::setWindowTitle("qFileCommander");
 
 
@@ -94,6 +97,7 @@ MainWindow::MainWindow(QWidget *parent)
                 w_col_r[i] = widthColumns[i].toInt();
         }
     }
+
 
     QPalette palette = QToolTip::palette();
     palette.setColor(QPalette::Inactive,QPalette::ToolTipBase,Qt::white);
@@ -154,6 +158,38 @@ MainWindow::MainWindow(QWidget *parent)
     connect(treeWidget_r->header(), &QHeaderView::sectionClicked, this, [this](int logicalIndex) {header_clicked_r(logicalIndex);});
     connect(treeWidget_r, &TreeFilesWidget::drop_signal, this, [this](QStringList lst, bool remove_after) {drop_func(lst, remove_after, true); });
 
+    //верхняя панель
+    ui->pushButton_settings->setGeometry(round(w*2), 0, round(w*25), round(h*25));
+    ui->pushButton_hidden_f->setGeometry(round(w*32), 0, round(w*25), round(h*25));
+    ui->pushButton_admin->setGeometry(round(w*62), 0, round(w*25), round(h*25));
+    ui->pushButton_open_in_exp->setGeometry(round(w*92), 0, round(w*25), round(h*25));
+    ui->pushButton_notepad->setGeometry(round(w*122), 0, round(w*25), round(h*25));
+    ui->pushButton_create_file->setGeometry(round(w*152), 0, round(w*25), round(h*25));
+    ui->pushButton_mass_rename->setGeometry(round(w*182), 0, round(w*25), round(h*25));
+    ui->pushButton_find->setGeometry(round(w*212), 0, round(w*25), round(h*25));
+    ui->line_0->setGeometry(round(w*-5), round(h*25), round(w*1540), round(h*2));
+    ui->line_1->setGeometry(round(w*-5), round(h*54), round(w*1540), round(h*2));
+    ui->line_2->setGeometry(round(w*-5), round(h*82), round(w*1540), round(h*2));
+
+    //иконки кнопок
+    ui->pushButton_settings->setIcon(QIcon("settings.png"));
+    ui->pushButton_mass_rename->setText("A");
+    ui->pushButton_open_in_exp->setIcon(QIcon(style()->standardIcon(QStyle::SP_DialogOpenButton)));
+    ui->pushButton_find->setIcon(QIcon(style()->standardIcon(QStyle::SP_FileDialogContentsView)));
+    if (QFile("C:\\Windows\\notepad.exe").exists())
+        ui->pushButton_notepad->setIcon(ic_pr.icon(QFileInfo("C:\\Windows\\notepad.exe")));
+    ui->pushButton_create_file->setText("+");
+    ui->pushButton_admin->setIcon(QIcon(style()->standardIcon(QStyle::SP_VistaShield)));
+    if(IsUserAnAdmin()) {
+        ui->pushButton_admin->setEnabled(false);
+        ui->pushButton_admin->setCheckable(false);
+    }
+    ui->pushButton_hidden_f->setIcon(QIcon("hiddenf.png"));
+    ui->pushButton_hidden_f->setCheckable(true);
+    if (hidden_f)
+        ui->pushButton_hidden_f->setChecked(true);
+    connect(ui->pushButton_hidden_f, SIGNAL(clicked()), this, SLOT(show_hidden_func()));
+
     //диски
     ui->horizontalLayout_l->setAlignment(Qt::AlignLeft);
     ui->horizontalLayout_r->setAlignment(Qt::AlignLeft);
@@ -179,29 +215,68 @@ MainWindow::MainWindow(QWidget *parent)
     ui->pushButton_f6->setFocusPolicy(Qt::NoFocus);
     ui->pushButton_f7->setFocusPolicy(Qt::NoFocus);
     ui->pushButton_f8->setFocusPolicy(Qt::NoFocus);
+    ui->pushButton_settings->setFocusPolicy(Qt::NoFocus);
+    ui->pushButton_hidden_f->setFocusPolicy(Qt::NoFocus);
+    ui->pushButton_admin->setFocusPolicy(Qt::NoFocus);
     ui->pushButton_open_in_exp->setFocusPolicy(Qt::NoFocus);
-    ui->pushButton_find->setFocusPolicy(Qt::NoFocus);
     ui->pushButton_notepad->setFocusPolicy(Qt::NoFocus);
     ui->pushButton_create_file->setFocusPolicy(Qt::NoFocus);
-    ui->pushButton_admin->setFocusPolicy(Qt::NoFocus);
+    ui->pushButton_mass_rename->setFocusPolicy(Qt::NoFocus);
+    ui->pushButton_find->setFocusPolicy(Qt::NoFocus);
     combobox_disk_l->setFocusPolicy(Qt::NoFocus);
     combobox_disk_r->setFocusPolicy(Qt::NoFocus);
-    ui->toolButton->setFocusPolicy(Qt::NoFocus);
-    ui->toolButton->setPopupMode(QToolButton::InstantPopup);
-    ui->pushButton_mass_rename->setFocusPolicy(Qt::NoFocus);
-    ui->pushButton_mass_rename->setText("A");
+    ui->toolButton_favourites_l->setFocusPolicy(Qt::NoFocus);
+    ui->toolButton_favourites_r->setFocusPolicy(Qt::NoFocus);
 
-    //иконки кнопок
-    ui->pushButton_open_in_exp->setIcon(QIcon(style()->standardIcon(QStyle::SP_DialogOpenButton)));
-    ui->pushButton_find->setIcon(QIcon(style()->standardIcon(QStyle::SP_FileDialogContentsView)));
-    if (QFile("C:\\Windows\\notepad.exe").exists())
-        ui->pushButton_notepad->setIcon(ic_pr.icon(QFileInfo("C:\\Windows\\notepad.exe")));
-    ui->pushButton_create_file->setText("+");
-    ui->pushButton_admin->setIcon(QIcon(style()->standardIcon(QStyle::SP_VistaShield)));
-    if(IsUserAnAdmin()) {
-        ui->pushButton_admin->setEnabled(false);
-        ui->pushButton_admin->setCheckable(false);
+
+    //избранное
+    ui->toolButton_favourites_l->setIcon(QIcon("favourites.png"));
+    ui->toolButton_favourites_r->setIcon(QIcon("favourites.png"));
+    ui->toolButton_favourites_l->setPopupMode(QToolButton::InstantPopup);
+    ui->toolButton_favourites_r->setPopupMode(QToolButton::InstantPopup);
+
+    act_add_fav_l = new QAction("Добавить текущий каталог", this);
+    ui->toolButton_favourites_l->addAction(act_add_fav_l);
+    connect(act_add_fav_l, &QAction::triggered, this, [this](){add_favourite(true);});
+    act_add_fav_r = new QAction("Добавить текущий каталог", this);
+    ui->toolButton_favourites_r->addAction(act_add_fav_r);
+    connect(act_add_fav_r, &QAction::triggered, this, [this](){add_favourite(false);});
+
+    act_remove_fav_l = new QAction("Исключить текущий каталог", this);
+    ui->toolButton_favourites_l->addAction(act_remove_fav_l);
+    connect(act_remove_fav_l, &QAction::triggered, this, [this](){remove_favourite(true);});
+    act_remove_fav_l->setVisible(false);
+    act_remove_fav_r = new QAction("Исключить текущий каталог", this);
+    ui->toolButton_favourites_r->addAction(act_remove_fav_r);
+    connect(act_remove_fav_r, &QAction::triggered, this, [this](){remove_favourite(false);});
+    act_remove_fav_r->setVisible(false);
+
+    {
+        QList<QVariant> n_fav = settings.value("/Settings/Names_Favourites").toList();
+        QList<QVariant> p_fav = settings.value("/Settings/Paths_Favourites").toList();
+
+        if (!n_fav.empty() && !p_fav.empty() && (n_fav.length() == p_fav.length())) {
+            QString new_name, path;
+            for (int i = 0; i < n_fav.length(); ++i) {
+                new_name = n_fav[i].toString();
+                path = p_fav[i].toString();
+
+                QAction *act = new QAction(path, this);
+                act->setCheckable(true);
+                ui->toolButton_favourites_l->insertAction(act_add_fav_l, act);
+                act->setText(new_name);
+                act->setData(path);
+                connect(act, &QAction::triggered, this, [act, this]() {ui->path_l->setText(act->data().toString());on_path_l_returnPressed();});
+                QAction *act2 = new QAction(path, this);
+                act2->setCheckable(true);
+                ui->toolButton_favourites_r->insertAction(act_add_fav_r, act2);
+                act2->setText(new_name);
+                act2->setData(path);
+                connect(act2, &QAction::triggered, this, [act2, this]() {ui->path_r->setText(act2->data().toString());on_path_r_returnPressed();});
+            }
+        }
     }
+
 
     //пути
     ui->path_l->setStyleSheet("QLineEdit {background: rgb(153, 180, 209);}");
@@ -218,23 +293,13 @@ MainWindow::MainWindow(QWidget *parent)
     ui->path_l->setText(last_path_l);
     ui->path_r->setText(last_path_r);
 
-
-    //Показать скрытые файлы (TODO вынести в кнопку?)
-    QAction *menu_show_hidden = new QAction("Показать скрытые файлы", this);
-    menu_show_hidden->setCheckable(true);
-    if (hidden_f)
-        menu_show_hidden->setChecked(true);
-    else
-        menu_show_hidden->setChecked(false);
-    ui->toolButton->addAction(menu_show_hidden);
-    connect(menu_show_hidden, SIGNAL(triggered()), this, SLOT(show_hidden_func()));
-
+    /*
     //Изменить шрифт
     QAction *menu_change_font = new QAction("Изменить шрифт", this);
     menu_change_font->setCheckable(false);
     ui->toolButton->addAction(menu_change_font);
     connect(menu_change_font, SIGNAL(triggered()), this, SLOT(change_font()));
-
+    */
 
     //запуск таймера на обновление
     find_disk();
@@ -292,38 +357,34 @@ void MainWindow::resizeEvent(QResizeEvent *event) {
     h_now = float(h) * float(MainWindow::height()) / float(h_max);
     treeWidget_l->header()->blockSignals(true);
     treeWidget_r->header()->blockSignals(true);
-    treeWidget_l->setGeometry(round(w_now*1), round(h*80), round(w_now*765), round(h_now*665 - (h-h_now)*140));
+    treeWidget_l->setGeometry(round(w_now*1), round(h*110), round(w_now*765), round(h_now*635 - (h-h_now)*170));
     treeWidget_l->header()->resizeSection(0, round(w_now*w_col_l[0]));
     treeWidget_l->header()->resizeSection(1, round(w_now*w_col_l[1]));
     treeWidget_l->header()->resizeSection(2, round(w_now*w_col_l[2]));
     treeWidget_l->header()->resizeSection(3, round(w_now*w_col_l[3]));
-    treeWidget_r->setGeometry(round(w_now*770), round(h*80), round(w_now*765), round(h_now*665 - (h-h_now)*140));
+    treeWidget_r->setGeometry(round(w_now*770), round(h*110), round(w_now*765), round(h_now*635 - (h-h_now)*170));
     treeWidget_r->header()->resizeSection(0, round(w_now*w_col_r[0]));
     treeWidget_r->header()->resizeSection(1, round(w_now*w_col_r[1]));
     treeWidget_r->header()->resizeSection(2, round(w_now*w_col_r[2]));
     treeWidget_r->header()->resizeSection(3, round(w_now*w_col_r[3]));
-    ui->horizontalLayoutWidget->setGeometry(round(w_now*1), 0, round(w_now*325), round(h*20));
-    ui->horizontalLayoutWidget_2->setGeometry(round(w_now*770), 0, round(w_now*325), round(h*20));
-    ui->pushButton_mass_rename->setGeometry(round(w_now*1360 - (w-w_now)*175), 0, round(w*25), round(h*25));
-    ui->pushButton_create_file->setGeometry(round(w_now*1385 - (w-w_now)*150), 0, round(w*25), round(h*25));
-    ui->pushButton_notepad->setGeometry(round(w_now*1410 - (w-w_now)*125), 0, round(w*25), round(h*25));
-    ui->pushButton_open_in_exp->setGeometry(round(w_now*1435 - (w-w_now)*100), 0, round(w*25), round(h*25));
-    ui->pushButton_find->setGeometry(round(w_now*1460 - (w-w_now)*75), 0, round(w*25), round(h*25));
-    ui->pushButton_admin->setGeometry(round(w_now*1485 - (w-w_now)*50), 0, round(w*25), round(h*25));
-    ui->toolButton->setGeometry(round(w_now*1510 - (w-w_now)*25), 0, round(w*25), round(h*25));
-    ui->line->setGeometry(round(w_now*-5), round(h*24), round(w_now*1540), round(h*2));
-    ui->line_2->setGeometry(round(w_now*-5), round(h*52), round(w_now*1540), round(h*2));
+    ui->horizontalLayoutWidget->setGeometry(round(w_now*1), round(h*30), round(w_now*325), round(h*20));
+    ui->horizontalLayoutWidget_2->setGeometry(round(w_now*770), round(h*30), round(w_now*325), round(h*20));
+
+
+    ui->horizontalLayoutWidget_5->setGeometry(round(w_now*1), 0, round(w_now*750), round(h*27));
     ui->line_3->setGeometry(round(w_now*-5), round(h_now*770 - (h-h_now)*35), round(w_now*1540), round(h*2));
-    ui->horizontalLayoutWidget_4->setGeometry(round(w_now*1), round(h*24), round(w_now*750), round(h*27));
+    ui->horizontalLayoutWidget_4->setGeometry(round(w_now*1), round(h*54), round(w_now*750), round(h*27));
     disk_progress_l->setMinimumWidth(round(w_now*200));
     disk_progress_l->setMaximumWidth(round(w_now*200));
     disk_progress_l->setMaximumHeight(round(h*15));
-    ui->horizontalLayoutWidget_5->setGeometry(round(w_now*770), round(h*24), round(w_now*750), round(h*27));
+    ui->horizontalLayoutWidget_5->setGeometry(round(w_now*770), round(h*54), round(w_now*750), round(h*27));
     disk_progress_r->setMinimumWidth(round(w_now*200));
     disk_progress_r->setMaximumWidth(round(w_now*200));
     disk_progress_r->setMaximumHeight(round(h*15));
-    ui->path_l->setGeometry(round(w_now*-1), round(h*57), round(w_now*767), round(h*24));
-    ui->path_r->setGeometry(round(w_now*768), round(h*57), round(w_now*767), round(h*24));
+    ui->path_l->setGeometry(round(w_now*-1), round(h*87), round(w_now*750 - (w - w_now)*15), round(h*24));
+    ui->toolButton_favourites_l->setGeometry(round(w_now*750 - (w - w_now)*15), round(h*89), round(w*15), round(h*20));
+    ui->path_r->setGeometry(round(w_now*768), round(h*87), round(w_now*750 - (w - w_now)*15), round(h*24));
+    ui->toolButton_favourites_r->setGeometry(round(w_now*1518 - (w - w_now)*15), round(h*89), round(w*15), round(h*20));
     ui->inf_dir_l->setGeometry(round(w_now*1), round(h_now*745 - (h-h_now)*60), round(w_now*650), round(h*22));
     ui->inf_dir_r->setGeometry(round(w_now*770), round(h_now*745 - (h-h_now)*60), round(w_now*650), round(h*22));
     ui->horizontalLayoutWidget_3->setGeometry(round(w_now*1), round(h_now*770 - (h-h_now)*35), round(w_now*1535), round(h*35));
@@ -380,6 +441,15 @@ void MainWindow::closeEvent(QCloseEvent *event)
         return;
     }
 
+    save_settings();
+
+    find_wid->close_wid();
+
+    event->accept();
+}
+
+void MainWindow::save_settings()
+{
     QSettings settings;
     settings.setValue("/Settings/L_Path", last_path_l);
     settings.setValue("/Settings/R_Path", last_path_r);
@@ -407,9 +477,96 @@ void MainWindow::closeEvent(QCloseEvent *event)
     settings.setValue("/Settings/Sort_R", ind_sort);
 
 
-    find_wid->close_wid();
+    QList<QVariant> n_fav;
+    int l_fav =  ui->toolButton_favourites_l->actions().size() - 2;
+    for (int i = 0; i < l_fav; ++i) {
+        n_fav << ui->toolButton_favourites_l->actions().at(i)->text();
+    }
+    settings.setValue("/Settings/Names_Favourites", n_fav);
+    n_fav.clear();
+    for (int i = 0; i < l_fav; ++i) {
+        n_fav << ui->toolButton_favourites_l->actions().at(i)->data();
+    }
+    settings.setValue("/Settings/Paths_Favourites", n_fav);
+}
 
-    event->accept();
+void MainWindow::add_favourite(bool l)
+{
+    QString& path = l ? last_path_l : last_path_r;
+    QString new_name = path; new_name = new_name.removeLast().split("/").last();
+
+    QInputDialog id;
+    id.setFont(main_font);
+    id.resize(QSize(400, 60));
+    id.setCancelButtonText("Отмена");
+    id.setLabelText("Название нового элемента в избранном:");
+    id.setTextValue(new_name);
+    if (!id.exec())
+        return;
+
+    new_name = id.textValue();
+    QAction *act = new QAction(path, this);
+    act->setCheckable(true);
+    ui->toolButton_favourites_l->insertAction(act_add_fav_l, act);
+    act->setText(new_name);
+    act->setData(path);
+    connect(act, &QAction::triggered, this, [act, this]() {ui->path_l->setText(act->data().toString());on_path_l_returnPressed();});
+    QAction *act2 = new QAction(path, this);
+    act2->setCheckable(true);
+    ui->toolButton_favourites_r->insertAction(act_add_fav_r, act2);
+    act2->setText(new_name);
+    act2->setData(path);
+    connect(act2, &QAction::triggered, this, [act2, this]() {ui->path_r->setText(act2->data().toString());on_path_r_returnPressed();});
+
+    if (path == last_path_l) {
+        act->setChecked(true);
+        act_add_fav_l->setVisible(false);
+        act_remove_fav_l->setVisible(true);
+    }
+    if (path == last_path_r) {
+        act2->setChecked(true);
+        act_add_fav_r->setVisible(false);
+        act_remove_fav_r->setVisible(true);
+    }
+}
+
+void MainWindow::remove_favourite(bool l)
+{
+    QToolButton *btn, *btn2;
+    QAction *act_a, *act_a2, *act_r, *act_r2;
+    if (l) {
+        btn = ui->toolButton_favourites_l;
+        btn2 = ui->toolButton_favourites_r;
+        act_a = act_add_fav_l;
+        act_a2 = act_add_fav_r;
+        act_r = act_remove_fav_l;
+        act_r2 = act_remove_fav_r;
+    } else {
+        btn = ui->toolButton_favourites_r;
+        btn2 = ui->toolButton_favourites_l;
+        act_a = act_add_fav_r;
+        act_a2 = act_add_fav_l;
+        act_r = act_remove_fav_r;
+        act_r2 = act_remove_fav_l;
+    }
+    for (auto a : btn->actions()) {
+        if (a->isChecked()) {
+            for (auto a2 : btn2->actions()) {
+                if (a2->text() == a->text()) {
+                    if (a2->isChecked()) {
+                        act_a2->setVisible(true);
+                        act_r2->setVisible(false);
+                    }
+                    btn2->removeAction(a2);
+                    break;
+                }
+            }
+            btn->removeAction(a);
+            act_a->setVisible(true);
+            act_r->setVisible(false);
+            return;
+        }
+    }
 }
 
 void MainWindow::change_w_col_l(int logicalIndex, int oldSize, int newSize)
@@ -700,6 +857,20 @@ void MainWindow::on_path_l_returnPressed()
         v_error("Путь " % QString('"') % ui->path_l->text() % QString('"') % " не найден.");
         ui->path_l->setText(last_path_l);
     }
+
+    for (auto a : ui->toolButton_favourites_l->actions())
+        a->setChecked(false);
+
+    for (auto a : ui->toolButton_favourites_l->actions()) {
+        if (a->data().toString() == last_path_l) {
+            a->setChecked(true);
+            act_add_fav_l->setVisible(false);
+            act_remove_fav_l->setVisible(true);
+            return;
+        }
+    }
+    act_add_fav_l->setVisible(true);
+    act_remove_fav_l->setVisible(false);
 }
 
 //изменение правого пути
@@ -747,6 +918,20 @@ void MainWindow::on_path_r_returnPressed()
         v_error("Путь " + QString('"') + ui->path_r->text() + QString('"') + " не найден.");
         ui->path_r->setText(last_path_r);
     }
+
+    for (auto a : ui->toolButton_favourites_r->actions())
+        a->setChecked(false);
+
+    for (auto a : ui->toolButton_favourites_r->actions()) {
+        if (a->data().toString() == last_path_r) {
+            a->setChecked(true);
+            act_add_fav_r->setVisible(false);
+            act_remove_fav_r->setVisible(true);
+            return;
+        }
+    }
+    act_add_fav_r->setVisible(true);
+    act_remove_fav_r->setVisible(false);
 }
 
 //клик по шапке левого дерева
@@ -882,6 +1067,7 @@ void MainWindow::treeWidget_l_customContextMenuRequested(const QPoint &pos)
         menu_f5->setVisible(false);
         menu_f6->setVisible(false);
         menu_f8->setVisible(false);
+        menu_create_file->setVisible(true);
         cust_menu_tree = last_path_l;
         cust_menu->popup(treeWidget_l->viewport()->mapToGlobal(pos));
         return;
@@ -893,6 +1079,7 @@ void MainWindow::treeWidget_l_customContextMenuRequested(const QPoint &pos)
         menu_f5->setVisible(true);
         menu_f6->setVisible(true);
         menu_f8->setVisible(true);
+        menu_create_file->setVisible(false);
 
         if (list.length() == 1) {
             menu_f4->setVisible(true);
@@ -917,6 +1104,7 @@ void MainWindow::treeWidget_r_customContextMenuRequested(const QPoint &pos)
         menu_f5->setVisible(false);
         menu_f6->setVisible(false);
         menu_f8->setVisible(false);
+        menu_create_file->setVisible(true);
         cust_menu_tree = last_path_r;
         cust_menu->popup(treeWidget_r->viewport()->mapToGlobal(pos));
         return;
@@ -928,6 +1116,7 @@ void MainWindow::treeWidget_r_customContextMenuRequested(const QPoint &pos)
         menu_f5->setVisible(true);
         menu_f6->setVisible(true);
         menu_f8->setVisible(true);
+        menu_create_file->setVisible(false);
 
         if (list.length() == 1) {
             menu_f4->setVisible(true);
@@ -1333,10 +1522,13 @@ void MainWindow::show_properties()
 //отображение/скрытие скрытых файлов
 void MainWindow::show_hidden_func()
 {
-    if (hidden_f)
+    if (hidden_f) {
         hidden_f = false;
-    else
+        ui->pushButton_hidden_f->setChecked(false);
+    } else {
         hidden_f = true;
+        ui->pushButton_hidden_f->setChecked(true);
+    }
     on_path_l_returnPressed();
     on_path_r_returnPressed();
 }

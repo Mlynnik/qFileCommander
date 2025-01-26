@@ -24,12 +24,13 @@ void CopyProcess::Copy()
         }
     }
 
-    emit set_all_size(all_size);
-    emit set_all_count(all_count);
     if (all_size == 0)
         all_size = 1;
     if (all_count == 0)
         all_count = 1;
+
+    emit set_all_size(all_size);
+    emit set_all_count(all_count);
 
     QString past_name;
     QString new_name;
@@ -39,8 +40,10 @@ void CopyProcess::Copy()
     QString path_old;
     if (selected_dirs.length() > 0)
         path_old = selected_dirs[0].left(selected_dirs[0].lastIndexOf("/")) + "/";
-    else
+    else if (selected_files.length() > 0)
         path_old = selected_files[0].left(selected_files[0].lastIndexOf("/")) + "/";
+    else
+        goto lab_end;
 
     past_disk = path_old.split("/").first().toLower();
     new_disk = dir_to.split("/").first().toCaseFolded().toLower();
@@ -682,9 +685,10 @@ int CopyProcess::dir_iter(const QString &dir, QString dir_to, bool remove_after)
                         //return;
                     }
                 }
-                if (copy_file(past_name, new_name) == 2)
+                int res_copy = copy_file(past_name, new_name);
+                if (res_copy == 2)
                     return 1;
-                if (copy_file(past_name, new_name) == 1)
+                if (res_copy == 1)
                     continue;
                 //TODO v_error
 
@@ -835,10 +839,10 @@ int CopyProcess::copy_file(const QString &past_name, const QString &new_name)
     dest.close();
     DWORD dw_attr = GetFileAttributesA(past_name.toLocal8Bit().data());
     SetFileAttributesA(new_name.toLocal8Bit().data(), dw_attr);
-    if (remove_after) {
+    /*if (remove_after) {
         SetFileAttributesA(past_name.toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
         file.remove();
-    }
+    }*/
 
     long long int av_s = st_inf.bytesAvailable();
     if (av_s < 1048576) {
