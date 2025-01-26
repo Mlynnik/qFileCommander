@@ -14,7 +14,7 @@ FindWidget::FindWidget(QWidget *parent, float _w, float _h) : QWidget{parent}
 {
     w = _w;
     h = _h;
-    this->setWindowTitle("Find files");
+    this->setWindowTitle("Поиск файлов");
     this->setGeometry(round(w*350), round(h*200), round(w*800), round(h*500));
     lab_find->setText("Найти");
     comb_file->setEditable(true);

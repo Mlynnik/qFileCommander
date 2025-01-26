@@ -77,7 +77,10 @@ void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, const QStri
     if (dir_str.count("/") > 1) {
         QTreeWidgetItem *item0 = new QTreeWidgetItem(this);
         item0->setIcon(0, style()->standardIcon(QStyle::SP_FileDialogToParent));
-        item0->setForeground(0, QColor(168,106,0));
+        item0->setForeground(0, QColor(72,72,0));
+        item0->setForeground(1, QColor(72,72,0));
+        item0->setForeground(2, QColor(72,72,0));
+        item0->setForeground(3, QColor(72,72,0));
         item0->setText(0, "..");
         item0->setText(1, "<DIR>");
 
@@ -92,7 +95,7 @@ void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, const QStri
             item0->setToolTip(3, tool_tip);
         }
 
-        list_colors.append(QColor(168,106,0));
+        list_colors.append(QColor(72,72,0));
         list_selected.append(false);
 
         this->setCurrentItem(item0);

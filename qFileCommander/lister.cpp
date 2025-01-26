@@ -176,7 +176,10 @@ void Lister::Fill()
         label_all_size->hide();
         verticalSlider->hide();
 
-        plainTextEdit->setPlainText(file->readAll());
+        if (f_type == 'x')
+            plainTextEdit->textCursor().insertHtml(file->readAll());
+        else
+            plainTextEdit->setPlainText(file->readAll());
     } else {
         verticalSlider_valueChanged(1);
     }
@@ -209,10 +212,9 @@ void Lister::verticalSlider_valueChanged(int value)
                 plainTextEdit->setPlainText(QString::fromLocal8Bit(buf));
         } else {
             if (f_cod == '8')
-                plainTextEdit->appendHtml(buf);
+                plainTextEdit->textCursor().insertHtml(buf);
             else
-                plainTextEdit->appendHtml(QString::fromLocal8Bit(buf));
-            plainTextEdit->textCursor().setPosition(0);
+                plainTextEdit->textCursor().insertHtml(QString::fromLocal8Bit(buf));
         }
         progres += 1048576;
         if (progres > f_size)
@@ -300,10 +302,9 @@ void Lister::f3_cod_html()
         if (f_size < 10485760) {
             file->seek(0);
             if (f_cod == '8')
-                plainTextEdit->appendHtml(file->readAll());
+                plainTextEdit->textCursor().insertHtml(file->readAll());
             else
-                plainTextEdit->appendHtml(QString::fromLocal8Bit(file->readAll()));
-            plainTextEdit->textCursor().setPosition(0);
+                plainTextEdit->textCursor().insertHtml(QString::fromLocal8Bit(file->readAll()));
         } else {
             pushButton_up->show();
             pushButton_down->show();
@@ -322,10 +323,9 @@ void Lister::f3_cod_html()
         if (f_size < 10485760) {
             file->seek(0);
             if (f_cod == '8')
-                plainTextEdit->appendHtml(file->readAll());
+                plainTextEdit->textCursor().insertHtml(file->readAll());
             else
-                plainTextEdit->appendHtml(QString::fromLocal8Bit(file->readAll()));
-            plainTextEdit->textCursor().setPosition(0);
+                plainTextEdit->textCursor().insertHtml(QString::fromLocal8Bit(file->readAll()));
         } else {
             pushButton_up->show();
             pushButton_down->show();
@@ -366,10 +366,8 @@ void Lister::f3_cod_utf8()
                 file->seek(0);
                 if (f_type_now == 't')
                     plainTextEdit->setPlainText(file->readAll());
-                else {
-                    plainTextEdit->appendHtml(file->readAll());
-                    plainTextEdit->textCursor().setPosition(0);
-                }
+                else
+                    plainTextEdit->textCursor().insertHtml(file->readAll());
             } else
                 verticalSlider_valueChanged(verticalSlider->value());
         }
@@ -387,10 +385,8 @@ void Lister::f3_cod_local()
                 file->seek(0);
                 if (f_type_now == 't')
                     plainTextEdit->setPlainText(QString::fromLocal8Bit(file->readAll()));
-                else {
-                    plainTextEdit->appendHtml(QString::fromLocal8Bit(file->readAll()));
-                    plainTextEdit->textCursor().setPosition(0);
-                }
+                else
+                    plainTextEdit->textCursor().insertHtml(QString::fromLocal8Bit(file->readAll()));
             } else
                 verticalSlider_valueChanged(verticalSlider->value());
         }

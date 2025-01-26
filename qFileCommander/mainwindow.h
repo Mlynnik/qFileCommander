@@ -58,10 +58,17 @@ private:
     QAction * menu_f5;
     QAction * copy_as_path;
     QAction * menu_f6;
+    QAction * menu_create_file;
     QAction * menu_f8;
     QAction * menu_properties;
 
     QString cust_menu_tree;
+
+    //избранное
+    QAction *act_add_fav_l;
+    QAction *act_add_fav_r;
+    QAction *act_remove_fav_l;
+    QAction *act_remove_fav_r;
 
     //текущий шрифт
     QFont main_font;
@@ -129,6 +136,14 @@ private slots:
     void resizeEvent(QResizeEvent *event);
     void keyPressEvent(QKeyEvent *event);
     void closeEvent(QCloseEvent *event);
+
+    //сохранить настройки в реестр
+    void save_settings();
+
+    //добавить текущий каталог в избранное (true - левый путь, false - правый)
+    void add_favourite(bool l);
+    //удалить текущий каталог из избранного (true - левый путь, false - правый)
+    void remove_favourite(bool l);
 
     //изменилась геометрия левого заголовка
     void change_w_col_l(int logicalIndex, int oldSize, int newSize);
