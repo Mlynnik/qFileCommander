@@ -5,9 +5,11 @@
 #include <QPushButton>
 
 
-Copy_files::Copy_files()
+Copy_files::Copy_files(const QFont *_dialog_font)
 {
-    msgBox.setFont(main_font);
+    dialog_font = _dialog_font;
+    msgBox.setWindowIcon(QIcon("appIcon.png"));
+    msgBox.setFont(*dialog_font);
     msgBox.setIcon(QMessageBox::Warning);
     msgBox.setWindowTitle("Внимание !");
     msgBox.addButton("Переименовать", QMessageBox::YesRole);
@@ -86,18 +88,19 @@ void Copy_files::Work(QString dir_to, const QStringList& selected_dirs, const QS
 
 
         QMessageBox q_copy;
-        q_copy.setFont(main_font);
+        q_copy.setWindowIcon(QIcon("appIcon.png"));
+        q_copy.setFont(*dialog_font);
         q_copy.setIcon(QMessageBox::Question);
 
         //TODO lineenit
 
         if (remove_after) {
             q_copy.setWindowTitle("Перемещение");
-            q_copy.setText("Переместить файлы(" % QString::number(selected_dirs.length() + selected_files.length()) %  "шт.) в\n'" % dir_to);
+            q_copy.setText("Переместить файлы(" % QString::number(selected_dirs.length() + selected_files.length()) %  "шт.) в\n'" % dir_to % "'");
         }
         else {
             q_copy.setWindowTitle("Копирование");
-            q_copy.setText("Копировать файлы("  % QString::number(selected_dirs.length() + selected_files.length()) %  "шт.) в\n'" % dir_to);
+            q_copy.setText("Копировать файлы("  % QString::number(selected_dirs.length() + selected_files.length()) %  "шт.) в\n'" % dir_to % "'");
         }
         q_copy.addButton("Да", QMessageBox::YesRole);
         q_copy.addButton("Отмена", QMessageBox::NoRole);
@@ -109,6 +112,11 @@ void Copy_files::Work(QString dir_to, const QStringList& selected_dirs, const QS
 
         w_progress = new QDialog();
         w_progress->setWindowFlags(Qt::WindowCloseButtonHint | Qt::WindowMinimizeButtonHint);
+        if (remove_after)
+            w_progress->setWindowTitle("Перемещение");
+        else
+            w_progress->setWindowTitle("Копирование");
+        w_progress->setWindowIcon(QIcon("appIcon.png"));
         w_progress->setFixedHeight(170);
         w_progress->setFixedWidth(500);
         pb = new QProgressBar(w_progress);
@@ -136,7 +144,7 @@ void Copy_files::Work(QString dir_to, const QStringList& selected_dirs, const QS
         b_cancel->setText("Отмена");
         b_cancel->setGeometry(360, 130, 110, 30);
         connect(b_cancel, SIGNAL(clicked()), this, SLOT(cancel_clicked()));
-        w_progress->setFont(main_font);
+        w_progress->setFont(*dialog_font);
         w_progress->show();
 
         th = new QThread(this);
@@ -183,7 +191,8 @@ void Copy_files::cancel_clicked()
 {
     emit cancel_clicked_first();
     QMessageBox v_q;
-    v_q.setFont(main_font);
+    v_q.setWindowIcon(QIcon("appIcon.png"));
+    v_q.setFont(*dialog_font);
     v_q.setIcon(QMessageBox::Question);
     v_q.setWindowTitle("Ошибка!");
     v_q.setText("Прервать операцию?");
@@ -204,7 +213,8 @@ void Copy_files::set_yet_exists_ind(QString val)
     int ind = msgBox.exec();
     if (ind == 6) {
         QMessageBox v_q;
-        v_q.setFont(main_font);
+        v_q.setWindowIcon(QIcon("appIcon.png"));
+        v_q.setFont(*dialog_font);
         v_q.setIcon(QMessageBox::Question);
         v_q.setWindowTitle("Ошибка!");
         v_q.setText("Прервать операцию?");
@@ -228,7 +238,8 @@ void Copy_files::set_yet_exists_ind(QString val)
 
 void Copy_files::v_error(QString str_error) {
     QMessageBox v_err;
-    v_err.setFont(main_font);
+    v_err.setWindowIcon(QIcon("appIcon.png"));
+    v_err.setFont(*dialog_font);
     v_err.setIcon(QMessageBox::Critical);
     v_err.setWindowTitle("Ошибка !");
     v_err.setText(str_error);
@@ -239,7 +250,8 @@ void Copy_files::v_error(QString str_error) {
 
 void Copy_files::cant_copy(QString str_error) {
     QMessageBox v_err;
-    v_err.setFont(main_font);
+    v_err.setWindowIcon(QIcon("appIcon.png"));
+    v_err.setFont(*dialog_font);
     v_err.setIcon(QMessageBox::Warning);
     v_err.setWindowTitle("Ошибка !");
     v_err.setText(str_error);
@@ -252,7 +264,8 @@ void Copy_files::cant_copy(QString str_error) {
 void Copy_files::cant_del(QString str_error)
 {
     QMessageBox v_err;
-    v_err.setFont(main_font);
+    v_err.setWindowIcon(QIcon("appIcon.png"));
+    v_err.setFont(*dialog_font);
     v_err.setIcon(QMessageBox::Warning);
     v_err.setWindowTitle("Ошибка !");
     v_err.setText("Не удалось удалить: " + str_error);

@@ -5,13 +5,16 @@
 #include <QThread>
 #include <QDir>
 
-Rename_Widget::Rename_Widget(const QFont& _main_font, float _w, float _h, QWidget *parent)
+Rename_Widget::Rename_Widget(const QFont *_main_font, const QFont *_panel_font, const QFont *_dialog_font, float _w, float _h, QWidget *parent)
     : QMainWindow(parent)
 {
     w = _w;
     h = _h;
     main_font = _main_font;
-    Rename_Widget::setFont(main_font);
+    panel_font = _panel_font;
+    dialog_font = _dialog_font;
+
+    Rename_Widget::setFont(*main_font);
     Rename_Widget::setAttribute(Qt::WA_DeleteOnClose);
 
     Rename_Widget::resize(round(w*1200), round(h*600));
@@ -137,10 +140,9 @@ Rename_Widget::Rename_Widget(const QFont& _main_font, float _w, float _h, QWidge
     treeWidget->header()->resizeSection(0, round(w*400));
     treeWidget->header()->resizeSection(1, round(w*650));
     treeWidget->header()->resizeSection(2, round(w*100));
-    QFont sec_font = main_font;
-    sec_font.setBold(false);
-    treeWidget->setFont(sec_font);
-    treeWidget->header()->setFont(main_font);
+
+    treeWidget->setFont(*panel_font);
+    treeWidget->header()->setFont(*main_font);
 
     verticalLayout->addWidget(treeWidget);
 
@@ -275,8 +277,10 @@ void Rename_Widget::on_pushButton_work_clicked()
     QTreeWidgetItem *item;
     qpd = new QProgressDialog(this);
     qpd->setAttribute(Qt::WA_DeleteOnClose);
+    qpd->setWindowIcon(QIcon("appIcon.png"));
     qpd->setModal(true);
     qpd->setMaximum(treeWidget->topLevelItemCount());
+    qpd->setFont(*dialog_font);
     qpd->setValue(0);
     for (int i = 0; i < treeWidget->topLevelItemCount(); ++i) {
         item = treeWidget->topLevelItem(i);
@@ -431,7 +435,8 @@ void Rename_Widget::end_operation_rename()
 //вызвает окно ошибки с переданным текстом
 void Rename_Widget::v_error(QString str_error) {
     QMessageBox v_err;
-    v_err.setFont(main_font);
+    v_err.setWindowIcon(QIcon("appIcon.png"));
+    v_err.setFont(*dialog_font);
     v_err.setIcon(QMessageBox::Critical);
     v_err.setWindowTitle("Ошибка !");
     v_err.setText(str_error);

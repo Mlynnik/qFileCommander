@@ -5,14 +5,15 @@
 #include <QPushButton>
 #include <shlobj.h>
 
-Delete_Files::Delete_Files() {}
+Delete_Files::Delete_Files(const QFont *_dialog_font) : dialog_font(_dialog_font) {}
 
 void Delete_Files::Work(const QStringList &selected_dirs, const QStringList &selected_files, bool is_final)
 {
     if (selected_dirs.length() + selected_files.length() > 0) {
         all_count = selected_dirs.length() + selected_files.length();
         QMessageBox q_del;
-        q_del.setFont(main_font);
+        q_del.setWindowIcon(QIcon("appIcon.png"));
+        q_del.setFont(*dialog_font);
         q_del.setIcon(QMessageBox::Question);
         q_del.setWindowTitle("Удаление");
         if (is_final)
@@ -29,6 +30,8 @@ void Delete_Files::Work(const QStringList &selected_dirs, const QStringList &sel
 
         w_progress = new QDialog();
         w_progress->setWindowFlags(Qt::WindowCloseButtonHint | Qt::WindowMinimizeButtonHint);
+        w_progress->setWindowIcon(QIcon("appIcon.png"));
+        w_progress->setWindowTitle("Удаление");
         w_progress->setFixedHeight(170);
         w_progress->setFixedWidth(500);
         pb = new QProgressBar(w_progress);
@@ -53,7 +56,7 @@ void Delete_Files::Work(const QStringList &selected_dirs, const QStringList &sel
         b_cancel->setText("Отмена");
         b_cancel->setGeometry(360, 130, 110, 30);
         connect(b_cancel, SIGNAL(clicked()), this, SLOT(cancel_clicked()));
-        w_progress->setFont(main_font);
+        w_progress->setFont(*dialog_font);
         w_progress->show();
 
         th = new QThread(this);
@@ -105,7 +108,8 @@ void Delete_Files::update_name_progress(QString val)
 void Delete_Files::v_error(QString str_error)
 {
     QMessageBox v_err;
-    v_err.setFont(main_font);
+    v_err.setWindowIcon(QIcon("appIcon.png"));
+    v_err.setFont(*dialog_font);
     v_err.setIcon(QMessageBox::Critical);
     v_err.setWindowTitle("Ошибка !");
     v_err.setText(str_error);
@@ -116,7 +120,8 @@ void Delete_Files::v_error(QString str_error)
 void Delete_Files::cant_del(QString str_error)
 {
     QMessageBox v_err;
-    v_err.setFont(main_font);
+    v_err.setWindowIcon(QIcon("appIcon.png"));
+    v_err.setFont(*dialog_font);
     v_err.setIcon(QMessageBox::Warning);
     v_err.setWindowTitle("Ошибка !");
     v_err.setText("Не удалось удалить: " + str_error);
@@ -130,7 +135,8 @@ void Delete_Files::cancel_clicked()
 {
     emit cancel_clicked_first();
     QMessageBox v_q;
-    v_q.setFont(main_font);
+    v_q.setWindowIcon(QIcon("appIcon.png"));
+    v_q.setFont(*dialog_font);
     v_q.setIcon(QMessageBox::Question);
     v_q.setWindowTitle("Ошибка!");
     v_q.setText("Прервать операцию?");

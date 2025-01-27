@@ -3,6 +3,8 @@
 
 #include "treefileswidget.h"
 #include "findwidget.h"
+#include "lister.h"
+#include <list>
 #include <QMainWindow>
 #include <QGuiApplication>
 #include <QScreen>
@@ -43,11 +45,11 @@ private:
     //левое дерево
     TreeFilesWidget *treeWidget_l;
     //ширина колонок левого дерева
-    int w_col_l[4] {435, 65, 120, 125};
+    int w_col_l[4] {425, 75, 140, 125};
     //правое дерево
     TreeFilesWidget *treeWidget_r;
     //ширина колонок правого дерева
-    int w_col_r[4] {430, 65, 120, 125};
+    int w_col_r[4] {425, 75, 140, 125};
 
     QFileIconProvider ic_pr;
 
@@ -70,8 +72,11 @@ private:
     QAction *act_remove_fav_l;
     QAction *act_remove_fav_r;
 
-    //текущий шрифт
+    //шрифты
     QFont main_font;
+    QFont panel_font;
+    QFont dialog_font;
+    QFont lister_font;
 
     //список дисков
     QFileInfoList md_old;
@@ -121,6 +126,7 @@ private:
     //кол-во активных файловых процессов
     int count_proc = 0;
 
+    std::list<Lister*> *lister_list = new std::list<Lister*>();
 
     //виджет поиска файлов
     FindWidget *find_wid;
@@ -132,6 +138,10 @@ public slots:
     //срабытывает при завершении операции с файлами (обновляет виджеты)
     void end_operation();
 
+    //смена шрифта
+    void change_main_font();
+    void change_panel_font();
+
 private slots:
     void resizeEvent(QResizeEvent *event);
     void keyPressEvent(QKeyEvent *event);
@@ -139,6 +149,9 @@ private slots:
 
     //сохранить настройки в реестр
     void save_settings();
+
+    //открыть настройки
+    void open_settings();
 
     //добавить текущий каталог в избранное (true - левый путь, false - правый)
     void add_favourite(bool l);
@@ -226,8 +239,6 @@ private slots:
 
     //открывает блокнот
     void on_pushButton_notepad_clicked();
-    //окно выбора шрифта
-    void change_font();
     //перезапустить приложение от имени администратора
     void on_pushButton_admin_clicked();
 

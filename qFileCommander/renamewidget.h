@@ -50,9 +50,8 @@ class Rename_Widget : public QMainWindow
     Q_OBJECT
 
 public:
-    Rename_Widget(const QFont& _main_font, float _w = 1.0, float _h = 1.0, QWidget *parent = nullptr);
+    Rename_Widget(const QFont *_main_font, const QFont *_panel_font, const QFont *_dialog_font, float _w = 1.0, float _h = 1.0, QWidget *parent = nullptr);
     void Fill(const QString& _dir, QStringList _selected_dirs, QStringList _selected_files);
-    QFont main_font;
     ~Rename_Widget();
 
 signals:
@@ -61,6 +60,10 @@ signals:
 private:
     float w = 1.0;
     float h = 1.0;
+    const QFont *main_font;
+    const QFont *panel_font;
+    const QFont *dialog_font;
+
     QWidget *centralwidget;
     QVBoxLayout *verticalLayout;
     QGridLayout *gridLayout;

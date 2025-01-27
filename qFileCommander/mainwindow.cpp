@@ -4,7 +4,7 @@
 #include "delete_files.h"
 #include "copy_files.h"
 #include "renamewidget.h"
-#include "lister.h"
+#include "settingswidget.h"
 #include <windows.h>
 #include <shlobj.h>
 #include <QHeaderView>
@@ -82,7 +82,11 @@ MainWindow::MainWindow(QWidget *parent)
     hidden_f = settings.value("/Settings/Hidden_F", false).toBool();
 
     main_font.fromString(settings.value("/Settings/Main_Font", "Times New Roman,12,-1,5,700,0,0,0,0,0,0,0,0,0,0,1").toString());
-    MainWindow::setFont(main_font);
+    panel_font.fromString(settings.value("/Settings/Panel_Font", "Times New Roman,12,-1,5,700,0,0,0,0,0,0,0,0,0,0,1").toString());
+    dialog_font.fromString(settings.value("/Settings/Dialog_Font", "Times New Roman,12,-1,5,700,0,0,0,0,0,0,0,0,0,0,1").toString());
+    lister_font.fromString(settings.value("/Settings/Lister_Font", "Times New Roman,12,-1,5,700,0,0,0,0,0,0,0,0,0,0,1").toString());
+    change_main_font();
+    change_panel_font();
 
     {
         QList<QVariant> widthColumns = settings.value("/Settings/L_Col_W").toList();
@@ -188,6 +192,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->pushButton_hidden_f->setCheckable(true);
     if (hidden_f)
         ui->pushButton_hidden_f->setChecked(true);
+    connect(ui->pushButton_settings, SIGNAL(clicked()), this, SLOT(open_settings()));
     connect(ui->pushButton_hidden_f, SIGNAL(clicked()), this, SLOT(show_hidden_func()));
 
     //диски
@@ -336,27 +341,30 @@ MainWindow::MainWindow(QWidget *parent)
         ind_sort = 0;
     emit treeWidget_r->header()->sectionClicked(ind_sort);
 
-    connect(treeWidget_l->header(), &QHeaderView::sectionResized, this, [this](int logicalIndex, int oldSize, int newSize) {change_w_col_l(logicalIndex, oldSize, newSize);});
-    connect(treeWidget_r->header(), &QHeaderView::sectionResized, this, [this](int logicalIndex, int oldSize, int newSize) {change_w_col_r(logicalIndex, oldSize, newSize);});
+    connect(treeWidget_l->header(), SIGNAL(sectionResized(int,int,int)), this, SLOT(change_w_col_l(int,int,int)));
+    connect(treeWidget_r->header(), SIGNAL(sectionResized(int,int,int)), this, SLOT(change_w_col_r(int,int,int)));
 
     timer->start(3000);
 
 
-    find_wid = new FindWidget(nullptr, w, h);
+    find_wid = new FindWidget(w, h, &main_font, &panel_font, &dialog_font);
     find_wid->setFont(main_font);
     connect(find_wid, SIGNAL(open_find_fid_signal(QString)), this, SLOT(open_find_fid(QString)));
 }
 
 MainWindow::~MainWindow()
 {
+    delete lister_list;
     delete ui;
 }
 
 void MainWindow::resizeEvent(QResizeEvent *event) {
-    w_now = float(w) * float(MainWindow::width()) / float(w_max);
-    h_now = float(h) * float(MainWindow::height()) / float(h_max);
+    w_now = w * float(MainWindow::width()) / float(w_max);
+    h_now = h * float(MainWindow::height()) / float(h_max);
+
     treeWidget_l->header()->blockSignals(true);
     treeWidget_r->header()->blockSignals(true);
+
     treeWidget_l->setGeometry(round(w_now*1), round(h*110), round(w_now*765), round(h_now*635 - (h-h_now)*170));
     treeWidget_l->header()->resizeSection(0, round(w_now*w_col_l[0]));
     treeWidget_l->header()->resizeSection(1, round(w_now*w_col_l[1]));
@@ -443,6 +451,9 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
     save_settings();
 
+    for (auto l : *lister_list)
+        l->close();
+
     find_wid->close_wid();
 
     event->accept();
@@ -454,6 +465,9 @@ void MainWindow::save_settings()
     settings.setValue("/Settings/L_Path", last_path_l);
     settings.setValue("/Settings/R_Path", last_path_r);
     settings.setValue("/Settings/Main_Font", main_font.toString());
+    settings.setValue("/Settings/Panel_Font", panel_font.toString());
+    settings.setValue("/Settings/Dialog_Font", dialog_font.toString());
+    settings.setValue("/Settings/Lister_Font", lister_font.toString());
     settings.setValue("/Settings/Hidden_F", hidden_f);
 
     QList<QVariant> widthColumns;
@@ -490,12 +504,38 @@ void MainWindow::save_settings()
     settings.setValue("/Settings/Paths_Favourites", n_fav);
 }
 
+void MainWindow::open_settings()
+{
+    SettingsWidget *sw = new SettingsWidget(&main_font, &panel_font, &dialog_font, &lister_font, w, h);
+    connect(sw, SIGNAL(apply_main_font()), this, SLOT(change_main_font()));
+    connect(sw, SIGNAL(apply_panel_font()), this, SLOT(change_panel_font()));
+    sw->show();
+}
+
+void MainWindow::change_main_font()
+{
+    MainWindow::setFont(main_font);
+    QToolTip::setFont(main_font);
+    treeWidget_l->header()->setFont(main_font);
+    treeWidget_r->header()->setFont(main_font);
+    ui->path_l->setFont(main_font);
+    ui->path_r->setFont(main_font);
+}
+
+void MainWindow::change_panel_font()
+{
+    treeWidget_l->setFont(panel_font);
+    treeWidget_r->setFont(panel_font);
+}
+
+
 void MainWindow::add_favourite(bool l)
 {
     QString& path = l ? last_path_l : last_path_r;
     QString new_name = path; new_name = new_name.removeLast().split("/").last();
 
     QInputDialog id;
+    id.setWindowIcon(QIcon("appIcon.png"));
     id.setFont(main_font);
     id.resize(QSize(400, 60));
     id.setCancelButtonText("Отмена");
@@ -572,17 +612,22 @@ void MainWindow::remove_favourite(bool l)
 void MainWindow::change_w_col_l(int logicalIndex, int oldSize, int newSize)
 {
     w_col_l[logicalIndex] = trunc(newSize/w_now);
+    w_col_l[3] = 765 - w_col_l[0] - w_col_l[1] - w_col_l[2];
+    treeWidget_l->header()->resizeSection(3, round(w_now*w_col_l[3]));
 }
 
 void MainWindow::change_w_col_r(int logicalIndex, int oldSize, int newSize)
 {
     w_col_r[logicalIndex] = trunc(newSize/w_now);
+    w_col_r[3] = 765 - w_col_r[0] - w_col_r[1] - w_col_r[2];
+    treeWidget_r->header()->resizeSection(3, round(w_now*w_col_r[3]));
 }
 
 //вызвает окно ошибки с переданным текстом
 void MainWindow::v_error(QString str_error) {
     QMessageBox v_err;
-    v_err.setFont(main_font);
+    v_err.setWindowIcon(QIcon("appIcon.png"));
+    v_err.setFont(dialog_font);
     v_err.setIcon(QMessageBox::Critical);
     v_err.setWindowTitle("Ошибка !");
     v_err.setText(str_error);
@@ -1075,6 +1120,13 @@ void MainWindow::treeWidget_l_customContextMenuRequested(const QPoint &pos)
     cust_menu_tree = "";
 
     QList<QTreeWidgetItem*> list = treeWidget_l->selectedItems();
+    if (!list.contains(item)) {
+        list.clear();
+        treeWidget_l->unselected_all();
+        treeWidget_l->change_select(treeWidget_l->indexOfTopLevelItem(item), true);
+        list.push_back(item);
+    }
+
     if (list.length() >= 1) {
         menu_f5->setVisible(true);
         menu_f6->setVisible(true);
@@ -1112,6 +1164,13 @@ void MainWindow::treeWidget_r_customContextMenuRequested(const QPoint &pos)
     cust_menu_tree = "";
 
     QList<QTreeWidgetItem*> list = treeWidget_r->selectedItems();
+    if (!list.contains(item)) {
+        list.clear();
+        treeWidget_r->unselected_all();
+        treeWidget_r->change_select(treeWidget_r->indexOfTopLevelItem(item), true);
+        list.push_back(item);
+    }
+
     if (list.length() >= 1) {
         menu_f5->setVisible(true);
         menu_f6->setVisible(true);
@@ -1193,9 +1252,8 @@ void MainWindow::drop_func(QStringList lst, bool remove_after, bool is_right)
     }
 
     if (selected_dirs.length() + selected_files.length() > 0) {
-        Copy_files *cp = new Copy_files();
+        Copy_files *cp = new Copy_files(&dialog_font);
         connect(cp, SIGNAL(end_operation()), this, SLOT(end_operation()));
-        cp->main_font = main_font;
         cp->Work(dir_to, selected_dirs, selected_files, remove_after);
         count_proc++;
     }
@@ -1241,6 +1299,7 @@ void MainWindow::on_pushButton_f4_clicked()
         bool flag_dir = false;
 
         QInputDialog id;
+        id.setWindowIcon(QIcon("appIcon.png"));
         id.setFont(main_font);
         id.resize(QSize(400, 60));
         id.setCancelButtonText("Отмена");
@@ -1350,9 +1409,8 @@ void MainWindow::f5_f6_func(bool remove_after)
     mass_all_selected(dir_to, selected_dirs, selected_files);
 
     if (selected_dirs.length() + selected_files.length() > 0) {
-        Copy_files *cp = new Copy_files();
+        Copy_files *cp = new Copy_files(&dialog_font);
         connect(cp, SIGNAL(end_operation()), this, SLOT(end_operation()));
-        cp->main_font = main_font;
         cp->Work(dir_to, selected_dirs, selected_files, remove_after);
         count_proc++;
     }
@@ -1382,7 +1440,8 @@ void MainWindow::on_pushButton_f7_clicked()
     }
 
     QInputDialog id;
-    id.setFont(main_font);
+    id.setWindowIcon(QIcon("appIcon.png"));
+    id.setFont(dialog_font);
     id.resize(QSize(400, 60));
     id.setCancelButtonText("Отмена");
     id.setLabelText("Создать новый каталог:");
@@ -1435,9 +1494,8 @@ void MainWindow::on_pushButton_f8_clicked()
     mass_all_selected(dir_to, selected_dirs, selected_files);
 
     if (selected_dirs.length() + selected_files.length() > 0) {
-        Delete_Files *df = new Delete_Files();
+        Delete_Files *df = new Delete_Files(&dialog_font);
         connect(df, SIGNAL(end_operation()), this, SLOT(end_operation()));
-        df->main_font = main_font;
         df->Work(selected_dirs, selected_files, false);
         count_proc++;
     }
@@ -1450,9 +1508,8 @@ void MainWindow::shift_del_f()
     QString dir_to; QStringList selected_dirs, selected_files;
     mass_all_selected(dir_to, selected_dirs, selected_files);
     if (selected_dirs.length() + selected_files.length() > 0) {
-        Delete_Files *df = new Delete_Files();
+        Delete_Files *df = new Delete_Files(&dialog_font);
         connect(df, SIGNAL(end_operation()), this, SLOT(end_operation()));
-        df->main_font = main_font;
         df->Work(selected_dirs, selected_files, true);
         count_proc++;
     }
@@ -1572,7 +1629,8 @@ void MainWindow::on_pushButton_create_file_clicked()
 
 
     QInputDialog id;
-    id.setFont(main_font);
+    id.setWindowIcon(QIcon("appIcon.png"));
+    id.setFont(dialog_font);
     id.resize(QSize(400, 60));
     id.setCancelButtonText("Отмена");
     id.setLabelText("Создать новый файл:");
@@ -1630,23 +1688,6 @@ void MainWindow::on_pushButton_notepad_clicked()
 }
 
 
-//окно выбора шрифта
-void MainWindow::change_font()
-{
-    bool ok;
-    QFont font = QFontDialog::getFont(
-        &ok, main_font, this);
-    if (ok) {
-        main_font = font;
-        MainWindow::setFont(main_font);
-        QToolTip::setFont(main_font);
-        treeWidget_l->header()->setFont(main_font);
-        treeWidget_r->header()->setFont(main_font);
-        ui->path_l->setFont(main_font);
-        ui->path_r->setFont(main_font);
-    }
-}
-
 void MainWindow::on_pushButton_admin_clicked()
 {
     if(IsUserAnAdmin()) {
@@ -1669,7 +1710,9 @@ void MainWindow::on_pushButton_f3_clicked()
         mass_all_selected(dir_to, selected_dirs, selected_files);
     }
     for (int i = 0; i < selected_files.length(); ++i) {
-        Lister *lister = new Lister(selected_files[i], this);
+        Lister *lister = new Lister(selected_files[i], &main_font, &lister_font);
+        lister_list->push_back(lister);
+        connect(lister, &Lister::closed, this, [lister, this](){lister_list->remove(lister);});
         lister->show();
     }
 }
@@ -1713,7 +1756,7 @@ void MainWindow::on_pushButton_mass_rename_clicked()
             dir_to = selected_dirs[0].left(selected_dirs[0].lastIndexOf("/")) + "/";
         else
             dir_to = selected_files[0].left(selected_files[0].lastIndexOf("/")) + "/";
-        Rename_Widget *rw = new Rename_Widget(main_font, w, h, this);
+        Rename_Widget *rw = new Rename_Widget(&main_font, &panel_font, &dialog_font, w, h, this);
         rw->Fill(dir_to, selected_dirs, selected_files);
         rw->setWindowModality(Qt::WindowModal);
         rw->show();

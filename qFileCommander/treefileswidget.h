@@ -39,6 +39,10 @@ public slots:
     void Fill(const QString &dir_str, bool hidden_file, const QString& last_dir_l);
     ///кол-во выделенных item
     int count_selected();
+    ///второй режим выделения
+    void change_select(int ind, bool is_sel);
+    ///снять выделение
+    void unselected_all();
 
 private:
     ///true - move file, false - copy
@@ -71,10 +75,6 @@ private slots:
     void current_itemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
     ///клик по item
     void widget_itemClicked(QTreeWidgetItem *item, int column);
-    ///снять выделение
-    void unselected_all();
-    ///второй режим выделения
-    void change_select(int ind, bool is_sel);
 
     void keyPressEvent(QKeyEvent *event) override;
 

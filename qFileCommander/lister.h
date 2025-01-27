@@ -17,8 +17,11 @@ class Lister : public QMainWindow
     Q_OBJECT
 
 public:
-    Lister(const QString &_f_name, QWidget *parent = nullptr);
+    Lister(const QString &_f_name, const QFont *main_font, const QFont *lister_font, QWidget *parent = nullptr);
     ~Lister();
+
+signals:
+    void closed();
 
 private slots:
     void keyPressEvent(QKeyEvent *event);

@@ -3,16 +3,21 @@
 #include <QMimeDatabase>
 #include <QImageReader>
 
-Lister::Lister(const QString& _f_name, QWidget *parent)
+Lister::Lister(const QString& _f_name, const QFont *main_font, const QFont *lister_font, QWidget *parent)
     : QMainWindow(parent)
 {
+    setWindowModality(Qt::NonModal);
     setAttribute(Qt::WA_DeleteOnClose);
     if (!QFile(_f_name).exists())
         this->close();
 
     f_name = _f_name;
-    Lister::setWindowTitle("Lister - [" + f_name + "]");
-    Lister::resize(800, 600);
+
+    setWindowTitle("Lister - [" + f_name + "]");
+    setWindowIcon(QIcon("appIcon.png"));
+    resize(800, 600);
+    setFont(*main_font);
+
     centralwidget = new QWidget(this);
     horizontalLayout = new QHBoxLayout(centralwidget);
     gridLayout = new QGridLayout();
@@ -27,6 +32,7 @@ Lister::Lister(const QString& _f_name, QWidget *parent)
     plainTextEdit = new QPlainTextEdit(centralwidget);
     plainTextEdit->setReadOnly(true);
     plainTextEdit->setWordWrapMode(QTextOption::NoWrap);
+    plainTextEdit->setFont(*lister_font);
     gridLayout->addWidget(plainTextEdit, 1, 0, 1, 6);
 
     verticalSlider = new QSlider(centralwidget);
@@ -120,6 +126,7 @@ Lister::~Lister()
     if (file->isOpen())
         file->close();
     delete file;
+    emit closed();
 }
 
 void Lister::keyPressEvent(QKeyEvent *event)

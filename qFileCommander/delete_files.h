@@ -74,25 +74,9 @@ class Delete_Files : public QObject
 {
     Q_OBJECT
 
-private:
-    QThread *th;
-    Delete_Process *dp;
-
-    QDialog *w_progress;
-    QProgressBar *pb;
-    QLabel *lab_name;
-    QLabel *lab_files;
-    QPushButton *b_pause;
-    QPushButton *b_minimize;
-    QPushButton *b_cancel;
-
-    long long int all_count = 0;
-    long long int comp_count = 0;
-
 public:
-    Delete_Files();
+    Delete_Files(const QFont *_dialog_font);
     void Work(const QStringList& selected_dirs, const QStringList& selected_files, bool is_final);
-    QFont main_font;
 
 signals:
     ///отмена операции
@@ -119,6 +103,24 @@ public slots:
     void v_error(QString str_error);
     ///не удалось выполнить удаление
     void cant_del(QString str_error);
+
+
+private:
+    const QFont *dialog_font;
+
+    QThread *th;
+    Delete_Process *dp;
+
+    QDialog *w_progress;
+    QProgressBar *pb;
+    QLabel *lab_name;
+    QLabel *lab_files;
+    QPushButton *b_pause;
+    QPushButton *b_minimize;
+    QPushButton *b_cancel;
+
+    long long int all_count = 0;
+    long long int comp_count = 0;
 
 private slots:
     ///моментальная отмена операции

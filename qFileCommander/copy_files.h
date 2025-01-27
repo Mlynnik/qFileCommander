@@ -12,9 +12,8 @@ class Copy_files : public QObject
     Q_OBJECT
 
 public:
-    Copy_files();
+    Copy_files(const QFont *_dialog_font);
     void Work(QString dir_to, const QStringList& selected_dirs, const QStringList& selected_files, bool remove_after);
-    QFont main_font;
 
 signals:
     ///отмена копирования
@@ -67,6 +66,8 @@ private slots:
     QString reformat_size(QString str);
 
 private:
+    const QFont *dialog_font;
+
     QThread *th;
     CopyProcess *cd;
 
