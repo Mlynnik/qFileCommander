@@ -2,6 +2,7 @@
 #define Lister_H
 
 #include "appsettings.h"
+#include <QThread>
 #include <QMainWindow>
 #include <QFile>
 #include <QHBoxLayout>
@@ -13,21 +14,29 @@
 #include <QMenuBar>
 #include <QScrollArea>
 
-enum ListerMode {NoMode = 0, Text, Image, Player, };
+
+enum ListerMode {NoMode = 0, Text, Image, Player, Dir};
 
 class Lister : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    Lister(const QString &_f_name, const AppSettings *_appSettings, QWidget *parent = nullptr);
+    Lister(const QString &_fpath, const AppSettings *_appSettings, QWidget *parent = nullptr);
     ~Lister();
 
 signals:
     void closed();
+    void stop();
+    void signal_loop();
+
+public slots:
+    void setDirInfo(long long int all_size, long long int dcnt, long long int fcnt);
+    void break_proc() { is_break = true; }
 
 private slots:
     void keyPressEvent(QKeyEvent *event);
+    void closeEvent(QCloseEvent *event);
 
     void Fill();
 
@@ -51,7 +60,7 @@ private slots:
 private:
     ListerMode mode = ListerMode::NoMode;
 
-    QString f_name;
+    QString fpath;
     const AppSettings* appSettings;
     const QFont *main_font;
     const QFont *dialog_font;
@@ -88,10 +97,36 @@ private:
     QMenu *menu_cod;
 
     QFile* file;
-    QByteArray prev_buf = 0;
     QByteArray buf = 0;
-    QByteArray next_buf = 0;
-    qint64 progres = 0;
+    qint64 progress = 0;
     qint64 f_size = 0;
+
+    QThread *th = nullptr;
+    bool is_break = false;
 };
+
+
+
+class DirPropProcess : public QObject
+{
+    Q_OBJECT
+
+public:
+    DirPropProcess(const QString& _fpath);
+signals:
+    void setInfo(long long int all_size, long long int dcnt, long long int fcnt);
+    void break_proc();
+
+public slots:
+    void Work();
+    void stop() { is_stop = true; }
+
+private:
+    bool is_stop = false;
+    const QString& fpath;
+    long long int all_size = 0;
+    long long int dcnt = 0;
+    long long int fcnt = 0;
+};
+
 #endif // Lister_H

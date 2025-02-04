@@ -1,26 +1,29 @@
 #include "lister.h"
 #include "playerwidget.h"
 #include <QScrollBar>
+#include <QFileInfo>
+#include <QDir>
+#include <QDirIterator>
 #include <QMimeDatabase>
 #include <QImageReader>
 
-Lister::Lister(const QString& _f_name, const AppSettings *_appSettings, QWidget *parent)
+Lister::Lister(const QString& _fpath, const AppSettings *_appSettings, QWidget *parent)
     : QMainWindow(parent)
 {
     setWindowModality(Qt::NonModal);
     setAttribute(Qt::WA_DeleteOnClose);
-    if (!QFile(_f_name).exists())
+    if (!QFile(_fpath).exists())
         this->close();
 
     appSettings = _appSettings;
-    f_name = _f_name;
+    fpath = _fpath;
     main_font = appSettings->main_font;
     dialog_font = appSettings->dialog_font;
     lister_font = appSettings->lister_font;
 
-    setWindowTitle("Lister - [" + f_name + "]");
+    setWindowTitle("Lister - [" + fpath + "]");
     setWindowIcon(QIcon("appIcon.png"));
-    resize(800, 600);
+    resize(round(appSettings->w*800), round(appSettings->h*600));
     setFont(*main_font);
 
     menubar = new QMenuBar(this);
@@ -63,7 +66,7 @@ Lister::Lister(const QString& _f_name, const AppSettings *_appSettings, QWidget 
     connect(cod_utf8, SIGNAL(triggered()), this, SLOT(f3_cod_utf8()));
     connect(cod_local, SIGNAL(triggered()), this, SLOT(f3_cod_local()));
 
-    file = new QFile(f_name);
+    file = new QFile(fpath);
     f_size = file->size();
 
     Fill();
@@ -74,6 +77,7 @@ Lister::~Lister()
     if (file->isOpen())
         file->close();
     delete file;
+
     emit closed();
 }
 
@@ -83,8 +87,22 @@ void Lister::keyPressEvent(QKeyEvent *event)
         this->close();
 }
 
+void Lister::closeEvent(QCloseEvent *event)
+{
+    event->ignore();
+    if (th)
+        emit stop();
+    else
+        event->accept();
+}
+
 void Lister::Fill()
 {
+    if (QFileInfo(fpath).isDir()) {
+        setMode(ListerMode::Dir);
+        return;
+    }
+
     QMimeDatabase db;
     QMimeType mime = db.mimeTypeForFile(file->fileName());
     QString m_s = mime.name();
@@ -130,7 +148,7 @@ void Lister::Fill()
     if (!file->open(QIODevice::ReadOnly))
         this->close();
 
-    if (f_size < 10485760) {
+    if (f_size < 1048576) {
         pushButton_up->hide();
         pushButton_down->hide();
         lineEdit_size_now->hide();
@@ -153,7 +171,7 @@ void Lister::setMode(ListerMode m)
 
     mode = m;
 
-    if (centralwidget != nullptr)
+    if (centralwidget)
         centralwidget->close();
     centralwidget = new QWidget(this);
     setCentralWidget(centralwidget);
@@ -216,7 +234,7 @@ void Lister::setMode(ListerMode m)
         pushButton_down->setText("down");
         gridLayout->addWidget(pushButton_down, 2, 5);
 
-        if (f_size < 10485760) {
+        if (f_size < 1048576) {
             pushButton_up->hide();
             pushButton_down->hide();
             lineEdit_size_now->hide();
@@ -244,7 +262,7 @@ void Lister::setMode(ListerMode m)
         image_area->setWidget(label_image);
         horizontalLayout->addWidget(image_area);
 
-        QImage image = QImageReader(f_name).read();
+        QImage image = QImageReader(fpath).read();
         image = image.scaled(image.size(), Qt::KeepAspectRatio);
         label_image->setFixedSize(image.size());
         label_image->setPixmap(QPixmap::fromImage(image));
@@ -252,10 +270,30 @@ void Lister::setMode(ListerMode m)
         if (file->isOpen())
             file->close();
 
-        PlayerWidget* player = new PlayerWidget(f_name, appSettings, centralwidget);
+        PlayerWidget* player = new PlayerWidget(fpath, appSettings, centralwidget);
         horizontalLayout->addWidget(player);
         setFocusProxy(player);
         menu_cod->setDisabled(true);
+    } else if (m == ListerMode::Dir) {
+        menu_view->setDisabled(true);
+        menu_cod->setDisabled(true);
+
+        plainTextEdit = new QPlainTextEdit(centralwidget);
+        plainTextEdit->setReadOnly(true);
+        horizontalLayout->addWidget(plainTextEdit);
+
+        plainTextEdit->setPlainText(fpath);
+
+        DirPropProcess *dpp = new DirPropProcess(fpath);
+        th = new QThread(this);
+
+        connect(th, SIGNAL(started()), dpp, SLOT(Work()));
+        connect(dpp, SIGNAL(setInfo(qlonglong,qlonglong,qlonglong)), this, SLOT(setDirInfo(qlonglong,qlonglong,qlonglong)));
+        connect(this, SIGNAL(stop()), dpp, SLOT(stop()), Qt::DirectConnection);
+        connect(dpp, SIGNAL(break_proc()), this, SLOT(break_proc()));
+
+        dpp->moveToThread(th);
+        th->start();
     }
 }
 
@@ -290,9 +328,9 @@ void Lister::verticalSlider_valueChanged(int value)
             else
                 plainTextEdit->textCursor().insertHtml(QString::fromLocal8Bit(buf));
         }
-        progres += 1048576;
-        if (progres > f_size)
-            progres = f_size;
+        progress += 1048576;
+        if (progress > f_size)
+            progress = f_size;
     }
 }
 
@@ -328,7 +366,7 @@ void Lister::f3_cod_only_text()
         if (!file->open(QIODevice::ReadOnly))
             this->close();
     }
-    if (f_size < 10485760) {
+    if (f_size < 1048576) {
         file->seek(0);
         if (f_cod == '8')
             plainTextEdit->setPlainText(file->readAll());
@@ -361,7 +399,7 @@ void Lister::f3_cod_html()
         if (!file->open(QIODevice::ReadOnly))
             this->close();
     }
-    if (f_size < 10485760) {
+    if (f_size < 1048576) {
         file->seek(0);
         if (f_cod == '8')
             plainTextEdit->textCursor().insertHtml(file->readAll());
@@ -410,7 +448,7 @@ void Lister::f3_cod_utf8()
     cod_local->setChecked(false);
 
     f_cod = '8';
-    if (f_size < 10485760) {
+    if (f_size < 1048576) {
         plainTextEdit->clear();
         file->seek(0);
         if (f_type_now == 't')
@@ -430,7 +468,7 @@ void Lister::f3_cod_local()
     cod_utf8->setChecked(false);
 
     f_cod = 'l';
-    if (f_size < 10485760) {
+    if (f_size < 1048576) {
         plainTextEdit->clear();
         file->seek(0);
         if (f_type_now == 't')
@@ -441,3 +479,75 @@ void Lister::f3_cod_local()
         verticalSlider_valueChanged(verticalSlider->value());
 }
 
+
+QString reformat_size(QString str)
+{
+    int x = str.length() - 3;
+    while(x > 0) {str.insert(x, QString(" ")); x -= 3;}
+    return str;
+}
+
+QString reformat_size_2(double num_0)
+{
+    QString str1;
+    if (num_0 >= 1000) {
+        num_0 = round(num_0 / 10.24) / 100;
+        str1 = QString::number(num_0) + " КБ";
+        if (num_0 >= 1000) {
+            num_0 = round(num_0 / 10.24) / 100;
+            str1 = QString::number(num_0) + " MБ";
+            if (num_0 >= 1000) {
+                num_0 = round(num_0 / 10.24) / 100;
+                str1 = QString::number(num_0) + " ГБ";
+                if (num_0 >= 1000) {
+                    num_0 = round(num_0 / 10.24) / 100;
+                    str1 = QString::number(num_0) + " ТБ";
+                }
+            }
+        }
+    } else
+        str1 = QString::number(num_0) + " Б";
+    return str1;
+}
+
+void Lister::setDirInfo(long long all_size, long long dcnt, long long fcnt)
+{
+    if (th) {
+        delete th;
+        th = nullptr;
+    }
+    if (is_break)
+        this->close();
+    if (plainTextEdit) {
+        plainTextEdit->appendPlainText("\nВсего файлов:     " % reformat_size(QString::number(fcnt)) % ",\nкаталогов:     "
+                                       % reformat_size(QString::number(dcnt)) % "\n\nОбщий размер:     "
+                                       % reformat_size(QString::number(all_size)) % " Б (" % reformat_size_2(all_size) % ")");
+    }
+}
+
+
+DirPropProcess::DirPropProcess(const QString &_fpath) : fpath(_fpath){}
+
+void DirPropProcess::Work()
+{
+    if (QDir().exists(fpath)) {
+        QDirIterator it(fpath, QDir::Dirs | QDir::Files | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+        while (it.hasNext()) {
+            if (is_stop)
+                break;
+            it.next();
+            if (it.fileInfo().isDir()) {
+                ++dcnt;
+            } else if (it.fileInfo().isFile()) {
+                ++fcnt;
+                all_size += it.fileInfo().size();
+            }
+        }
+    }
+    if (is_stop)
+        emit break_proc();
+    emit setInfo(all_size, dcnt, fcnt);
+
+    this->deleteLater();
+    this->thread()->exit();
+}

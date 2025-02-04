@@ -1707,10 +1707,16 @@ void MainWindow::on_pushButton_admin_clicked()
 //просмотр файла
 void MainWindow::on_pushButton_f3_clicked()
 {
-    QStringList selected_files;
+    QStringList selected_dirs; QStringList selected_files;
     {
-        QString dir_to; QStringList selected_dirs;
+        QString dir_to;
         mass_all_selected(dir_to, selected_dirs, selected_files);
+    }
+    for (int i = 0; i < selected_dirs.length(); ++i) {
+        Lister *lister = new Lister(selected_dirs[i], appSettings);
+        lister_list.push_back(lister);
+        connect(lister, &Lister::closed, this, [lister, this](){lister_list.remove(lister);});
+        lister->show();
     }
     for (int i = 0; i < selected_files.length(); ++i) {
         Lister *lister = new Lister(selected_files[i], appSettings);

@@ -20,7 +20,7 @@ void CopyProcess::Copy()
     for (int i = 0; i < selected_files.length(); ++i) {
         if (QFile().exists(selected_files[i])) {
             all_size += QFile(selected_files[i]).size();
-            all_count++;
+            ++all_count;
         }
     }
 
@@ -753,7 +753,7 @@ void CopyProcess::get_dir_info(const QString &dir)
         while (it.hasNext()) {
             it.next();
             all_size += it.fileInfo().size();
-            all_count++;
+            ++all_count;
         }
     }
 }

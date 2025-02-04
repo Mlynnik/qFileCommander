@@ -199,7 +199,6 @@ void Delete_Files::end_del()
 
     delete th;
     this->deleteLater();
-
 }
 
 
