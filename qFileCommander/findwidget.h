@@ -1,6 +1,7 @@
 #ifndef FINDWIDGET_H
 #define FINDWIDGET_H
 
+#include "appsettings.h"
 #include <QWidget>
 #include <QMimeDatabase>
 #include <QTreeWidget>
@@ -42,7 +43,7 @@ class FindWidget : public QWidget
 {
     Q_OBJECT
 public:
-    explicit FindWidget(float _w, float _h, const QFont *_main_font, const QFont *_panel_font, const QFont *_dialog_font, QWidget *parent = nullptr);
+    explicit FindWidget(const AppSettings *appSettings, QWidget *parent = nullptr);
 
 signals:
     void stop_find();

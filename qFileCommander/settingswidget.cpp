@@ -5,12 +5,15 @@
 #include <QFontDialog>
 #include <QTextEdit>
 
-SettingsWidget::SettingsWidget(QFont *_main_font, QFont *_panel_font, QFont *_dialog_font, QFont *_lister_font, float _w, float _h, QWidget *parent)
-    : main_font(_main_font), panel_font(_panel_font),  dialog_font(_dialog_font),  lister_font(_lister_font),
-    QTabWidget{parent}
+SettingsWidget::SettingsWidget(AppSettings* appsettings, QWidget *parent) : QTabWidget{parent}
 {
-    w = _w;
-    h = _h;
+    w = appsettings->w;
+    h = appsettings->h;
+    main_font = appsettings->main_font;
+    panel_font = appsettings->panel_font;
+    dialog_font = appsettings->dialog_font;
+    lister_font = appsettings->lister_font;
+
     SettingsWidget::setAttribute(Qt::WA_DeleteOnClose);
     SettingsWidget::setAttribute(Qt::WA_ShowModal);
     SettingsWidget::setWindowTitle("Настройки");

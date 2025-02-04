@@ -5,9 +5,9 @@
 #include <QPushButton>
 
 
-Copy_files::Copy_files(const QFont *_dialog_font)
+Copy_files::Copy_files(const AppSettings *appSettings)
 {
-    dialog_font = _dialog_font;
+    dialog_font = appSettings->dialog_font;
     msgBox.setWindowIcon(QIcon("appIcon.png"));
     msgBox.setFont(*dialog_font);
     msgBox.setIcon(QMessageBox::Warning);

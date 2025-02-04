@@ -1,6 +1,7 @@
 #ifndef DELETE_FILES_H
 #define DELETE_FILES_H
 
+#include "appsettings.h"
 #include <QMessageBox>
 #include <QDialog>
 #include <QLabel>
@@ -75,7 +76,7 @@ class Delete_Files : public QObject
     Q_OBJECT
 
 public:
-    Delete_Files(const QFont *_dialog_font);
+    Delete_Files(const AppSettings *appSettings);
     void Work(const QStringList& selected_dirs, const QStringList& selected_files, bool is_final);
 
 signals:

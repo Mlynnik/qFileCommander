@@ -10,13 +10,13 @@
 #include <qevent.h>
 #include <windows.h>
 
-FindWidget::FindWidget(float _w, float _h, const QFont *_main_font, const QFont *_panel_font, const QFont *_dialog_font, QWidget *parent) : QWidget{parent}
+FindWidget::FindWidget(const AppSettings *appSettings, QWidget *parent) : QWidget{parent}
 {
-    w = _w;
-    h = _h;
-    main_font = _main_font;
-    panel_font = _panel_font;
-    dialog_font = _dialog_font;
+    w = appSettings->w;
+    h = appSettings->h;
+    main_font = appSettings->main_font;
+    panel_font = appSettings->panel_font;
+    dialog_font = appSettings->dialog_font;
 
     setWindowTitle("Поиск файлов");
     setWindowIcon(QIcon("appIcon.png"));
@@ -53,7 +53,7 @@ FindWidget::FindWidget(float _w, float _h, const QFont *_main_font, const QFont 
     gr_lay->addWidget(find_res_0, 3, 0);
     gr_lay->addWidget(find_res_1, 3, 1);
     gr_lay->addWidget(tree_find, 4, 0, 1, 3);
-    tree_find->setFont(*_panel_font);
+    tree_find->setFont(*panel_font);
     tree_find->setColumnCount(1);
     tree_find->setHeaderHidden(true);
     tree_find->setRootIsDecorated(false);

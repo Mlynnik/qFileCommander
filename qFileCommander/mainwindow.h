@@ -4,6 +4,7 @@
 #include "treefileswidget.h"
 #include "findwidget.h"
 #include "lister.h"
+#include "appsettings.h"
 #include <list>
 #include <QMainWindow>
 #include <QGuiApplication>
@@ -14,6 +15,7 @@
 #include <QProgressBar>
 #include <QPushButton>
 #include <QFileIconProvider>
+
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -32,6 +34,7 @@ public:
 private:
     Ui::MainWindow *ui;
     QScreen *screen = QGuiApplication::primaryScreen();
+    AppSettings *appSettings;
     float w = float(screen->geometry().width()) / float(1536);
     float h = float(screen->geometry().height()) / float(864);
     //ширина экрана
@@ -126,7 +129,7 @@ private:
     //кол-во активных файловых процессов
     int count_proc = 0;
 
-    std::list<Lister*> *lister_list = new std::list<Lister*>();
+    std::list<Lister*> lister_list;
 
     //виджет поиска файлов
     FindWidget *find_wid;

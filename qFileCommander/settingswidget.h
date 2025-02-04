@@ -1,6 +1,7 @@
 #ifndef SETTINGSWIDGET_H
 #define SETTINGSWIDGET_H
 
+#include "appsettings.h"
 #include <QWidget>
 #include <QTabWidget>
 #include <QLabel>
@@ -9,7 +10,7 @@ class SettingsWidget : public QTabWidget
 {
     Q_OBJECT
 public:
-    explicit SettingsWidget(QFont *_main_font, QFont *_panel_font, QFont *_dialog_font, QFont *_lister_font, float _w, float _h, QWidget *parent = nullptr);
+    explicit SettingsWidget(AppSettings* appsettings, QWidget *parent = nullptr);
 
 signals:
     void apply_main_font();

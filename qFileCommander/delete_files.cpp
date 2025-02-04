@@ -5,7 +5,7 @@
 #include <QPushButton>
 #include <shlobj.h>
 
-Delete_Files::Delete_Files(const QFont *_dialog_font) : dialog_font(_dialog_font) {}
+Delete_Files::Delete_Files(const AppSettings *appSettings) : dialog_font(appSettings->dialog_font) {}
 
 void Delete_Files::Work(const QStringList &selected_dirs, const QStringList &selected_files, bool is_final)
 {

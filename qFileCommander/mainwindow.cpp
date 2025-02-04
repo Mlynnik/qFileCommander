@@ -88,6 +88,10 @@ MainWindow::MainWindow(QWidget *parent)
     change_main_font();
     change_panel_font();
 
+    appSettings = new AppSettings();
+    appSettings->w = w; appSettings->h = h; appSettings->main_font = &main_font;
+    appSettings->panel_font = &panel_font; appSettings->dialog_font = &dialog_font; appSettings->lister_font = &lister_font;
+
     {
         QList<QVariant> widthColumns = settings.value("/Settings/L_Col_W").toList();
         if (!widthColumns.empty() && (widthColumns.size() == 4)) {
@@ -347,14 +351,13 @@ MainWindow::MainWindow(QWidget *parent)
     timer->start(3000);
 
 
-    find_wid = new FindWidget(w, h, &main_font, &panel_font, &dialog_font);
+    find_wid = new FindWidget(appSettings);
     find_wid->setFont(main_font);
     connect(find_wid, SIGNAL(open_find_fid_signal(QString)), this, SLOT(open_find_fid(QString)));
 }
 
 MainWindow::~MainWindow()
 {
-    delete lister_list;
     delete ui;
 }
 
@@ -451,7 +454,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
     save_settings();
 
-    for (auto l : *lister_list)
+    for (auto l : lister_list)
         l->close();
 
     find_wid->close_wid();
@@ -506,7 +509,7 @@ void MainWindow::save_settings()
 
 void MainWindow::open_settings()
 {
-    SettingsWidget *sw = new SettingsWidget(&main_font, &panel_font, &dialog_font, &lister_font, w, h);
+    SettingsWidget *sw = new SettingsWidget(appSettings);
     connect(sw, SIGNAL(apply_main_font()), this, SLOT(change_main_font()));
     connect(sw, SIGNAL(apply_panel_font()), this, SLOT(change_panel_font()));
     sw->show();
@@ -1252,7 +1255,7 @@ void MainWindow::drop_func(QStringList lst, bool remove_after, bool is_right)
     }
 
     if (selected_dirs.length() + selected_files.length() > 0) {
-        Copy_files *cp = new Copy_files(&dialog_font);
+        Copy_files *cp = new Copy_files(appSettings);
         connect(cp, SIGNAL(end_operation()), this, SLOT(end_operation()));
         cp->Work(dir_to, selected_dirs, selected_files, remove_after);
         count_proc++;
@@ -1409,7 +1412,7 @@ void MainWindow::f5_f6_func(bool remove_after)
     mass_all_selected(dir_to, selected_dirs, selected_files);
 
     if (selected_dirs.length() + selected_files.length() > 0) {
-        Copy_files *cp = new Copy_files(&dialog_font);
+        Copy_files *cp = new Copy_files(appSettings);
         connect(cp, SIGNAL(end_operation()), this, SLOT(end_operation()));
         cp->Work(dir_to, selected_dirs, selected_files, remove_after);
         count_proc++;
@@ -1494,7 +1497,7 @@ void MainWindow::on_pushButton_f8_clicked()
     mass_all_selected(dir_to, selected_dirs, selected_files);
 
     if (selected_dirs.length() + selected_files.length() > 0) {
-        Delete_Files *df = new Delete_Files(&dialog_font);
+        Delete_Files *df = new Delete_Files(appSettings);
         connect(df, SIGNAL(end_operation()), this, SLOT(end_operation()));
         df->Work(selected_dirs, selected_files, false);
         count_proc++;
@@ -1508,7 +1511,7 @@ void MainWindow::shift_del_f()
     QString dir_to; QStringList selected_dirs, selected_files;
     mass_all_selected(dir_to, selected_dirs, selected_files);
     if (selected_dirs.length() + selected_files.length() > 0) {
-        Delete_Files *df = new Delete_Files(&dialog_font);
+        Delete_Files *df = new Delete_Files(appSettings);
         connect(df, SIGNAL(end_operation()), this, SLOT(end_operation()));
         df->Work(selected_dirs, selected_files, true);
         count_proc++;
@@ -1710,9 +1713,9 @@ void MainWindow::on_pushButton_f3_clicked()
         mass_all_selected(dir_to, selected_dirs, selected_files);
     }
     for (int i = 0; i < selected_files.length(); ++i) {
-        Lister *lister = new Lister(selected_files[i], &main_font, &lister_font);
-        lister_list->push_back(lister);
-        connect(lister, &Lister::closed, this, [lister, this](){lister_list->remove(lister);});
+        Lister *lister = new Lister(selected_files[i], appSettings);
+        lister_list.push_back(lister);
+        connect(lister, &Lister::closed, this, [lister, this](){lister_list.remove(lister);});
         lister->show();
     }
 }
@@ -1756,7 +1759,7 @@ void MainWindow::on_pushButton_mass_rename_clicked()
             dir_to = selected_dirs[0].left(selected_dirs[0].lastIndexOf("/")) + "/";
         else
             dir_to = selected_files[0].left(selected_files[0].lastIndexOf("/")) + "/";
-        Rename_Widget *rw = new Rename_Widget(&main_font, &panel_font, &dialog_font, w, h, this);
+        Rename_Widget *rw = new Rename_Widget(appSettings, this);
         rw->Fill(dir_to, selected_dirs, selected_files);
         rw->setWindowModality(Qt::WindowModal);
         rw->show();

@@ -5,14 +5,14 @@
 #include <QThread>
 #include <QDir>
 
-Rename_Widget::Rename_Widget(const QFont *_main_font, const QFont *_panel_font, const QFont *_dialog_font, float _w, float _h, QWidget *parent)
+Rename_Widget::Rename_Widget(const AppSettings *appSettings, QWidget *parent)
     : QMainWindow(parent)
 {
-    w = _w;
-    h = _h;
-    main_font = _main_font;
-    panel_font = _panel_font;
-    dialog_font = _dialog_font;
+    w = appSettings->w;
+    h = appSettings->h;
+    main_font = appSettings->main_font;
+    panel_font = appSettings->panel_font;
+    dialog_font = appSettings->dialog_font;
 
     Rename_Widget::setFont(*main_font);
     Rename_Widget::setAttribute(Qt::WA_DeleteOnClose);
