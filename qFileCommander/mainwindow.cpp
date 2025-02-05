@@ -302,13 +302,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->path_l->setText(last_path_l);
     ui->path_r->setText(last_path_r);
 
-    /*
-    //Изменить шрифт
-    QAction *menu_change_font = new QAction("Изменить шрифт", this);
-    menu_change_font->setCheckable(false);
-    ui->toolButton->addAction(menu_change_font);
-    connect(menu_change_font, SIGNAL(triggered()), this, SLOT(change_font()));
-    */
 
     //запуск таймера на обновление
     find_disk();
