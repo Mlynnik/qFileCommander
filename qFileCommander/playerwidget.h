@@ -53,6 +53,7 @@ class PlayerWidget : public QWidget
 public:
     PlayerWidget(const QString &_fpath, const AppSettings *appSettings, QWidget *parent = nullptr);
     ~PlayerWidget();
+    void reFill(const QString &_fpath);
 
 private:
     float w;

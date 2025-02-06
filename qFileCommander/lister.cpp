@@ -4,16 +4,13 @@
 #include <QFileInfo>
 #include <QDir>
 #include <QDirIterator>
-#include <QMimeDatabase>
 #include <QImageReader>
 
 Lister::Lister(const QString& _fpath, const AppSettings *_appSettings, QWidget *parent)
-    : QMainWindow(parent)
+    : QWidget(parent)
 {
     setWindowModality(Qt::NonModal);
     setAttribute(Qt::WA_DeleteOnClose);
-    if (!QFile(_fpath).exists())
-        this->close();
 
     appSettings = _appSettings;
     fpath = _fpath;
@@ -23,15 +20,14 @@ Lister::Lister(const QString& _fpath, const AppSettings *_appSettings, QWidget *
     resize(round(appSettings->w*800), round(appSettings->h*600));
     setFont(*appSettings->main_font);
 
-    centralwidget = new QWidget(this);
-    setCentralWidget(centralwidget);
-    centralwidget->setAttribute(Qt::WA_DeleteOnClose);
-    horizontalLayout = new QHBoxLayout(centralwidget);
-    horizontalLayout->setAlignment(Qt::AlignTop);
+    horizontalLayout = new QVBoxLayout(this);
+    horizontalLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    horizontalLayout->setContentsMargins(0, 0, 0, 0);
 
     menubar = new QMenuBar(this);
-    menubar->setGeometry(QRect(0, 0, round(appSettings->w*800), round(appSettings->h*25)));
-    Lister::setMenuBar(menubar);
+    //menubar->setGeometry(0, 0, round(appSettings->w*200), round(appSettings->h*25));
+    menubar->setMaximumHeight(round(appSettings->h*25));
+    horizontalLayout->addWidget(menubar);
 
     cod_only_text = new QAction("Только текст", this);
     cod_html = new QAction("HTML (без показа тэгов)", this);
@@ -69,7 +65,8 @@ Lister::Lister(const QString& _fpath, const AppSettings *_appSettings, QWidget *
     connect(cod_utf8, SIGNAL(triggered()), this, SLOT(f3_cod_utf8()));
     connect(cod_local, SIGNAL(triggered()), this, SLOT(f3_cod_local()));
 
-    Fill();
+    if (QFile(_fpath).exists())
+        Fill();
 }
 
 Lister::~Lister()
@@ -92,15 +89,83 @@ void Lister::closeEvent(QCloseEvent *event)
         event->accept();
 }
 
+void Lister::reFill(const QString &_fpath)
+{
+    if (!QFile(_fpath).exists())
+        return;
+
+    fpath = _fpath;
+    cod_img->setChecked(false);
+    cod_only_text->setChecked(false);
+    cod_html->setChecked(false);
+    cod_audio->setChecked(false);
+    cod_img->setCheckable(true);
+    cod_img->setDisabled(false);
+    cod_audio->setCheckable(true);
+    cod_audio->setDisabled(false);
+
+    if (QFileInfo(fpath).isDir()) {
+        if (mode == ListerMode::Dir && widget_now)
+            ((DirWidget*)widget_now)->reFill(fpath);
+        else
+            setMode(ListerMode::Dir);
+        return;
+    }
+
+    menu_view->setDisabled(false);
+    QMimeType mime = db.mimeTypeForFile(fpath);
+    QString m_s = mime.name();
+
+    if (m_s.startsWith("audio")) {
+        if (mode == ListerMode::Player && widget_now)
+            ((PlayerWidget*)widget_now)->reFill(fpath);
+        else
+            setMode(ListerMode::Player);
+        cod_img->setChecked(false);
+        cod_img->setDisabled(true);
+        cod_audio->setDisabled(false);
+        cod_audio->setChecked(true);
+        return;
+    }
+
+    if (m_s.startsWith("image")) {
+        if (mode == ListerMode::Image && widget_now)
+            ((ImageWidget*)widget_now)->reFill(fpath);
+        else
+            setMode(ListerMode::Image);
+        cod_audio->setChecked(false);
+        cod_audio->setDisabled(true);
+        cod_img->setDisabled(false);
+        cod_img->setChecked(true);
+        return;
+    }
+
+
+    if (m_s.contains("html") or m_s.contains("xml") or m_s.contains("epub")) {
+        is_xml = true;
+        cod_html->setChecked(true);
+    } else {
+        is_xml = false;
+        cod_only_text->setChecked(true);
+    }
+    if (mode == ListerMode::Text && widget_now)
+        ((TextWidget*)widget_now)->reFill(fpath, is_xml, cod);
+    else
+        setMode(ListerMode::Text);
+
+    cod_img->setDisabled(true);
+    cod_audio->setDisabled(true);
+}
+
 void Lister::Fill()
 {
+    menu_view->setDisabled(false);
     if (QFileInfo(fpath).isDir()) {
         setMode(ListerMode::Dir);
         return;
     }
 
     QFile file(fpath);
-    QMimeDatabase db;
     QMimeType mime = db.mimeTypeForFile(file.fileName());
     QString m_s = mime.name();
 
@@ -108,6 +173,7 @@ void Lister::Fill()
         setMode(ListerMode::Player);
         cod_img->setCheckable(false);
         cod_img->setDisabled(true);
+        cod_audio->setDisabled(false);
         cod_audio->setChecked(true);
         return;
     }
@@ -116,12 +182,12 @@ void Lister::Fill()
         setMode(ListerMode::Image);
         cod_audio->setCheckable(false);
         cod_audio->setDisabled(true);
+        cod_img->setDisabled(false);
         cod_img->setChecked(true);
         return;
     }
 
 
-    setMode(ListerMode::Text);
     if (m_s.contains("html") or m_s.contains("xml") or m_s.contains("epub")) {
         is_xml = true;
         cod_html->setChecked(true);
@@ -130,19 +196,17 @@ void Lister::Fill()
         cod_only_text->setChecked(true);
     }
 
-    cod_img->setCheckable(false);
+    setMode(ListerMode::Text);
     cod_img->setDisabled(true);
-    cod_audio->setCheckable(false);
     cod_audio->setDisabled(true);
 }
 
 void Lister::setMode(ListerMode m)
 {
-    if (mode == m)
+    if (mode == m && widget_now)
         return;
 
     mode = m;
-
     if (widget_now) {
         widget_now->close();
         widget_now = nullptr;
@@ -150,7 +214,7 @@ void Lister::setMode(ListerMode m)
 
     if (m == ListerMode::Text) {
         menu_cod->setDisabled(false);
-        TextWidget *tw = new TextWidget(fpath, appSettings, centralwidget, is_xml, cod);
+        TextWidget *tw = new TextWidget(fpath, appSettings, this, is_xml, cod);
         horizontalLayout->addWidget(tw);
 
         connect(this, SIGNAL(change_xml(bool)), tw, SLOT(change_xml(bool)));
@@ -160,12 +224,12 @@ void Lister::setMode(ListerMode m)
     }
     else if (m == ListerMode::Image) {
         menu_cod->setDisabled(true);
-        ImageWidget *iw = new ImageWidget(fpath, centralwidget);
+        ImageWidget *iw = new ImageWidget(fpath, this);
         horizontalLayout->addWidget(iw);
         widget_now = iw;
     }
     else if (m == ListerMode::Player) {
-        PlayerWidget* player = new PlayerWidget(fpath, appSettings, centralwidget);
+        PlayerWidget* player = new PlayerWidget(fpath, appSettings, this);
         horizontalLayout->addWidget(player);
         setFocusProxy(player);
         menu_cod->setDisabled(true);
@@ -176,7 +240,7 @@ void Lister::setMode(ListerMode m)
         menu_cod->setDisabled(true);
 
         is_th = true;
-        DirWidget *dw = new DirWidget(fpath, appSettings, centralwidget);
+        DirWidget *dw = new DirWidget(fpath, appSettings, this);
         dw->setReadOnly(true);
         horizontalLayout->addWidget(dw);
 
@@ -427,7 +491,7 @@ TextWidget::TextWidget(const QString &_fpath, const AppSettings *appSettings, QW
     plainTextEdit = new QPlainTextEdit(this);
     plainTextEdit->setReadOnly(true);
     plainTextEdit->setWordWrapMode(QTextOption::NoWrap);
-    //plainTextEdit->setFont(*lister_font);
+    plainTextEdit->setFont(*appSettings->lister_font);
     gridLayout->addWidget(plainTextEdit, 1, 0, 1, 6);
 
     verticalSlider = new QSlider(this);
@@ -460,12 +524,12 @@ TextWidget::TextWidget(const QString &_fpath, const AppSettings *appSettings, QW
     pushButton_down->setText("down");
     gridLayout->addWidget(pushButton_down, 2, 5);
 
-    //horizontalLayout->addLayout(gridLayout);
-
     label_all_size->setText("из " + QString::number(ceil((double)f_size/1048576.0)) + " МБ");
     lineEdit_size_now->setText("1");
     verticalSlider->setMinimum(1);
     verticalSlider->setMaximum(ceil((double)f_size/1048576.0));
+    verticalSlider->setSingleStep(1);
+    verticalSlider->setPageStep(1);
 
     connect(verticalSlider, SIGNAL(valueChanged(int)), this, SLOT(verticalSlider_valueChanged(int)));
     connect(lineEdit_size_now, SIGNAL(returnPressed()), this, SLOT(on_lineEdit_size_now_returnPressed()));
@@ -492,10 +556,12 @@ TextWidget::~TextWidget()
     delete file;
 }
 
-void TextWidget::reFill(const QString& _fpath)
+void TextWidget::reFill(const QString& _fpath, bool _is_xml, FCodes _cod)
 {
     plainTextEdit->clear();
     fpath = _fpath;
+    is_xml = _is_xml;
+    cod = _cod;
 
     if (file->isOpen())
         file->close();
@@ -514,7 +580,8 @@ void TextWidget::reFill(const QString& _fpath)
 void TextWidget::Fill()
 {
     if (!file->open(QIODevice::ReadOnly))
-        this->close();
+        return;
+    //this->close();
 
     if (f_size < 1048576) {
         pushButton_up->hide();
@@ -579,7 +646,6 @@ void TextWidget::verticalSlider_valueChanged(int value)
                 plainTextEdit->textCursor().insertHtml(QString::fromLocal8Bit(buf));
             else
                 plainTextEdit->setPlainText(QString::fromLocal8Bit(buf));
-
         }
 
         progress += 1048576;

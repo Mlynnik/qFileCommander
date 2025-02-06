@@ -13,18 +13,20 @@
 #include <QSlider>
 #include <QMenuBar>
 #include <QScrollArea>
+#include <QMimeDatabase>
 
 
 enum ListerMode {NoMode = 0, Text, Image, Player, Dir};
 enum FCodes { UTF8 = 0, Local };
 
-class Lister : public QMainWindow
+class Lister : public QWidget
 {
     Q_OBJECT
 
 public:
     Lister(const QString &_fpath, const AppSettings *_appSettings, QWidget *parent = nullptr);
     ~Lister();
+    void reFill(const QString &_fpath);
 
 signals:
     void closed();
@@ -57,6 +59,7 @@ private:
     const AppSettings *appSettings;
     ListerMode mode = ListerMode::NoMode;
 
+    QMimeDatabase db;
     QMenuBar *menubar;
     QMenu *menu_view;
     QMenu *menu_cod;
@@ -67,8 +70,7 @@ private:
     QAction *cod_utf8;
     QAction *cod_local;
 
-    QWidget *centralwidget = nullptr;
-    QHBoxLayout *horizontalLayout = nullptr;
+    QVBoxLayout *horizontalLayout = nullptr;
     QWidget *widget_now = nullptr;
 
     bool is_th = false;
@@ -142,7 +144,7 @@ signals:
     void stop();
 
 public slots:
-    void reFill(const QString &_fpath);
+    void reFill(const QString &_fpath, bool _is_xml = false, FCodes _cod = FCodes::UTF8);
 
     void change_xml(bool v) { is_xml = v; updateText(); }
     void change_cod(FCodes new_cod) { cod = new_cod; updateText(); }

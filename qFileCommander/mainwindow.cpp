@@ -168,19 +168,22 @@ MainWindow::MainWindow(QWidget *parent)
 
     //верхняя панель
     ui->pushButton_settings->setGeometry(round(w*2), 0, round(w*25), round(h*25));
-    ui->pushButton_hidden_f->setGeometry(round(w*32), 0, round(w*25), round(h*25));
-    ui->pushButton_admin->setGeometry(round(w*62), 0, round(w*25), round(h*25));
-    ui->pushButton_open_in_exp->setGeometry(round(w*92), 0, round(w*25), round(h*25));
-    ui->pushButton_notepad->setGeometry(round(w*122), 0, round(w*25), round(h*25));
-    ui->pushButton_create_file->setGeometry(round(w*152), 0, round(w*25), round(h*25));
-    ui->pushButton_mass_rename->setGeometry(round(w*182), 0, round(w*25), round(h*25));
-    ui->pushButton_find->setGeometry(round(w*212), 0, round(w*25), round(h*25));
+    ui->pushButton_fast_view->setGeometry(round(w*32), 0, round(w*25), round(h*25));
+    ui->pushButton_hidden_f->setGeometry(round(w*62), 0, round(w*25), round(h*25));
+    ui->pushButton_admin->setGeometry(round(w*92), 0, round(w*25), round(h*25));
+    ui->pushButton_open_in_exp->setGeometry(round(w*122), 0, round(w*25), round(h*25));
+    ui->pushButton_notepad->setGeometry(round(w*152), 0, round(w*25), round(h*25));
+    ui->pushButton_create_file->setGeometry(round(w*182), 0, round(w*25), round(h*25));
+    ui->pushButton_mass_rename->setGeometry(round(w*212), 0, round(w*25), round(h*25));
+    ui->pushButton_find->setGeometry(round(w*242), 0, round(w*25), round(h*25));
     ui->line_0->setGeometry(round(w*-5), round(h*25), round(w*1540), round(h*2));
     ui->line_1->setGeometry(round(w*-5), round(h*54), round(w*1540), round(h*2));
     ui->line_2->setGeometry(round(w*-5), round(h*82), round(w*1540), round(h*2));
 
     //иконки кнопок
     ui->pushButton_settings->setIcon(QIcon("settings.png"));
+    ui->pushButton_fast_view->setIcon(QIcon("fastView.png"));
+    ui->pushButton_fast_view->setCheckable(true);
     ui->pushButton_mass_rename->setText("A");
     ui->pushButton_open_in_exp->setIcon(QIcon(style()->standardIcon(QStyle::SP_DialogOpenButton)));
     ui->pushButton_find->setIcon(QIcon(style()->standardIcon(QStyle::SP_FileDialogContentsView)));
@@ -197,6 +200,7 @@ MainWindow::MainWindow(QWidget *parent)
     if (hidden_f)
         ui->pushButton_hidden_f->setChecked(true);
     connect(ui->pushButton_settings, SIGNAL(clicked()), this, SLOT(open_settings()));
+    connect(ui->pushButton_fast_view, SIGNAL(clicked()), this, SLOT(change_fast_view()));
     connect(ui->pushButton_hidden_f, SIGNAL(clicked()), this, SLOT(show_hidden_func()));
 
     //диски
@@ -225,6 +229,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->pushButton_f7->setFocusPolicy(Qt::NoFocus);
     ui->pushButton_f8->setFocusPolicy(Qt::NoFocus);
     ui->pushButton_settings->setFocusPolicy(Qt::NoFocus);
+    ui->pushButton_fast_view->setFocusPolicy(Qt::NoFocus);
     ui->pushButton_hidden_f->setFocusPolicy(Qt::NoFocus);
     ui->pushButton_admin->setFocusPolicy(Qt::NoFocus);
     ui->pushButton_open_in_exp->setFocusPolicy(Qt::NoFocus);
@@ -374,6 +379,8 @@ void MainWindow::resizeEvent(QResizeEvent *event) {
     ui->horizontalLayoutWidget->setGeometry(round(w_now*1), round(h*30), round(w_now*325), round(h*20));
     ui->horizontalLayoutWidget_2->setGeometry(round(w_now*770), round(h*30), round(w_now*325), round(h*20));
 
+    if (view_widget)
+        view_widget->setGeometry(round(w_now*770), round(h*110), round(w_now*765), round(h_now*635 - (h-h_now)*170));
 
     ui->horizontalLayoutWidget_5->setGeometry(round(w_now*1), 0, round(w_now*750), round(h*27));
     ui->line_3->setGeometry(round(w_now*-5), round(h_now*770 - (h-h_now)*35), round(w_now*1540), round(h*2));
@@ -451,6 +458,9 @@ void MainWindow::closeEvent(QCloseEvent *event)
         l->close();
 
     find_wid->close_wid();
+
+    if (view_widget)
+        view_widget->close();
 
     event->accept();
 }
@@ -608,15 +618,74 @@ void MainWindow::remove_favourite(bool l)
 void MainWindow::change_w_col_l(int logicalIndex, int oldSize, int newSize)
 {
     w_col_l[logicalIndex] = trunc(newSize/w_now);
-    w_col_l[3] = 765 - w_col_l[0] - w_col_l[1] - w_col_l[2];
+    w_col_l[3] = 760 - w_col_l[0] - w_col_l[1] - w_col_l[2];
     treeWidget_l->header()->resizeSection(3, round(w_now*w_col_l[3]));
 }
 
 void MainWindow::change_w_col_r(int logicalIndex, int oldSize, int newSize)
 {
     w_col_r[logicalIndex] = trunc(newSize/w_now);
-    w_col_r[3] = 765 - w_col_r[0] - w_col_r[1] - w_col_r[2];
+    w_col_r[3] = 760 - w_col_r[0] - w_col_r[1] - w_col_r[2];
     treeWidget_r->header()->resizeSection(3, round(w_now*w_col_r[3]));
+}
+
+void MainWindow::change_fast_view()
+{
+    if (ui->pushButton_fast_view->isChecked()) {
+        is_fast_view = true;
+        treeWidget_r->hide();
+        ui->inf_dir_r->hide();
+        ui->path_r->setReadOnly(true);
+        ui->toolButton_favourites_r->setDisabled(true);
+
+        QString fpath;
+        if (treeWidget_l->currentItem())
+            fpath = treeWidget_l->currentItem()->data(0, Qt::UserRole).toString();
+
+        if (fpath == "")
+            fpath = last_path_l;
+
+        view_widget = new Lister(fpath, appSettings, this);
+        ui->path_r->setText(fpath.split("/").last());
+        view_widget->show();
+        view_widget->setFocusPolicy(Qt::StrongFocus);
+        connect(view_widget, &Lister::closed, this, [this]() {if (ui->pushButton_fast_view->isChecked()) ui->pushButton_fast_view->click();});
+        connect(treeWidget_l, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)), this, SLOT(reDrawFastView(QTreeWidgetItem*,QTreeWidgetItem*)));
+    } else {
+        disconnect(treeWidget_l, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)), this, SLOT(reDrawFastView(QTreeWidgetItem*,QTreeWidgetItem*)));
+        if (view_widget) {
+            view_widget->close();
+        }
+        view_widget = nullptr;
+
+        is_fast_view = false;
+        treeWidget_r->show();
+        ui->inf_dir_r->show();
+        ui->path_r->setReadOnly(false);
+        ui->toolButton_favourites_r->setDisabled(false);
+
+        ui->path_r->setText(last_path_r);
+        on_path_r_returnPressed();
+    }
+
+    resizeEvent(nullptr);
+}
+
+void MainWindow::reDrawFastView(QTreeWidgetItem *current, QTreeWidgetItem *)
+{
+    if (!current)
+        return;
+
+    QString fpath = current->data(0, Qt::UserRole).toString();
+    if (fpath == "")
+        fpath = last_path_l;
+    QString fname = fpath.split("/").last();
+    if (fname == ui->path_r->text())
+        return;
+
+    ui->path_r->setText(fname);
+    view_widget->reFill(fpath);
+    view_widget->setFocusPolicy(Qt::StrongFocus);
 }
 
 //вызвает окно ошибки с переданным текстом
@@ -917,6 +986,8 @@ void MainWindow::on_path_l_returnPressed()
 //изменение правого пути
 void MainWindow::on_path_r_returnPressed()
 {
+    if (is_fast_view)
+        return;
     if (ui->path_r->text().isEmpty()) {
         ui->path_r->setText(last_path_r);
         on_path_r_returnPressed();
@@ -1414,12 +1485,16 @@ void MainWindow::f5_f6_func(bool remove_after)
 
 //копирование
 void MainWindow::on_pushButton_f5_clicked() {
+    if (is_fast_view)
+        return;
     f5_f6_func(false);
 }
 
 //перемещение
 void MainWindow::on_pushButton_f6_clicked()
 {
+    if (is_fast_view)
+        return;
     f5_f6_func(true);
 }
 

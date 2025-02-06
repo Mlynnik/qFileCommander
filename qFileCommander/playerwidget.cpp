@@ -20,18 +20,11 @@ PlayerWidget::PlayerWidget(const QString& _fpath, const AppSettings *appSettings
     setMinimumWidth(round(w*500));
     setMinimumHeight(round(h*60));
     setMaximumHeight(round(h*120));
-    if (parent) {
+    if (parent && parent->isWindow()) {
         parent->setMinimumWidth(round(w*500));
         parent->setMinimumHeight(round(h*60));
         parent->setMaximumHeight(round(h*120));
-        parent->resize(round(w*500), round(h*60));
-        QWidget *p = parent->parentWidget();
-        if (p != nullptr) {
-            p->setMinimumWidth(round(w*500));
-            p->setMinimumHeight(round(h*80));
-            p->setMaximumHeight(round(h*120));
-            p->resize(round(w*510), round(h*100));
-        }
+        parent->resize(round(w*500), round(h*80));
     }
 
     player = new QMediaPlayer(this);
@@ -120,16 +113,23 @@ PlayerWidget::PlayerWidget(const QString& _fpath, const AppSettings *appSettings
 
 PlayerWidget::~PlayerWidget()
 {
-    if (parentWidget()) {
+    if (parentWidget() && parentWidget()->isWindow()) {
         parentWidget()->setMinimumSize(0, 0);
         parentWidget()->setMaximumSize(16777215, 16777215);
         parentWidget()->resize(round(w*800), round(h*600));
-        QWidget *p = parentWidget()->parentWidget();
-        if (p != nullptr) {
-            p->setMinimumSize(0, 0);
-            p->setMaximumSize(16777215, 16777215);
-            p->resize(round(w*800), round(h*600));
-        }
+        parentWidget()->setWindowState(parentWidget()->windowState() & ~(Qt::WindowMinimized
+                                                         | Qt::WindowMaximized
+                                                         | Qt::WindowFullScreen));
+    }
+}
+
+void PlayerWidget::reFill(const QString &_fpath)
+{
+    if (QFile(_fpath).exists()) {
+        fpath = _fpath;
+        player->stop();
+        player->setSource(QUrl::fromLocalFile(fpath));
+        play_clicked();
     }
 }
 

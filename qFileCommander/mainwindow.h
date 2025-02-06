@@ -48,11 +48,17 @@ private:
     //левое дерево
     TreeFilesWidget *treeWidget_l;
     //ширина колонок левого дерева
-    int w_col_l[4] {425, 75, 140, 125};
+    int w_col_l[4] {415, 75, 140, 130};
     //правое дерево
     TreeFilesWidget *treeWidget_r;
     //ширина колонок правого дерева
-    int w_col_r[4] {425, 75, 140, 125};
+    int w_col_r[4] {415, 75, 140, 130};
+
+    //виджет быстрого просмотра
+    Lister *view_widget = nullptr;
+    //активирован режим быстрого просмотра
+    bool is_fast_view = false;
+    QMimeDatabase db;
 
     QFileIconProvider ic_pr;
 
@@ -165,6 +171,11 @@ private slots:
     void change_w_col_l(int logicalIndex, int oldSize, int newSize);
     //изменилась геометрия правого заголовка
     void change_w_col_r(int logicalIndex, int oldSize, int newSize);
+
+    //изменение режима (бастрый просмотр на правой панели)
+    void change_fast_view();
+    //перерисовка виджета быстрого просмотра
+    void reDrawFastView(QTreeWidgetItem *current,QTreeWidgetItem*);
 
     //вызвает окно ошибки с переданным текстом
     void v_error(QString str_error);
