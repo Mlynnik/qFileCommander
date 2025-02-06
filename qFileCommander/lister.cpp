@@ -1,79 +1,44 @@
 #include "lister.h"
+#include "playerwidget.h"
 #include <QScrollBar>
-#include <QMimeDatabase>
+#include <QFileInfo>
+#include <QDir>
+#include <QDirIterator>
 #include <QImageReader>
 
-Lister::Lister(const QString& _f_name, QWidget *parent)
-    : QMainWindow(parent)
+Lister::Lister(const QString& _fpath, const AppSettings *_appSettings, QWidget *parent)
+    : QWidget(parent)
 {
+    setWindowModality(Qt::NonModal);
     setAttribute(Qt::WA_DeleteOnClose);
-    if (!QFile(_f_name).exists())
-        this->close();
 
-    f_name = _f_name;
-    Lister::setWindowTitle("Lister - [" + f_name + "]");
-    Lister::resize(800, 600);
-    centralwidget = new QWidget(this);
-    horizontalLayout = new QHBoxLayout(centralwidget);
-    gridLayout = new QGridLayout();
+    appSettings = _appSettings;
+    fpath = _fpath;
 
-    label_image = new QLabel(centralwidget);
+    setWindowTitle("Lister - [" + fpath + "]");
+    setWindowIcon(QIcon("appIcon.png"));
+    resize(round(appSettings->w*800), round(appSettings->h*600));
+    setFont(*appSettings->main_font);
 
-    image_area = new QScrollArea(centralwidget);
-    image_area->setWidget(label_image);
-    gridLayout->addWidget(image_area, 0, 0, 1, 7);
-    image_area->hide();
+    horizontalLayout = new QVBoxLayout(this);
+    horizontalLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    horizontalLayout->setContentsMargins(0, 0, 0, 0);
 
-    plainTextEdit = new QPlainTextEdit(centralwidget);
-    plainTextEdit->setReadOnly(true);
-    plainTextEdit->setWordWrapMode(QTextOption::NoWrap);
-    gridLayout->addWidget(plainTextEdit, 1, 0, 1, 6);
-
-    verticalSlider = new QSlider(centralwidget);
-    verticalSlider->setOrientation(Qt::Vertical);
-    verticalSlider->setInvertedAppearance(true);
-    verticalSlider->setInvertedControls(true);
-    gridLayout->addWidget(verticalSlider, 1, 6);
-
-    pushButton_up = new QPushButton(centralwidget);
-    pushButton_up->setMaximumWidth(60);
-    pushButton_up->setText("up");
-    gridLayout->addWidget(pushButton_up, 2, 0);
-
-    horizontalSpacer = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
-    gridLayout->addItem(horizontalSpacer, 2, 1);
-
-    lineEdit_size_now = new QLineEdit(centralwidget);
-    lineEdit_size_now->setMaximumWidth(200);
-    gridLayout->addWidget(lineEdit_size_now, 2, 2);
-
-    label_all_size = new QLabel(centralwidget);
-    label_all_size->setMaximumWidth(300);
-    gridLayout->addWidget(label_all_size, 2, 3);
-
-    horizontalSpacer_2 = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
-    gridLayout->addItem(horizontalSpacer_2, 2, 4);
-
-    pushButton_down = new QPushButton(centralwidget);
-    pushButton_down->setMaximumWidth(60);
-    pushButton_down->setText("down");
-    gridLayout->addWidget(pushButton_down, 2, 5);
-
-    horizontalLayout->addLayout(gridLayout);
-
-    Lister::setCentralWidget(centralwidget);
     menubar = new QMenuBar(this);
-    menubar->setGeometry(QRect(0, 0, 800, 25));
-    Lister::setMenuBar(menubar);
+    //menubar->setGeometry(0, 0, round(appSettings->w*200), round(appSettings->h*25));
+    menubar->setMaximumHeight(round(appSettings->h*25));
+    horizontalLayout->addWidget(menubar);
 
     cod_only_text = new QAction("Только текст", this);
     cod_html = new QAction("HTML (без показа тэгов)", this);
     cod_img = new QAction("Графика", this);
+    cod_audio = new QAction("Аудио", this);
     cod_utf8 = new QAction("UTF-8", this);
     cod_local = new QAction("Local", this);
     cod_only_text->setCheckable(true);
     cod_html->setCheckable(true);
     cod_img->setCheckable(true);
+    cod_audio->setCheckable(true);
     cod_utf8->setCheckable(true);
     cod_local->setCheckable(true);
 
@@ -82,6 +47,7 @@ Lister::Lister(const QString& _f_name, QWidget *parent)
     menu_view->addAction(cod_only_text);
     menu_view->addAction(cod_html);
     menu_view->addAction(cod_img);
+    menu_view->addAction(cod_audio);
 
     menu_cod = new QMenu(menubar);
     menu_cod->setTitle("Кодировка");
@@ -89,37 +55,23 @@ Lister::Lister(const QString& _f_name, QWidget *parent)
     menu_cod->addAction(cod_local);
     cod_utf8->setChecked(true);
 
-
     menubar->addAction(menu_view->menuAction());
     menubar->addAction(menu_cod->menuAction());
 
     connect(cod_only_text, SIGNAL(triggered()), this, SLOT(f3_cod_only_text()));
     connect(cod_html, SIGNAL(triggered()), this, SLOT(f3_cod_html()));
     connect(cod_img, SIGNAL(triggered()), this, SLOT(f3_cod_img()));
+    connect(cod_audio, SIGNAL(triggered()), this, SLOT(f3_cod_audio()));
     connect(cod_utf8, SIGNAL(triggered()), this, SLOT(f3_cod_utf8()));
     connect(cod_local, SIGNAL(triggered()), this, SLOT(f3_cod_local()));
 
-
-    file = new QFile(f_name);
-    f_size = file->size();
-
-    label_all_size->setText("из " + QString::number(ceil((double)f_size/1048576.0)) + " МБ");
-    lineEdit_size_now->setText("1");
-    verticalSlider->setMinimum(1);
-    verticalSlider->setMaximum(ceil((double)f_size/1048576.0));
-    connect(verticalSlider, SIGNAL(valueChanged(int)), this, SLOT(verticalSlider_valueChanged(int)));
-    connect(lineEdit_size_now, SIGNAL(returnPressed()), this, SLOT(on_lineEdit_size_now_returnPressed()));
-    connect(pushButton_up, SIGNAL(clicked()), this, SLOT(on_pushButton_up_clicked()));
-    connect(pushButton_down, SIGNAL(clicked()), this, SLOT(on_pushButton_down_clicked()));
-
-    Fill();
+    if (QFile(_fpath).exists())
+        Fill();
 }
 
 Lister::~Lister()
 {
-    if (file->isOpen())
-        file->close();
-    delete file;
+    emit closed();
 }
 
 void Lister::keyPressEvent(QKeyEvent *event)
@@ -128,102 +80,581 @@ void Lister::keyPressEvent(QKeyEvent *event)
         this->close();
 }
 
-void Lister::Fill()
+void Lister::closeEvent(QCloseEvent *event)
 {
-    QMimeDatabase db;
-    QMimeType mime = db.mimeTypeForFile(file->fileName());
+    event->ignore();
+    if (is_th)
+        emit stop();
+    else
+        event->accept();
+}
+
+void Lister::reFill(const QString &_fpath)
+{
+    if (!QFile(_fpath).exists())
+        return;
+
+    fpath = _fpath;
+    cod_img->setChecked(false);
+    cod_only_text->setChecked(false);
+    cod_html->setChecked(false);
+    cod_audio->setChecked(false);
+    cod_img->setCheckable(true);
+    cod_img->setDisabled(false);
+    cod_audio->setCheckable(true);
+    cod_audio->setDisabled(false);
+
+    if (QFileInfo(fpath).isDir()) {
+        if (mode == ListerMode::Dir && widget_now)
+            ((DirWidget*)widget_now)->reFill(fpath);
+        else
+            setMode(ListerMode::Dir);
+        return;
+    }
+
+    menu_view->setDisabled(false);
+    QMimeType mime = db.mimeTypeForFile(fpath);
     QString m_s = mime.name();
 
-    if (m_s.contains("image")) {
-        f_type = 'i';
-        f_type_now = 'i';
-        cod_img->setChecked(true);
-        plainTextEdit->hide();
-        pushButton_up->hide();
-        pushButton_down->hide();
-        lineEdit_size_now->hide();
-        label_all_size->hide();
-        verticalSlider->hide();
-        image_area->show();
-
-        QImage image = QImageReader(f_name).read();
-        image = image.scaled(image.size(), Qt::KeepAspectRatio);
-
-        label_image->setFixedSize(image.size());
-        label_image->setPixmap(QPixmap::fromImage(image));
+    if (m_s.startsWith("audio")) {
+        if (mode == ListerMode::Player && widget_now)
+            ((PlayerWidget*)widget_now)->reFill(fpath);
+        else
+            setMode(ListerMode::Player);
+        cod_img->setChecked(false);
+        cod_img->setDisabled(true);
+        cod_audio->setDisabled(false);
+        cod_audio->setChecked(true);
         return;
-    } else if (m_s.contains("html") or m_s.contains("xml") or m_s.contains("epub")) {
-        f_type = 'x';
-        f_type_now = 'x';
+    }
+
+    if (m_s.startsWith("image")) {
+        if (mode == ListerMode::Image && widget_now)
+            ((ImageWidget*)widget_now)->reFill(fpath);
+        else
+            setMode(ListerMode::Image);
+        cod_audio->setChecked(false);
+        cod_audio->setDisabled(true);
+        cod_img->setDisabled(false);
+        cod_img->setChecked(true);
+        return;
+    }
+
+
+    if (m_s.contains("html") or m_s.contains("xml") or m_s.contains("epub")) {
+        is_xml = true;
         cod_html->setChecked(true);
     } else {
-        f_type = 't';
-        f_type_now = 't';
+        is_xml = false;
+        cod_only_text->setChecked(true);
+    }
+    if (mode == ListerMode::Text && widget_now)
+        ((TextWidget*)widget_now)->reFill(fpath, is_xml, cod);
+    else
+        setMode(ListerMode::Text);
+
+    cod_img->setDisabled(true);
+    cod_audio->setDisabled(true);
+}
+
+void Lister::Fill()
+{
+    menu_view->setDisabled(false);
+    if (QFileInfo(fpath).isDir()) {
+        setMode(ListerMode::Dir);
+        return;
+    }
+
+    QFile file(fpath);
+    QMimeType mime = db.mimeTypeForFile(file.fileName());
+    QString m_s = mime.name();
+
+    if (m_s.startsWith("audio")) {
+        setMode(ListerMode::Player);
+        cod_img->setCheckable(false);
+        cod_img->setDisabled(true);
+        cod_audio->setDisabled(false);
+        cod_audio->setChecked(true);
+        return;
+    }
+
+    if (m_s.startsWith("image")) {
+        setMode(ListerMode::Image);
+        cod_audio->setCheckable(false);
+        cod_audio->setDisabled(true);
+        cod_img->setDisabled(false);
+        cod_img->setChecked(true);
+        return;
+    }
+
+
+    if (m_s.contains("html") or m_s.contains("xml") or m_s.contains("epub")) {
+        is_xml = true;
+        cod_html->setChecked(true);
+    } else {
+        is_xml = false;
         cod_only_text->setChecked(true);
     }
 
-    cod_img->setCheckable(false);
-    cod_img->setEnabled(false);
+    setMode(ListerMode::Text);
+    cod_img->setDisabled(true);
+    cod_audio->setDisabled(true);
+}
 
+void Lister::setMode(ListerMode m)
+{
+    if (mode == m && widget_now)
+        return;
 
-    if (!file->open(QIODevice::ReadOnly))
-        this->close();
+    mode = m;
+    if (widget_now) {
+        widget_now->close();
+        widget_now = nullptr;
+    }
 
-    if (f_size < 10485760) {
-        pushButton_up->hide();
-        pushButton_down->hide();
-        lineEdit_size_now->hide();
-        label_all_size->hide();
-        verticalSlider->hide();
+    if (m == ListerMode::Text) {
+        menu_cod->setDisabled(false);
+        TextWidget *tw = new TextWidget(fpath, appSettings, this, is_xml, cod);
+        horizontalLayout->addWidget(tw);
 
-        if (f_type == 'x')
-            plainTextEdit->textCursor().insertHtml(file->readAll());
-        else
-            plainTextEdit->setPlainText(file->readAll());
-    } else {
-        verticalSlider_valueChanged(1);
+        connect(this, SIGNAL(change_xml(bool)), tw, SLOT(change_xml(bool)));
+        connect(this, SIGNAL(change_cod(FCodes)), tw, SLOT(change_cod(FCodes)));
+        connect(tw, SIGNAL(stop()), this, SLOT(close()));
+        widget_now = tw;
+    }
+    else if (m == ListerMode::Image) {
+        menu_cod->setDisabled(true);
+        ImageWidget *iw = new ImageWidget(fpath, this);
+        horizontalLayout->addWidget(iw);
+        widget_now = iw;
+    }
+    else if (m == ListerMode::Player) {
+        PlayerWidget* player = new PlayerWidget(fpath, appSettings, this);
+        horizontalLayout->addWidget(player);
+        setFocusProxy(player);
+        menu_cod->setDisabled(true);
+        widget_now = player;
+    }
+    else if (m == ListerMode::Dir) {
+        menu_view->setDisabled(true);
+        menu_cod->setDisabled(true);
+
+        is_th = true;
+        DirWidget *dw = new DirWidget(fpath, appSettings, this);
+        dw->setReadOnly(true);
+        horizontalLayout->addWidget(dw);
+
+        connect(this, SIGNAL(closed()), dw, SLOT(close()), Qt::DirectConnection);
+        connect(dw, SIGNAL(th_finished()), this, SLOT(th_finished()));
+        connect(this, SIGNAL(stop()), dw, SLOT(close()), Qt::DirectConnection);
+        connect(dw, SIGNAL(parent_close()), this, SLOT(set_close()));
+        widget_now = dw;
     }
 }
 
 
-void Lister::on_pushButton_up_clicked()
+void Lister::f3_cod_only_text()
+{
+    cod_only_text->setChecked(true);
+
+    if (mode == ListerMode::Text) {
+        if (is_xml) {
+            is_xml = false;
+            cod_html->setChecked(false);
+            emit change_xml(false);
+        }
+        return;
+    }
+
+    cod_html->setChecked(false);
+    cod_img->setChecked(false);
+    cod_audio->setChecked(false);
+
+    is_xml = false;
+    setMode(ListerMode::Text);
+}
+
+void Lister::f3_cod_html()
+{
+    cod_html->setChecked(true);
+
+    if (mode == ListerMode::Text) {
+        if (!is_xml) {
+            is_xml = true;
+            cod_only_text->setChecked(false);
+            emit change_xml(true);
+        }
+        return;
+    }
+
+    cod_only_text->setChecked(false);
+    cod_img->setChecked(false);
+    cod_audio->setChecked(false);
+
+    is_xml = true;
+    setMode(ListerMode::Text);
+}
+
+void Lister::f3_cod_img()
+{
+    cod_img->setChecked(true);
+    if (mode == ListerMode::Image)
+        return;
+
+    cod_only_text->setChecked(false);
+    cod_html->setChecked(false);
+    cod_audio->setChecked(false);
+
+    setMode(ListerMode::Image);
+}
+
+void Lister::f3_cod_audio()
+{
+    cod_audio->setChecked(true);
+    if (mode == ListerMode::Player)
+        return;
+
+    cod_only_text->setChecked(false);
+    cod_html->setChecked(false);
+    cod_img->setChecked(false);
+
+    setMode(ListerMode::Player);
+}
+
+void Lister::f3_cod_utf8()
+{
+    cod_utf8->setChecked(true);
+    if (cod == FCodes::UTF8)
+        return;
+
+    cod_local->setChecked(false);
+
+    cod = FCodes::UTF8;
+    emit change_cod(cod);
+}
+
+void Lister::f3_cod_local()
+{
+    cod_local->setChecked(true);
+    if (cod == FCodes::Local)
+        return;
+
+    cod_utf8->setChecked(false);
+
+    cod = FCodes::Local;
+    emit change_cod(cod);
+}
+
+
+QString reformat_size(QString str)
+{
+    int x = str.length() - 3;
+    while(x > 0) {str.insert(x, QString(" ")); x -= 3;}
+    return str;
+}
+
+QString reformat_size_2(double num_0)
+{
+    QString str1;
+    if (num_0 >= 1000) {
+        num_0 = round(num_0 / 10.24) / 100;
+        str1 = QString::number(num_0) + " КБ";
+        if (num_0 >= 1000) {
+            num_0 = round(num_0 / 10.24) / 100;
+            str1 = QString::number(num_0) + " MБ";
+            if (num_0 >= 1000) {
+                num_0 = round(num_0 / 10.24) / 100;
+                str1 = QString::number(num_0) + " ГБ";
+                if (num_0 >= 1000) {
+                    num_0 = round(num_0 / 10.24) / 100;
+                    str1 = QString::number(num_0) + " ТБ";
+                }
+            }
+        }
+    } else
+        str1 = QString::number(num_0) + " Б";
+    return str1;
+}
+
+
+//DirWidget
+DirWidget::DirWidget(const QString &_fpath, const AppSettings *appSettings, QWidget *parent) : QPlainTextEdit(parent)
+{
+    setAttribute(Qt::WA_DeleteOnClose);
+    fpath = _fpath;
+    setFont(*appSettings->lister_font);
+    Fill();
+}
+
+void DirWidget::closeEvent(QCloseEvent *event)
+{
+    event->ignore();
+    if (th)
+        emit stop();
+    else
+        event->accept();
+}
+
+void DirWidget::Fill()
+{
+    setPlainText(fpath);
+    is_reFill = false;
+    DirPropProcess *dpp = new DirPropProcess(fpath);
+    th = new QThread(this);
+
+    connect(th, SIGNAL(started()), dpp, SLOT(Work()));
+    connect(dpp, SIGNAL(setInfo(qlonglong,qlonglong,qlonglong)), this, SLOT(setDirInfo(qlonglong,qlonglong,qlonglong)));
+    connect(this, SIGNAL(stop()), dpp, SLOT(stop()), Qt::DirectConnection);
+    connect(dpp, SIGNAL(break_proc()), this, SLOT(break_proc()));
+
+    dpp->moveToThread(th);
+    th->start();
+}
+
+void DirWidget::reFill(const QString &_fpath)
+{
+    if (th) {
+        is_reFill = true;
+        emit stop();
+    }
+
+    fpath = _fpath;
+    clear();
+    Fill();
+}
+
+void DirWidget::setDirInfo(long long all_size, long long dcnt, long long fcnt)
+{
+    if (th) {
+        th->wait();
+        delete th;
+        th = nullptr;
+    }
+    if (is_reFill) {
+        is_reFill = false;
+        is_break = false;
+    }
+    if (is_break)
+        emit parent_close();
+    emit th_finished();
+    if (is_break) {
+        this->close();
+        return;
+    }
+
+    appendPlainText("\nВсего файлов:     " % reformat_size(QString::number(fcnt)) % ",\nкаталогов:     "
+                    % reformat_size(QString::number(dcnt)) % "\n\nОбщий размер:     "
+                    % reformat_size(QString::number(all_size)) % " Б (" % reformat_size_2(all_size) % ")");
+}
+
+
+DirPropProcess::DirPropProcess(const QString &_fpath) : fpath(_fpath){}
+
+void DirPropProcess::Work()
+{
+    if (QDir().exists(fpath)) {
+        QDirIterator it(fpath, QDir::Dirs | QDir::Files | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+        while (it.hasNext()) {
+            if (is_stop)
+                break;
+            it.next();
+            if (it.fileInfo().isDir()) {
+                ++dcnt;
+            } else if (it.fileInfo().isFile()) {
+                ++fcnt;
+                all_size += it.fileInfo().size();
+            }
+        }
+    }
+    if (is_stop)
+        emit break_proc();
+    emit setInfo(all_size, dcnt, fcnt);
+
+    this->deleteLater();
+    this->thread()->exit();
+}
+
+
+//TextWidget
+TextWidget::TextWidget(const QString &_fpath, const AppSettings *appSettings, QWidget *parent, bool _is_xml, FCodes _cod) : QWidget(parent)
+{
+    setAttribute(Qt::WA_DeleteOnClose);
+    file = new QFile(_fpath);
+
+    fpath = _fpath;
+    is_xml = _is_xml;
+    cod = _cod;
+    f_size = file->size();
+
+    gridLayout = new QGridLayout(this);
+
+    plainTextEdit = new QPlainTextEdit(this);
+    plainTextEdit->setReadOnly(true);
+    plainTextEdit->setWordWrapMode(QTextOption::NoWrap);
+    plainTextEdit->setFont(*appSettings->lister_font);
+    gridLayout->addWidget(plainTextEdit, 1, 0, 1, 6);
+
+    verticalSlider = new QSlider(this);
+    verticalSlider->setOrientation(Qt::Vertical);
+    verticalSlider->setInvertedAppearance(true);
+    verticalSlider->setInvertedControls(true);
+    gridLayout->addWidget(verticalSlider, 1, 6);
+
+    pushButton_up = new QPushButton(this);
+    pushButton_up->setMaximumWidth(60);
+    pushButton_up->setText("up");
+    gridLayout->addWidget(pushButton_up, 2, 0);
+
+    horizontalSpacer = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    gridLayout->addItem(horizontalSpacer, 2, 1);
+
+    lineEdit_size_now = new QLineEdit(this);
+    lineEdit_size_now->setMaximumWidth(200);
+    gridLayout->addWidget(lineEdit_size_now, 2, 2);
+
+    label_all_size = new QLabel(this);
+    label_all_size->setMaximumWidth(300);
+    gridLayout->addWidget(label_all_size, 2, 3);
+
+    horizontalSpacer_2 = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    gridLayout->addItem(horizontalSpacer_2, 2, 4);
+
+    pushButton_down = new QPushButton(this);
+    pushButton_down->setMaximumWidth(60);
+    pushButton_down->setText("down");
+    gridLayout->addWidget(pushButton_down, 2, 5);
+
+    label_all_size->setText("из " + QString::number(ceil((double)f_size/1048576.0)) + " МБ");
+    lineEdit_size_now->setText("1");
+    verticalSlider->setMinimum(1);
+    verticalSlider->setMaximum(ceil((double)f_size/1048576.0));
+    verticalSlider->setSingleStep(1);
+    verticalSlider->setPageStep(1);
+
+    connect(verticalSlider, SIGNAL(valueChanged(int)), this, SLOT(verticalSlider_valueChanged(int)));
+    connect(lineEdit_size_now, SIGNAL(returnPressed()), this, SLOT(on_lineEdit_size_now_returnPressed()));
+    connect(pushButton_up, SIGNAL(clicked()), this, SLOT(on_pushButton_up_clicked()));
+    connect(pushButton_down, SIGNAL(clicked()), this, SLOT(on_pushButton_down_clicked()));
+
+    setFont(*appSettings->main_font);
+    plainTextEdit->setFont(*appSettings->lister_font);
+
+
+    if (file->exists()) {
+        Fill();
+    } else {
+        close();
+        if (parentWidget())
+            parentWidget()->close();
+    }
+}
+
+TextWidget::~TextWidget()
+{
+    if (file->isOpen())
+        file->close();
+    delete file;
+}
+
+void TextWidget::reFill(const QString& _fpath, bool _is_xml, FCodes _cod)
+{
+    plainTextEdit->clear();
+    fpath = _fpath;
+    is_xml = _is_xml;
+    cod = _cod;
+
+    if (file->isOpen())
+        file->close();
+    delete file;
+
+    file = new QFile(fpath);
+    if (!file->exists()) {
+        close();
+        if (parentWidget())
+            parentWidget()->close();
+    }
+
+    Fill();
+}
+
+void TextWidget::Fill()
+{
+    if (!file->open(QIODevice::ReadOnly))
+        return;
+    //this->close();
+
+    if (f_size < 1048576) {
+        pushButton_up->hide();
+        pushButton_down->hide();
+        lineEdit_size_now->hide();
+        label_all_size->hide();
+        verticalSlider->hide();
+    } else {
+        pushButton_up->show();
+        pushButton_down->show();
+        lineEdit_size_now->show();
+        label_all_size->show();
+        verticalSlider->show();
+    }
+    updateText();
+}
+
+void TextWidget::updateText()
+{
+    if (f_size < 1048576) {
+        plainTextEdit->clear();
+        file->seek(0);
+        if (cod == FCodes::UTF8) {
+            if (is_xml)
+                plainTextEdit->textCursor().insertHtml(file->readAll());
+            else
+                plainTextEdit->setPlainText(file->readAll());
+        } else if (cod == FCodes::Local) {
+            if (is_xml)
+                plainTextEdit->textCursor().insertHtml(QString::fromLocal8Bit(file->readAll()));
+            else
+                plainTextEdit->setPlainText(QString::fromLocal8Bit(file->readAll()));
+        }
+    } else
+        verticalSlider_valueChanged(verticalSlider->value());
+}
+
+void TextWidget::on_pushButton_up_clicked()
 {
     verticalSlider->setValue(verticalSlider->value() - 1);
 }
 
-
-void Lister::on_pushButton_down_clicked()
+void TextWidget::on_pushButton_down_clicked()
 {
     verticalSlider->setValue(verticalSlider->value() + 1);
 }
 
-
-void Lister::verticalSlider_valueChanged(int value)
+void TextWidget::verticalSlider_valueChanged(int value)
 {
     lineEdit_size_now->setText(QString::number(value));
     file->seek((value-1)*1048576);
 
-    plainTextEdit->clear();
     if (!(buf = file->read(1048576)).isEmpty()) {
-        if (f_type_now == 't') {
-            if (f_cod == '8')
-                plainTextEdit->setPlainText(buf);
-            else
-                plainTextEdit->setPlainText(QString::fromLocal8Bit(buf));
-        } else {
-            if (f_cod == '8')
+        plainTextEdit->clear();
+        if (cod == FCodes::UTF8) {
+            if (is_xml)
                 plainTextEdit->textCursor().insertHtml(buf);
             else
+                plainTextEdit->setPlainText(buf);
+        } else if (cod == FCodes::Local) {
+            if (is_xml)
                 plainTextEdit->textCursor().insertHtml(QString::fromLocal8Bit(buf));
+            else
+                plainTextEdit->setPlainText(QString::fromLocal8Bit(buf));
         }
-        progres += 1048576;
-        if (progres > f_size)
-            progres = f_size;
+
+        progress += 1048576;
+        if (progress > f_size)
+            progress = f_size;
     }
 }
 
-
-void Lister::on_lineEdit_size_now_returnPressed()
+void TextWidget::on_lineEdit_size_now_returnPressed()
 {
     bool ok;
     int now_s = lineEdit_size_now->text().toInt(&ok);
@@ -232,164 +663,31 @@ void Lister::on_lineEdit_size_now_returnPressed()
     }
 }
 
-void Lister::f3_cod_only_text()
+
+//ImageWidget
+ImageWidget::ImageWidget(const QString &_fpath, QWidget *parent)
 {
-    cod_only_text->setChecked(true);
-    cod_html->setChecked(false);
-    cod_img->setChecked(false);
-    if (label_image->isVisible()) {
-        f_type_now = 't';
-        image_area->hide();
-        plainTextEdit->clear();
-        plainTextEdit->show();
-        if (!file->isOpen()) {
-            if (!file->open(QIODevice::ReadOnly))
-                this->close();
-        }
-        if (f_size < 10485760) {
-            file->seek(0);
-            if (f_cod == '8')
-                plainTextEdit->setPlainText(file->readAll());
-            else
-                plainTextEdit->setPlainText(QString::fromLocal8Bit(file->readAll()));
-        } else {
-            pushButton_up->show();
-            pushButton_down->show();
-            lineEdit_size_now->show();
-            label_all_size->show();
-            verticalSlider->show();
-            verticalSlider_valueChanged(verticalSlider->value());
-        }
-    } else if (f_type_now == 'x') {
-        f_type_now = 't';
-        plainTextEdit->clear();
-        if (!file->isOpen()) {
-            if (!file->open(QIODevice::ReadOnly))
-                this->close();
-        }
-        if (f_size < 10485760) {
-            file->seek(0);
-            if (f_cod == '8')
-                plainTextEdit->setPlainText(file->readAll());
-            else
-                plainTextEdit->setPlainText(QString::fromLocal8Bit(file->readAll()));
-        } else {
-            pushButton_up->show();
-            pushButton_down->show();
-            lineEdit_size_now->show();
-            label_all_size->show();
-            verticalSlider->show();
-            verticalSlider_valueChanged(verticalSlider->value());
-        }
-    }
+    setAttribute(Qt::WA_DeleteOnClose);
+    fpath = _fpath;
+    label_image = new QLabel(this);
+    setWidget(label_image);
+    Fill();
 }
 
-void Lister::f3_cod_html()
+void ImageWidget::reFill(const QString &_fpath)
 {
-    cod_only_text->setChecked(false);
-    cod_html->setChecked(true);
-    cod_img->setChecked(false);
-
-    if (label_image->isVisible()) {
-        f_type_now = 'x';
-        image_area->hide();
-        plainTextEdit->clear();
-        plainTextEdit->show();
-        if (!file->isOpen()) {
-            if (!file->open(QIODevice::ReadOnly))
-                this->close();
-        }
-        if (f_size < 10485760) {
-            file->seek(0);
-            if (f_cod == '8')
-                plainTextEdit->textCursor().insertHtml(file->readAll());
-            else
-                plainTextEdit->textCursor().insertHtml(QString::fromLocal8Bit(file->readAll()));
-        } else {
-            pushButton_up->show();
-            pushButton_down->show();
-            lineEdit_size_now->show();
-            label_all_size->show();
-            verticalSlider->show();
-            verticalSlider_valueChanged(verticalSlider->value());
-        }
-    } else if (f_type_now == 't') {
-        f_type_now = 'x';
-        plainTextEdit->clear();
-        if (!file->isOpen()) {
-            if (!file->open(QIODevice::ReadOnly))
-                this->close();
-        }
-        if (f_size < 10485760) {
-            file->seek(0);
-            if (f_cod == '8')
-                plainTextEdit->textCursor().insertHtml(file->readAll());
-            else
-                plainTextEdit->textCursor().insertHtml(QString::fromLocal8Bit(file->readAll()));
-        } else {
-            pushButton_up->show();
-            pushButton_down->show();
-            lineEdit_size_now->show();
-            label_all_size->show();
-            verticalSlider->show();
-            verticalSlider_valueChanged(verticalSlider->value());
-        }
-    }
+    fpath = _fpath;
+    label_image->clear();
+    Fill();
 }
 
-void Lister::f3_cod_img()
+void ImageWidget::Fill()
 {
-    cod_only_text->setChecked(false);
-    cod_html->setChecked(false);
-    cod_img->setChecked(true);
-    if (f_type_now != 'i') {
-        f_type_now = 'i';
-        plainTextEdit->hide();
-        plainTextEdit->clear();
-        pushButton_up->hide();
-        pushButton_down->hide();
-        lineEdit_size_now->hide();
-        label_all_size->hide();
-        verticalSlider->hide();
-        image_area->show();
-    }
-}
+    if (!QFileInfo(fpath).isFile())
+        return;
 
-void Lister::f3_cod_utf8()
-{
-    cod_utf8->setChecked(true);
-    cod_local->setChecked(false);
-    if (f_cod != '8') {
-        f_cod = '8';
-        if (plainTextEdit->isVisible()) {
-            if (f_size < 10485760) {
-                file->seek(0);
-                if (f_type_now == 't')
-                    plainTextEdit->setPlainText(file->readAll());
-                else
-                    plainTextEdit->textCursor().insertHtml(file->readAll());
-            } else
-                verticalSlider_valueChanged(verticalSlider->value());
-        }
-    }
+    QImage image = QImageReader(fpath).read();
+    image = image.scaled(image.size(), Qt::KeepAspectRatio);
+    label_image->setFixedSize(image.size());
+    label_image->setPixmap(QPixmap::fromImage(image));
 }
-
-void Lister::f3_cod_local()
-{
-    cod_utf8->setChecked(false);
-    cod_local->setChecked(true);
-    if (f_cod != 'l') {
-        f_cod = 'l';
-        if (plainTextEdit->isVisible()) {
-            if (f_size < 10485760) {
-                file->seek(0);
-                if (f_type_now == 't')
-                    plainTextEdit->setPlainText(QString::fromLocal8Bit(file->readAll()));
-                else
-                    plainTextEdit->textCursor().insertHtml(QString::fromLocal8Bit(file->readAll()));
-            } else
-                verticalSlider_valueChanged(verticalSlider->value());
-        }
-    }
-}
-

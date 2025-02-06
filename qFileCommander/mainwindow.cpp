@@ -4,7 +4,7 @@
 #include "delete_files.h"
 #include "copy_files.h"
 #include "renamewidget.h"
-#include "lister.h"
+#include "settingswidget.h"
 #include <windows.h>
 #include <shlobj.h>
 #include <QHeaderView>
@@ -35,18 +35,20 @@ MainWindow::MainWindow(QWidget *parent)
     cust_menu = new QMenu(this);
     menu_f4 = new QAction("Переименовать", this);
     menu_open = new QAction("Открыть с помощью", this);
-    menu_f5 = new QAction("Копировать", this);
     copy_as_path = new QAction("Копировать как путь", this);
-    menu_f6 = new QAction("Переместить", this);
+    menu_ctrl_c = new QAction("Копировать", this);
+    menu_ctrl_x = new QAction("Вырезать", this);
+    menu_ctrl_v = new QAction("Вставить", this);
     menu_create_file = new QAction("Создать файл", this);
     menu_f8 = new QAction("Удалить", this);
     menu_properties = new QAction("Свойства", this);
 
     connect(menu_f4, SIGNAL(triggered()), this, SLOT(on_pushButton_f4_clicked()));
     connect(menu_open, SIGNAL(triggered()), this, SLOT(menu_open_with_wind()));
-    connect(menu_f5, SIGNAL(triggered()), this, SLOT(on_pushButton_f5_clicked()));
     connect(copy_as_path, SIGNAL(triggered()), this, SLOT(copy_as_path_clicked()));
-    connect(menu_f6, SIGNAL(triggered()), this, SLOT(on_pushButton_f6_clicked()));
+    connect(menu_ctrl_c, SIGNAL(triggered()), this, SLOT(ctrl_c_clicked()));
+    connect(menu_ctrl_x, SIGNAL(triggered()), this, SLOT(ctrl_x_clicked()));
+    connect(menu_ctrl_v, SIGNAL(triggered()), this, SLOT(ctrl_v_clicked()));
     connect(menu_f8, SIGNAL(triggered()), this, SLOT(on_pushButton_f8_clicked()));
     connect(menu_properties, SIGNAL(triggered()), this, SLOT(show_properties()));
     connect(menu_create_file, SIGNAL(triggered()), this, SLOT(on_pushButton_create_file_clicked()));
@@ -55,11 +57,11 @@ MainWindow::MainWindow(QWidget *parent)
     cust_menu->addSeparator();
     cust_menu->addAction(menu_open);
     cust_menu->addSeparator();
-    cust_menu->addAction(menu_f5);
-    cust_menu->addSeparator();
-    cust_menu->addAction(menu_f6);
-    cust_menu->addSeparator();
     cust_menu->addAction(copy_as_path);
+    cust_menu->addSeparator();
+    cust_menu->addAction(menu_ctrl_c);
+    cust_menu->addAction(menu_ctrl_x);
+    cust_menu->addAction(menu_ctrl_v);
     cust_menu->addSeparator();
     cust_menu->addAction(menu_f8);
     cust_menu->addSeparator();
@@ -82,7 +84,15 @@ MainWindow::MainWindow(QWidget *parent)
     hidden_f = settings.value("/Settings/Hidden_F", false).toBool();
 
     main_font.fromString(settings.value("/Settings/Main_Font", "Times New Roman,12,-1,5,700,0,0,0,0,0,0,0,0,0,0,1").toString());
-    MainWindow::setFont(main_font);
+    panel_font.fromString(settings.value("/Settings/Panel_Font", "Times New Roman,12,-1,5,700,0,0,0,0,0,0,0,0,0,0,1").toString());
+    dialog_font.fromString(settings.value("/Settings/Dialog_Font", "Times New Roman,12,-1,5,700,0,0,0,0,0,0,0,0,0,0,1").toString());
+    lister_font.fromString(settings.value("/Settings/Lister_Font", "Times New Roman,12,-1,5,700,0,0,0,0,0,0,0,0,0,0,1").toString());
+    change_main_font();
+    change_panel_font();
+
+    appSettings = new AppSettings();
+    appSettings->w = w; appSettings->h = h; appSettings->main_font = &main_font;
+    appSettings->panel_font = &panel_font; appSettings->dialog_font = &dialog_font; appSettings->lister_font = &lister_font;
 
     {
         QList<QVariant> widthColumns = settings.value("/Settings/L_Col_W").toList();
@@ -160,19 +170,22 @@ MainWindow::MainWindow(QWidget *parent)
 
     //верхняя панель
     ui->pushButton_settings->setGeometry(round(w*2), 0, round(w*25), round(h*25));
-    ui->pushButton_hidden_f->setGeometry(round(w*32), 0, round(w*25), round(h*25));
-    ui->pushButton_admin->setGeometry(round(w*62), 0, round(w*25), round(h*25));
-    ui->pushButton_open_in_exp->setGeometry(round(w*92), 0, round(w*25), round(h*25));
-    ui->pushButton_notepad->setGeometry(round(w*122), 0, round(w*25), round(h*25));
-    ui->pushButton_create_file->setGeometry(round(w*152), 0, round(w*25), round(h*25));
-    ui->pushButton_mass_rename->setGeometry(round(w*182), 0, round(w*25), round(h*25));
-    ui->pushButton_find->setGeometry(round(w*212), 0, round(w*25), round(h*25));
+    ui->pushButton_fast_view->setGeometry(round(w*32), 0, round(w*25), round(h*25));
+    ui->pushButton_hidden_f->setGeometry(round(w*62), 0, round(w*25), round(h*25));
+    ui->pushButton_admin->setGeometry(round(w*92), 0, round(w*25), round(h*25));
+    ui->pushButton_open_in_exp->setGeometry(round(w*122), 0, round(w*25), round(h*25));
+    ui->pushButton_notepad->setGeometry(round(w*152), 0, round(w*25), round(h*25));
+    ui->pushButton_create_file->setGeometry(round(w*182), 0, round(w*25), round(h*25));
+    ui->pushButton_mass_rename->setGeometry(round(w*212), 0, round(w*25), round(h*25));
+    ui->pushButton_find->setGeometry(round(w*242), 0, round(w*25), round(h*25));
     ui->line_0->setGeometry(round(w*-5), round(h*25), round(w*1540), round(h*2));
     ui->line_1->setGeometry(round(w*-5), round(h*54), round(w*1540), round(h*2));
     ui->line_2->setGeometry(round(w*-5), round(h*82), round(w*1540), round(h*2));
 
     //иконки кнопок
     ui->pushButton_settings->setIcon(QIcon("settings.png"));
+    ui->pushButton_fast_view->setIcon(QIcon("fastView.png"));
+    ui->pushButton_fast_view->setCheckable(true);
     ui->pushButton_mass_rename->setText("A");
     ui->pushButton_open_in_exp->setIcon(QIcon(style()->standardIcon(QStyle::SP_DialogOpenButton)));
     ui->pushButton_find->setIcon(QIcon(style()->standardIcon(QStyle::SP_FileDialogContentsView)));
@@ -188,6 +201,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->pushButton_hidden_f->setCheckable(true);
     if (hidden_f)
         ui->pushButton_hidden_f->setChecked(true);
+    connect(ui->pushButton_settings, SIGNAL(clicked()), this, SLOT(open_settings()));
+    connect(ui->pushButton_fast_view, SIGNAL(clicked()), this, SLOT(change_fast_view()));
     connect(ui->pushButton_hidden_f, SIGNAL(clicked()), this, SLOT(show_hidden_func()));
 
     //диски
@@ -216,6 +231,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->pushButton_f7->setFocusPolicy(Qt::NoFocus);
     ui->pushButton_f8->setFocusPolicy(Qt::NoFocus);
     ui->pushButton_settings->setFocusPolicy(Qt::NoFocus);
+    ui->pushButton_fast_view->setFocusPolicy(Qt::NoFocus);
     ui->pushButton_hidden_f->setFocusPolicy(Qt::NoFocus);
     ui->pushButton_admin->setFocusPolicy(Qt::NoFocus);
     ui->pushButton_open_in_exp->setFocusPolicy(Qt::NoFocus);
@@ -250,6 +266,13 @@ MainWindow::MainWindow(QWidget *parent)
     ui->toolButton_favourites_r->addAction(act_remove_fav_r);
     connect(act_remove_fav_r, &QAction::triggered, this, [this](){remove_favourite(false);});
     act_remove_fav_r->setVisible(false);
+
+    act_sett_fav_l = new QAction("Настройка", this);
+    ui->toolButton_favourites_l->addAction(act_sett_fav_l);
+    connect(act_sett_fav_l, SIGNAL(triggered(bool)), this, SLOT(settings_favourite()));
+    act_sett_fav_r = new QAction("Настройка", this);
+    ui->toolButton_favourites_r->addAction(act_sett_fav_r);
+    connect(act_sett_fav_r, SIGNAL(triggered(bool)), this, SLOT(settings_favourite()));
 
     {
         QList<QVariant> n_fav = settings.value("/Settings/Names_Favourites").toList();
@@ -293,13 +316,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->path_l->setText(last_path_l);
     ui->path_r->setText(last_path_r);
 
-    /*
-    //Изменить шрифт
-    QAction *menu_change_font = new QAction("Изменить шрифт", this);
-    menu_change_font->setCheckable(false);
-    ui->toolButton->addAction(menu_change_font);
-    connect(menu_change_font, SIGNAL(triggered()), this, SLOT(change_font()));
-    */
 
     //запуск таймера на обновление
     find_disk();
@@ -336,13 +352,13 @@ MainWindow::MainWindow(QWidget *parent)
         ind_sort = 0;
     emit treeWidget_r->header()->sectionClicked(ind_sort);
 
-    connect(treeWidget_l->header(), &QHeaderView::sectionResized, this, [this](int logicalIndex, int oldSize, int newSize) {change_w_col_l(logicalIndex, oldSize, newSize);});
-    connect(treeWidget_r->header(), &QHeaderView::sectionResized, this, [this](int logicalIndex, int oldSize, int newSize) {change_w_col_r(logicalIndex, oldSize, newSize);});
+    connect(treeWidget_l->header(), SIGNAL(sectionResized(int,int,int)), this, SLOT(change_w_col_l(int,int,int)));
+    connect(treeWidget_r->header(), SIGNAL(sectionResized(int,int,int)), this, SLOT(change_w_col_r(int,int,int)));
 
     timer->start(3000);
 
 
-    find_wid = new FindWidget(nullptr, w, h);
+    find_wid = new FindWidget(appSettings);
     find_wid->setFont(main_font);
     connect(find_wid, SIGNAL(open_find_fid_signal(QString)), this, SLOT(open_find_fid(QString)));
 }
@@ -353,10 +369,12 @@ MainWindow::~MainWindow()
 }
 
 void MainWindow::resizeEvent(QResizeEvent *event) {
-    w_now = float(w) * float(MainWindow::width()) / float(w_max);
-    h_now = float(h) * float(MainWindow::height()) / float(h_max);
+    w_now = w * float(MainWindow::width()) / float(w_max);
+    h_now = h * float(MainWindow::height()) / float(h_max);
+
     treeWidget_l->header()->blockSignals(true);
     treeWidget_r->header()->blockSignals(true);
+
     treeWidget_l->setGeometry(round(w_now*1), round(h*110), round(w_now*765), round(h_now*635 - (h-h_now)*170));
     treeWidget_l->header()->resizeSection(0, round(w_now*w_col_l[0]));
     treeWidget_l->header()->resizeSection(1, round(w_now*w_col_l[1]));
@@ -370,6 +388,8 @@ void MainWindow::resizeEvent(QResizeEvent *event) {
     ui->horizontalLayoutWidget->setGeometry(round(w_now*1), round(h*30), round(w_now*325), round(h*20));
     ui->horizontalLayoutWidget_2->setGeometry(round(w_now*770), round(h*30), round(w_now*325), round(h*20));
 
+    if (view_widget)
+        view_widget->setGeometry(round(w_now*770), round(h*110), round(w_now*765), round(h_now*635 - (h-h_now)*170));
 
     ui->horizontalLayoutWidget_5->setGeometry(round(w_now*1), 0, round(w_now*750), round(h*27));
     ui->line_3->setGeometry(round(w_now*-5), round(h_now*770 - (h-h_now)*35), round(w_now*1540), round(h*2));
@@ -443,7 +463,13 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
     save_settings();
 
+    for (auto l : lister_list)
+        l->close();
+
     find_wid->close_wid();
+
+    if (view_widget)
+        view_widget->close();
 
     event->accept();
 }
@@ -454,6 +480,9 @@ void MainWindow::save_settings()
     settings.setValue("/Settings/L_Path", last_path_l);
     settings.setValue("/Settings/R_Path", last_path_r);
     settings.setValue("/Settings/Main_Font", main_font.toString());
+    settings.setValue("/Settings/Panel_Font", panel_font.toString());
+    settings.setValue("/Settings/Dialog_Font", dialog_font.toString());
+    settings.setValue("/Settings/Lister_Font", lister_font.toString());
     settings.setValue("/Settings/Hidden_F", hidden_f);
 
     QList<QVariant> widthColumns;
@@ -478,7 +507,7 @@ void MainWindow::save_settings()
 
 
     QList<QVariant> n_fav;
-    int l_fav =  ui->toolButton_favourites_l->actions().size() - 2;
+    int l_fav =  ui->toolButton_favourites_l->actions().size() - 3;
     for (int i = 0; i < l_fav; ++i) {
         n_fav << ui->toolButton_favourites_l->actions().at(i)->text();
     }
@@ -490,12 +519,39 @@ void MainWindow::save_settings()
     settings.setValue("/Settings/Paths_Favourites", n_fav);
 }
 
+void MainWindow::open_settings()
+{
+    SettingsWidget *sw = new SettingsWidget(appSettings);
+    connect(sw, SIGNAL(apply_main_font()), this, SLOT(change_main_font()));
+    connect(sw, SIGNAL(apply_panel_font()), this, SLOT(change_panel_font()));
+    sw->show();
+}
+
+void MainWindow::change_main_font()
+{
+    MainWindow::setFont(main_font);
+    QToolTip::setFont(main_font);
+    treeWidget_l->header()->setFont(main_font);
+    treeWidget_r->header()->setFont(main_font);
+    ui->path_l->setFont(main_font);
+    ui->path_r->setFont(main_font);
+}
+
+void MainWindow::change_panel_font()
+{
+    treeWidget_l->setFont(panel_font);
+    treeWidget_r->setFont(panel_font);
+}
+
+
 void MainWindow::add_favourite(bool l)
 {
-    QString& path = l ? last_path_l : last_path_r;
+    QString path = l ? last_path_l : last_path_r;
+    path = QFileInfo(path).absoluteFilePath();
     QString new_name = path; new_name = new_name.removeLast().split("/").last();
 
     QInputDialog id;
+    id.setWindowIcon(QIcon("appIcon.png"));
     id.setFont(main_font);
     id.resize(QSize(400, 60));
     id.setCancelButtonText("Отмена");
@@ -518,12 +574,15 @@ void MainWindow::add_favourite(bool l)
     act2->setData(path);
     connect(act2, &QAction::triggered, this, [act2, this]() {ui->path_r->setText(act2->data().toString());on_path_r_returnPressed();});
 
-    if (path == last_path_l) {
+    QString fname = QFileInfo(last_path_l).absoluteFilePath();
+
+    if (path == fname) {
         act->setChecked(true);
         act_add_fav_l->setVisible(false);
         act_remove_fav_l->setVisible(true);
     }
-    if (path == last_path_r) {
+    fname = QFileInfo(last_path_r).absoluteFilePath();
+    if (path == fname) {
         act2->setChecked(true);
         act_add_fav_r->setVisible(false);
         act_remove_fav_r->setVisible(true);
@@ -569,20 +628,110 @@ void MainWindow::remove_favourite(bool l)
     }
 }
 
+void MainWindow::settings_favourite()
+{
+    SettingsFavWidget *sfw = new SettingsFavWidget(appSettings, ui->toolButton_favourites_l, ui->toolButton_favourites_r);
+    connect(sfw, SIGNAL(update_menu(QStringList,QStringList)), this, SLOT(add_favourites(QStringList,QStringList)));
+    sfw->show();
+}
+
+void MainWindow::add_favourites(QStringList fnames, QStringList fpathes)
+{
+    for (int i = 0; i < fnames.length(); ++i) {
+        QAction *act = new QAction(fnames[i], this);
+        act->setCheckable(true);
+        ui->toolButton_favourites_l->insertAction(act_add_fav_l, act);
+        act->setData(fpathes[i]);
+        connect(act, &QAction::triggered, this, [act, this]() {ui->path_l->setText(act->data().toString());on_path_l_returnPressed();});
+
+        QAction *act2 = new QAction(fnames[i], this);
+        act2->setCheckable(true);
+        ui->toolButton_favourites_r->insertAction(act_add_fav_r, act2);
+        act2->setData(fpathes[i]);
+        connect(act2, &QAction::triggered, this, [act2, this]() {ui->path_r->setText(act2->data().toString());on_path_r_returnPressed();});
+    }
+    on_path_l_returnPressed();
+    on_path_r_returnPressed();
+}
+
 void MainWindow::change_w_col_l(int logicalIndex, int oldSize, int newSize)
 {
     w_col_l[logicalIndex] = trunc(newSize/w_now);
+    w_col_l[3] = 760 - w_col_l[0] - w_col_l[1] - w_col_l[2];
+    treeWidget_l->header()->resizeSection(3, round(w_now*w_col_l[3]));
 }
 
 void MainWindow::change_w_col_r(int logicalIndex, int oldSize, int newSize)
 {
     w_col_r[logicalIndex] = trunc(newSize/w_now);
+    w_col_r[3] = 760 - w_col_r[0] - w_col_r[1] - w_col_r[2];
+    treeWidget_r->header()->resizeSection(3, round(w_now*w_col_r[3]));
+}
+
+void MainWindow::change_fast_view()
+{
+    if (ui->pushButton_fast_view->isChecked()) {
+        is_fast_view = true;
+        treeWidget_r->hide();
+        ui->inf_dir_r->hide();
+        ui->path_r->setReadOnly(true);
+        ui->toolButton_favourites_r->setDisabled(true);
+
+        QString fpath;
+        if (treeWidget_l->currentItem())
+            fpath = treeWidget_l->currentItem()->data(0, Qt::UserRole).toString();
+
+        if (fpath == "")
+            fpath = last_path_l;
+
+        view_widget = new Lister(fpath, appSettings, this);
+        ui->path_r->setText(fpath.split("/").last());
+        view_widget->show();
+        view_widget->setFocusPolicy(Qt::StrongFocus);
+        connect(view_widget, &Lister::closed, this, [this]() {if (ui->pushButton_fast_view->isChecked()) ui->pushButton_fast_view->click();});
+        connect(treeWidget_l, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)), this, SLOT(reDrawFastView(QTreeWidgetItem*,QTreeWidgetItem*)));
+    } else {
+        disconnect(treeWidget_l, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)), this, SLOT(reDrawFastView(QTreeWidgetItem*,QTreeWidgetItem*)));
+        if (view_widget) {
+            view_widget->close();
+        }
+        view_widget = nullptr;
+
+        is_fast_view = false;
+        treeWidget_r->show();
+        ui->inf_dir_r->show();
+        ui->path_r->setReadOnly(false);
+        ui->toolButton_favourites_r->setDisabled(false);
+
+        ui->path_r->setText(last_path_r);
+        on_path_r_returnPressed();
+    }
+
+    resizeEvent(nullptr);
+}
+
+void MainWindow::reDrawFastView(QTreeWidgetItem *current, QTreeWidgetItem *)
+{
+    if (!current)
+        return;
+
+    QString fpath = current->data(0, Qt::UserRole).toString();
+    if (fpath == "")
+        fpath = last_path_l;
+    QString fname = fpath.split("/").last();
+    if (fname == ui->path_r->text())
+        return;
+
+    ui->path_r->setText(fname);
+    view_widget->reFill(fpath);
+    view_widget->setFocusPolicy(Qt::StrongFocus);
 }
 
 //вызвает окно ошибки с переданным текстом
 void MainWindow::v_error(QString str_error) {
     QMessageBox v_err;
-    v_err.setFont(main_font);
+    v_err.setWindowIcon(QIcon("appIcon.png"));
+    v_err.setFont(dialog_font);
     v_err.setIcon(QMessageBox::Critical);
     v_err.setWindowTitle("Ошибка !");
     v_err.setText(str_error);
@@ -832,7 +981,6 @@ void MainWindow::on_path_l_returnPressed()
             ui->path_l->setText(ui->path_l->text() + "/");
     }
     QDir dir(ui->path_l->text());
-    //if (dir.exists() && ui->path_l->text().endsWith("/")) {
     if (dir.exists()) {
         size_d_l(new_disk);
         combobox_disk_l->setCurrentIndex(combobox_disk_l->findText(new_disk));
@@ -861,8 +1009,9 @@ void MainWindow::on_path_l_returnPressed()
     for (auto a : ui->toolButton_favourites_l->actions())
         a->setChecked(false);
 
+    QString fname = QFileInfo(last_path_l).absoluteFilePath();
     for (auto a : ui->toolButton_favourites_l->actions()) {
-        if (a->data().toString() == last_path_l) {
+        if (a->data().toString() == fname) {
             a->setChecked(true);
             act_add_fav_l->setVisible(false);
             act_remove_fav_l->setVisible(true);
@@ -876,6 +1025,8 @@ void MainWindow::on_path_l_returnPressed()
 //изменение правого пути
 void MainWindow::on_path_r_returnPressed()
 {
+    if (is_fast_view)
+        return;
     if (ui->path_r->text().isEmpty()) {
         ui->path_r->setText(last_path_r);
         on_path_r_returnPressed();
@@ -922,8 +1073,9 @@ void MainWindow::on_path_r_returnPressed()
     for (auto a : ui->toolButton_favourites_r->actions())
         a->setChecked(false);
 
+    QString fname = QFileInfo(last_path_r).absoluteFilePath();
     for (auto a : ui->toolButton_favourites_r->actions()) {
-        if (a->data().toString() == last_path_r) {
+        if (a->data().toString() == fname) {
             a->setChecked(true);
             act_add_fav_r->setVisible(false);
             act_remove_fav_r->setVisible(true);
@@ -1057,6 +1209,33 @@ void MainWindow::treeWidget_r_itemActivated(QTreeWidgetItem *item, int column)
     }
 }
 
+void MainWindow::ctrl_c_clicked()
+{
+    QKeyEvent e(QEvent::KeyPress, Qt::Key_C, Qt::ControlModifier);
+    if (treeWidget_l->hasFocus())
+        QApplication::sendEvent(treeWidget_l, &e);
+    else
+        QApplication::sendEvent(treeWidget_r, &e);
+}
+
+void MainWindow::ctrl_x_clicked()
+{
+    QKeyEvent e(QEvent::KeyPress, Qt::Key_X, Qt::ControlModifier);
+    if (treeWidget_l->hasFocus())
+        QApplication::sendEvent(treeWidget_l, &e);
+    else
+        QApplication::sendEvent(treeWidget_r, &e);
+}
+
+void MainWindow::ctrl_v_clicked()
+{
+    QKeyEvent e(QEvent::KeyPress, Qt::Key_V, Qt::ControlModifier);
+    if (treeWidget_l->hasFocus())
+        QApplication::sendEvent(treeWidget_l, &e);
+    else
+        QApplication::sendEvent(treeWidget_r, &e);
+}
+
 //контекстное меню левого дерева
 void MainWindow::treeWidget_l_customContextMenuRequested(const QPoint &pos)
 {
@@ -1064,8 +1243,9 @@ void MainWindow::treeWidget_l_customContextMenuRequested(const QPoint &pos)
     if (item == NULL) {
         menu_f4->setVisible(false);
         menu_open->setVisible(false);
-        menu_f5->setVisible(false);
-        menu_f6->setVisible(false);
+        menu_ctrl_c->setVisible(false);
+        menu_ctrl_x->setVisible(false);
+        menu_ctrl_v->setVisible(true);
         menu_f8->setVisible(false);
         menu_create_file->setVisible(true);
         cust_menu_tree = last_path_l;
@@ -1075,9 +1255,17 @@ void MainWindow::treeWidget_l_customContextMenuRequested(const QPoint &pos)
     cust_menu_tree = "";
 
     QList<QTreeWidgetItem*> list = treeWidget_l->selectedItems();
+    if (!list.contains(item)) {
+        list.clear();
+        treeWidget_l->unselected_all();
+        treeWidget_l->change_select(treeWidget_l->indexOfTopLevelItem(item), true);
+        list.push_back(item);
+    }
+
     if (list.length() >= 1) {
-        menu_f5->setVisible(true);
-        menu_f6->setVisible(true);
+        menu_ctrl_c->setVisible(true);
+        menu_ctrl_x->setVisible(true);
+        menu_ctrl_v->setVisible(false);
         menu_f8->setVisible(true);
         menu_create_file->setVisible(false);
 
@@ -1101,8 +1289,9 @@ void MainWindow::treeWidget_r_customContextMenuRequested(const QPoint &pos)
     if (item == NULL) {
         menu_f4->setVisible(false);
         menu_open->setVisible(false);
-        menu_f5->setVisible(false);
-        menu_f6->setVisible(false);
+        menu_ctrl_c->setVisible(false);
+        menu_ctrl_x->setVisible(false);
+        menu_ctrl_v->setVisible(true);
         menu_f8->setVisible(false);
         menu_create_file->setVisible(true);
         cust_menu_tree = last_path_r;
@@ -1112,9 +1301,17 @@ void MainWindow::treeWidget_r_customContextMenuRequested(const QPoint &pos)
     cust_menu_tree = "";
 
     QList<QTreeWidgetItem*> list = treeWidget_r->selectedItems();
+    if (!list.contains(item)) {
+        list.clear();
+        treeWidget_r->unselected_all();
+        treeWidget_r->change_select(treeWidget_r->indexOfTopLevelItem(item), true);
+        list.push_back(item);
+    }
+
     if (list.length() >= 1) {
-        menu_f5->setVisible(true);
-        menu_f6->setVisible(true);
+        menu_ctrl_c->setVisible(true);
+        menu_ctrl_x->setVisible(true);
+        menu_ctrl_v->setVisible(false);
         menu_f8->setVisible(true);
         menu_create_file->setVisible(false);
 
@@ -1193,9 +1390,8 @@ void MainWindow::drop_func(QStringList lst, bool remove_after, bool is_right)
     }
 
     if (selected_dirs.length() + selected_files.length() > 0) {
-        Copy_files *cp = new Copy_files();
+        Copy_files *cp = new Copy_files(appSettings);
         connect(cp, SIGNAL(end_operation()), this, SLOT(end_operation()));
-        cp->main_font = main_font;
         cp->Work(dir_to, selected_dirs, selected_files, remove_after);
         count_proc++;
     }
@@ -1241,6 +1437,7 @@ void MainWindow::on_pushButton_f4_clicked()
         bool flag_dir = false;
 
         QInputDialog id;
+        id.setWindowIcon(QIcon("appIcon.png"));
         id.setFont(main_font);
         id.resize(QSize(400, 60));
         id.setCancelButtonText("Отмена");
@@ -1350,9 +1547,8 @@ void MainWindow::f5_f6_func(bool remove_after)
     mass_all_selected(dir_to, selected_dirs, selected_files);
 
     if (selected_dirs.length() + selected_files.length() > 0) {
-        Copy_files *cp = new Copy_files();
+        Copy_files *cp = new Copy_files(appSettings);
         connect(cp, SIGNAL(end_operation()), this, SLOT(end_operation()));
-        cp->main_font = main_font;
         cp->Work(dir_to, selected_dirs, selected_files, remove_after);
         count_proc++;
     }
@@ -1360,12 +1556,16 @@ void MainWindow::f5_f6_func(bool remove_after)
 
 //копирование
 void MainWindow::on_pushButton_f5_clicked() {
+    if (is_fast_view)
+        return;
     f5_f6_func(false);
 }
 
 //перемещение
 void MainWindow::on_pushButton_f6_clicked()
 {
+    if (is_fast_view)
+        return;
     f5_f6_func(true);
 }
 
@@ -1382,7 +1582,8 @@ void MainWindow::on_pushButton_f7_clicked()
     }
 
     QInputDialog id;
-    id.setFont(main_font);
+    id.setWindowIcon(QIcon("appIcon.png"));
+    id.setFont(dialog_font);
     id.resize(QSize(400, 60));
     id.setCancelButtonText("Отмена");
     id.setLabelText("Создать новый каталог:");
@@ -1435,9 +1636,8 @@ void MainWindow::on_pushButton_f8_clicked()
     mass_all_selected(dir_to, selected_dirs, selected_files);
 
     if (selected_dirs.length() + selected_files.length() > 0) {
-        Delete_Files *df = new Delete_Files();
+        Delete_Files *df = new Delete_Files(appSettings);
         connect(df, SIGNAL(end_operation()), this, SLOT(end_operation()));
-        df->main_font = main_font;
         df->Work(selected_dirs, selected_files, false);
         count_proc++;
     }
@@ -1450,9 +1650,8 @@ void MainWindow::shift_del_f()
     QString dir_to; QStringList selected_dirs, selected_files;
     mass_all_selected(dir_to, selected_dirs, selected_files);
     if (selected_dirs.length() + selected_files.length() > 0) {
-        Delete_Files *df = new Delete_Files();
+        Delete_Files *df = new Delete_Files(appSettings);
         connect(df, SIGNAL(end_operation()), this, SLOT(end_operation()));
-        df->main_font = main_font;
         df->Work(selected_dirs, selected_files, true);
         count_proc++;
     }
@@ -1572,7 +1771,8 @@ void MainWindow::on_pushButton_create_file_clicked()
 
 
     QInputDialog id;
-    id.setFont(main_font);
+    id.setWindowIcon(QIcon("appIcon.png"));
+    id.setFont(dialog_font);
     id.resize(QSize(400, 60));
     id.setCancelButtonText("Отмена");
     id.setLabelText("Создать новый файл:");
@@ -1630,23 +1830,6 @@ void MainWindow::on_pushButton_notepad_clicked()
 }
 
 
-//окно выбора шрифта
-void MainWindow::change_font()
-{
-    bool ok;
-    QFont font = QFontDialog::getFont(
-        &ok, main_font, this);
-    if (ok) {
-        main_font = font;
-        MainWindow::setFont(main_font);
-        QToolTip::setFont(main_font);
-        treeWidget_l->header()->setFont(main_font);
-        treeWidget_r->header()->setFont(main_font);
-        ui->path_l->setFont(main_font);
-        ui->path_r->setFont(main_font);
-    }
-}
-
 void MainWindow::on_pushButton_admin_clicked()
 {
     if(IsUserAnAdmin()) {
@@ -1663,13 +1846,21 @@ void MainWindow::on_pushButton_admin_clicked()
 //просмотр файла
 void MainWindow::on_pushButton_f3_clicked()
 {
-    QStringList selected_files;
+    QStringList selected_dirs; QStringList selected_files;
     {
-        QString dir_to; QStringList selected_dirs;
+        QString dir_to;
         mass_all_selected(dir_to, selected_dirs, selected_files);
     }
+    for (int i = 0; i < selected_dirs.length(); ++i) {
+        Lister *lister = new Lister(selected_dirs[i], appSettings);
+        lister_list.push_back(lister);
+        connect(lister, &Lister::closed, this, [lister, this](){lister_list.remove(lister);});
+        lister->show();
+    }
     for (int i = 0; i < selected_files.length(); ++i) {
-        Lister *lister = new Lister(selected_files[i], this);
+        Lister *lister = new Lister(selected_files[i], appSettings);
+        lister_list.push_back(lister);
+        connect(lister, &Lister::closed, this, [lister, this](){lister_list.remove(lister);});
         lister->show();
     }
 }
@@ -1713,7 +1904,7 @@ void MainWindow::on_pushButton_mass_rename_clicked()
             dir_to = selected_dirs[0].left(selected_dirs[0].lastIndexOf("/")) + "/";
         else
             dir_to = selected_files[0].left(selected_files[0].lastIndexOf("/")) + "/";
-        Rename_Widget *rw = new Rename_Widget(main_font, w, h, this);
+        Rename_Widget *rw = new Rename_Widget(appSettings, this);
         rw->Fill(dir_to, selected_dirs, selected_files);
         rw->setWindowModality(Qt::WindowModal);
         rw->show();

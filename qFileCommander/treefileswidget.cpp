@@ -87,7 +87,7 @@ void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, const QStri
         if (QDir(dir_str + "..").exists()) {
             QFileInfo fileInfo(dir_str + "..");
             item0->setText(3, fileInfo.lastModified().toString("dd.MM.yyyy hh:mm"));
-            item0->setTextAlignment(3, Qt::AlignRight);
+            item0->setTextAlignment(3, Qt::AlignLeft);
             QString tool_tip = fileInfo.fileName() % "\nДата создания: " % fileInfo.birthTime().toString("dd.MM.yyyy hh:mm");
             item0->setToolTip(0, tool_tip);
             item0->setToolTip(1, tool_tip);
@@ -116,7 +116,7 @@ void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, const QStri
         item->setText(1, "<DIR>");
         item->setText(3, fileInfo.lastModified().toString("dd.MM.yyyy hh:mm"));
         item->setTextAlignment(2, Qt::AlignRight);
-        item->setTextAlignment(3, Qt::AlignRight);
+        item->setTextAlignment(3, Qt::AlignLeft);
         QString tool_tip = fileInfo.fileName() % "\nДата создания: " % fileInfo.birthTime().toString("dd.MM.yyyy hh:mm");
         item->setToolTip(0, tool_tip);
         item->setToolTip(1, tool_tip);
@@ -212,10 +212,10 @@ void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, const QStri
         item->setText(1, fileInfo.suffix());
         all_v += fileInfo.size();
         all_f += 1;
-        item->setText(2, HelperFunctions::reformat_size(QString::number(fileInfo.size(), 'g', 20)));
+        item->setText(2, HelperFunctions::reformat_size(QString::number(fileInfo.size(), 'g', 20)) + "      ");
         item->setText(3, fileInfo.lastModified().toString("dd.MM.yyyy hh:mm"));
         item->setTextAlignment(2, Qt::AlignRight);
-        item->setTextAlignment(3, Qt::AlignRight);
+        item->setTextAlignment(3, Qt::AlignLeft);
         QString tool_tip = fileInfo.fileName() % "\nРазмер: " % HelperFunctions::reformat_size_2(fileInfo.size()) % "\nДата создания: "
                            % fileInfo.birthTime().toString("dd.MM.yyyy hh:mm");
         item->setToolTip(0, tool_tip);

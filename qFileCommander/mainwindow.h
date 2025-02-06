@@ -3,6 +3,9 @@
 
 #include "treefileswidget.h"
 #include "findwidget.h"
+#include "lister.h"
+#include "appsettings.h"
+#include <list>
 #include <QMainWindow>
 #include <QGuiApplication>
 #include <QScreen>
@@ -12,6 +15,7 @@
 #include <QProgressBar>
 #include <QPushButton>
 #include <QFileIconProvider>
+
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -30,6 +34,7 @@ public:
 private:
     Ui::MainWindow *ui;
     QScreen *screen = QGuiApplication::primaryScreen();
+    AppSettings *appSettings;
     float w = float(screen->geometry().width()) / float(1536);
     float h = float(screen->geometry().height()) / float(864);
     //ширина экрана
@@ -43,24 +48,31 @@ private:
     //левое дерево
     TreeFilesWidget *treeWidget_l;
     //ширина колонок левого дерева
-    int w_col_l[4] {435, 65, 120, 125};
+    int w_col_l[4] {415, 75, 140, 130};
     //правое дерево
     TreeFilesWidget *treeWidget_r;
     //ширина колонок правого дерева
-    int w_col_r[4] {430, 65, 120, 125};
+    int w_col_r[4] {415, 75, 140, 130};
+
+    //виджет быстрого просмотра
+    Lister *view_widget = nullptr;
+    //активирован режим быстрого просмотра
+    bool is_fast_view = false;
+    QMimeDatabase db;
 
     QFileIconProvider ic_pr;
 
     //меню
-    QMenu* cust_menu;
-    QAction * menu_f4;
-    QAction * menu_open;
-    QAction * menu_f5;
-    QAction * copy_as_path;
-    QAction * menu_f6;
-    QAction * menu_create_file;
-    QAction * menu_f8;
-    QAction * menu_properties;
+    QMenu *cust_menu;
+    QAction *menu_f4;
+    QAction *menu_open;
+    QAction *menu_ctrl_c;
+    QAction *menu_ctrl_x;
+    QAction *menu_ctrl_v;
+    QAction *copy_as_path;
+    QAction *menu_create_file;
+    QAction *menu_f8;
+    QAction *menu_properties;
 
     QString cust_menu_tree;
 
@@ -69,9 +81,14 @@ private:
     QAction *act_add_fav_r;
     QAction *act_remove_fav_l;
     QAction *act_remove_fav_r;
+    QAction *act_sett_fav_l;
+    QAction *act_sett_fav_r;
 
-    //текущий шрифт
+    //шрифты
     QFont main_font;
+    QFont panel_font;
+    QFont dialog_font;
+    QFont lister_font;
 
     //список дисков
     QFileInfoList md_old;
@@ -121,6 +138,7 @@ private:
     //кол-во активных файловых процессов
     int count_proc = 0;
 
+    std::list<Lister*> lister_list;
 
     //виджет поиска файлов
     FindWidget *find_wid;
@@ -132,6 +150,10 @@ public slots:
     //срабытывает при завершении операции с файлами (обновляет виджеты)
     void end_operation();
 
+    //смена шрифта
+    void change_main_font();
+    void change_panel_font();
+
 private slots:
     void resizeEvent(QResizeEvent *event);
     void keyPressEvent(QKeyEvent *event);
@@ -140,15 +162,27 @@ private slots:
     //сохранить настройки в реестр
     void save_settings();
 
+    //открыть настройки
+    void open_settings();
+
     //добавить текущий каталог в избранное (true - левый путь, false - правый)
     void add_favourite(bool l);
     //удалить текущий каталог из избранного (true - левый путь, false - правый)
     void remove_favourite(bool l);
+    //настройка избранного
+    void settings_favourite();
+    //добавить каталоги по спискам
+    void add_favourites(QStringList fnames, QStringList fpathes);
 
     //изменилась геометрия левого заголовка
     void change_w_col_l(int logicalIndex, int oldSize, int newSize);
     //изменилась геометрия правого заголовка
     void change_w_col_r(int logicalIndex, int oldSize, int newSize);
+
+    //изменение режима (бастрый просмотр на правой панели)
+    void change_fast_view();
+    //перерисовка виджета быстрого просмотра
+    void reDrawFastView(QTreeWidgetItem *current,QTreeWidgetItem*);
 
     //вызвает окно ошибки с переданным текстом
     void v_error(QString str_error);
@@ -181,6 +215,12 @@ private slots:
     void treeWidget_l_itemActivated(QTreeWidgetItem *item, int column);
     //двойной клик по файлу/папке
     void treeWidget_r_itemActivated(QTreeWidgetItem *item, int column);
+    //имитация ctrl+c
+    void ctrl_c_clicked();
+    //имитация ctrl+x
+    void ctrl_x_clicked();
+    //имитация ctrl+v
+    void ctrl_v_clicked();
     //контекстное меню левого дерева
     void treeWidget_l_customContextMenuRequested(const QPoint &pos);
     //контекстное меню правого дерева
@@ -226,8 +266,6 @@ private slots:
 
     //открывает блокнот
     void on_pushButton_notepad_clicked();
-    //окно выбора шрифта
-    void change_font();
     //перезапустить приложение от имени администратора
     void on_pushButton_admin_clicked();
 
@@ -246,4 +284,5 @@ private slots:
     //групповое переименование
     void on_pushButton_mass_rename_clicked();
 };
+
 #endif // MAINWINDOW_H

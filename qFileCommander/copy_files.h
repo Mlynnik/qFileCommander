@@ -1,20 +1,20 @@
 #ifndef COPY_FILES_H
 #define COPY_FILES_H
 
+#include "copy_process.h"
+#include "appsettings.h"
 #include <QMessageBox>
 #include <QDialog>
 #include <QProgressBar>
 #include <QLabel>
-#include "copy_process.h"
 
 class Copy_files : public QObject
 {
     Q_OBJECT
 
 public:
-    Copy_files();
+    Copy_files(const AppSettings *appSettings);
     void Work(QString dir_to, const QStringList& selected_dirs, const QStringList& selected_files, bool remove_after);
-    QFont main_font;
 
 signals:
     ///отмена копирования
@@ -67,6 +67,8 @@ private slots:
     QString reformat_size(QString str);
 
 private:
+    const QFont *dialog_font;
+
     QThread *th;
     CopyProcess *cd;
 

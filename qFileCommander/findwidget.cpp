@@ -10,12 +10,19 @@
 #include <qevent.h>
 #include <windows.h>
 
-FindWidget::FindWidget(QWidget *parent, float _w, float _h) : QWidget{parent}
+FindWidget::FindWidget(const AppSettings *appSettings, QWidget *parent) : QWidget{parent}
 {
-    w = _w;
-    h = _h;
-    this->setWindowTitle("Поиск файлов");
-    this->setGeometry(round(w*350), round(h*200), round(w*800), round(h*500));
+    w = appSettings->w;
+    h = appSettings->h;
+    main_font = appSettings->main_font;
+    panel_font = appSettings->panel_font;
+    dialog_font = appSettings->dialog_font;
+
+    setWindowTitle("Поиск файлов");
+    setWindowIcon(QIcon("appIcon.png"));
+    setGeometry(round(w*350), round(h*200), round(w*800), round(h*500));
+    setFont(*main_font);
+
     lab_find->setText("Найти");
     comb_file->setEditable(true);
     connect(comb_file->lineEdit(), &QLineEdit::returnPressed, this, &FindWidget::find_f_0);
@@ -46,6 +53,7 @@ FindWidget::FindWidget(QWidget *parent, float _w, float _h) : QWidget{parent}
     gr_lay->addWidget(find_res_0, 3, 0);
     gr_lay->addWidget(find_res_1, 3, 1);
     gr_lay->addWidget(tree_find, 4, 0, 1, 3);
+    tree_find->setFont(*panel_font);
     tree_find->setColumnCount(1);
     tree_find->setHeaderHidden(true);
     tree_find->setRootIsDecorated(false);
@@ -204,7 +212,8 @@ void FindWidget::closeEvent(QCloseEvent *event)
 
 void FindWidget::v_error(QString str_error) {
     QMessageBox v_err;
-    v_err.setFont(this->font());
+    v_err.setWindowIcon(QIcon("appIcon.png"));
+    v_err.setFont(*dialog_font);
     v_err.setIcon(QMessageBox::Critical);
     v_err.setWindowTitle("Ошибка !");
     v_err.setText(str_error);
