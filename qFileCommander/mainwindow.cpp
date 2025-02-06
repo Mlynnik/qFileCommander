@@ -35,18 +35,20 @@ MainWindow::MainWindow(QWidget *parent)
     cust_menu = new QMenu(this);
     menu_f4 = new QAction("Переименовать", this);
     menu_open = new QAction("Открыть с помощью", this);
-    menu_f5 = new QAction("Копировать", this);
     copy_as_path = new QAction("Копировать как путь", this);
-    menu_f6 = new QAction("Переместить", this);
+    menu_ctrl_c = new QAction("Копировать", this);
+    menu_ctrl_x = new QAction("Вырезать", this);
+    menu_ctrl_v = new QAction("Вставить", this);
     menu_create_file = new QAction("Создать файл", this);
     menu_f8 = new QAction("Удалить", this);
     menu_properties = new QAction("Свойства", this);
 
     connect(menu_f4, SIGNAL(triggered()), this, SLOT(on_pushButton_f4_clicked()));
     connect(menu_open, SIGNAL(triggered()), this, SLOT(menu_open_with_wind()));
-    connect(menu_f5, SIGNAL(triggered()), this, SLOT(on_pushButton_f5_clicked()));
     connect(copy_as_path, SIGNAL(triggered()), this, SLOT(copy_as_path_clicked()));
-    connect(menu_f6, SIGNAL(triggered()), this, SLOT(on_pushButton_f6_clicked()));
+    connect(menu_ctrl_c, SIGNAL(triggered()), this, SLOT(ctrl_c_clicked()));
+    connect(menu_ctrl_x, SIGNAL(triggered()), this, SLOT(ctrl_x_clicked()));
+    connect(menu_ctrl_v, SIGNAL(triggered()), this, SLOT(ctrl_v_clicked()));
     connect(menu_f8, SIGNAL(triggered()), this, SLOT(on_pushButton_f8_clicked()));
     connect(menu_properties, SIGNAL(triggered()), this, SLOT(show_properties()));
     connect(menu_create_file, SIGNAL(triggered()), this, SLOT(on_pushButton_create_file_clicked()));
@@ -55,11 +57,11 @@ MainWindow::MainWindow(QWidget *parent)
     cust_menu->addSeparator();
     cust_menu->addAction(menu_open);
     cust_menu->addSeparator();
-    cust_menu->addAction(menu_f5);
-    cust_menu->addSeparator();
-    cust_menu->addAction(menu_f6);
-    cust_menu->addSeparator();
     cust_menu->addAction(copy_as_path);
+    cust_menu->addSeparator();
+    cust_menu->addAction(menu_ctrl_c);
+    cust_menu->addAction(menu_ctrl_x);
+    cust_menu->addAction(menu_ctrl_v);
     cust_menu->addSeparator();
     cust_menu->addAction(menu_f8);
     cust_menu->addSeparator();
@@ -1169,6 +1171,33 @@ void MainWindow::treeWidget_r_itemActivated(QTreeWidgetItem *item, int column)
     }
 }
 
+void MainWindow::ctrl_c_clicked()
+{
+    QKeyEvent e(QEvent::KeyPress, Qt::Key_C, Qt::ControlModifier);
+    if (treeWidget_l->hasFocus())
+        QApplication::sendEvent(treeWidget_l, &e);
+    else
+        QApplication::sendEvent(treeWidget_r, &e);
+}
+
+void MainWindow::ctrl_x_clicked()
+{
+    QKeyEvent e(QEvent::KeyPress, Qt::Key_X, Qt::ControlModifier);
+    if (treeWidget_l->hasFocus())
+        QApplication::sendEvent(treeWidget_l, &e);
+    else
+        QApplication::sendEvent(treeWidget_r, &e);
+}
+
+void MainWindow::ctrl_v_clicked()
+{
+    QKeyEvent e(QEvent::KeyPress, Qt::Key_V, Qt::ControlModifier);
+    if (treeWidget_l->hasFocus())
+        QApplication::sendEvent(treeWidget_l, &e);
+    else
+        QApplication::sendEvent(treeWidget_r, &e);
+}
+
 //контекстное меню левого дерева
 void MainWindow::treeWidget_l_customContextMenuRequested(const QPoint &pos)
 {
@@ -1176,8 +1205,9 @@ void MainWindow::treeWidget_l_customContextMenuRequested(const QPoint &pos)
     if (item == NULL) {
         menu_f4->setVisible(false);
         menu_open->setVisible(false);
-        menu_f5->setVisible(false);
-        menu_f6->setVisible(false);
+        menu_ctrl_c->setVisible(false);
+        menu_ctrl_x->setVisible(false);
+        menu_ctrl_v->setVisible(true);
         menu_f8->setVisible(false);
         menu_create_file->setVisible(true);
         cust_menu_tree = last_path_l;
@@ -1195,8 +1225,9 @@ void MainWindow::treeWidget_l_customContextMenuRequested(const QPoint &pos)
     }
 
     if (list.length() >= 1) {
-        menu_f5->setVisible(true);
-        menu_f6->setVisible(true);
+        menu_ctrl_c->setVisible(true);
+        menu_ctrl_x->setVisible(true);
+        menu_ctrl_v->setVisible(false);
         menu_f8->setVisible(true);
         menu_create_file->setVisible(false);
 
@@ -1220,8 +1251,9 @@ void MainWindow::treeWidget_r_customContextMenuRequested(const QPoint &pos)
     if (item == NULL) {
         menu_f4->setVisible(false);
         menu_open->setVisible(false);
-        menu_f5->setVisible(false);
-        menu_f6->setVisible(false);
+        menu_ctrl_c->setVisible(false);
+        menu_ctrl_x->setVisible(false);
+        menu_ctrl_v->setVisible(true);
         menu_f8->setVisible(false);
         menu_create_file->setVisible(true);
         cust_menu_tree = last_path_r;
@@ -1239,8 +1271,9 @@ void MainWindow::treeWidget_r_customContextMenuRequested(const QPoint &pos)
     }
 
     if (list.length() >= 1) {
-        menu_f5->setVisible(true);
-        menu_f6->setVisible(true);
+        menu_ctrl_c->setVisible(true);
+        menu_ctrl_x->setVisible(true);
+        menu_ctrl_v->setVisible(false);
         menu_f8->setVisible(true);
         menu_create_file->setVisible(false);
 

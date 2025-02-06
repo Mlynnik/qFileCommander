@@ -63,15 +63,16 @@ private:
     QFileIconProvider ic_pr;
 
     //меню
-    QMenu* cust_menu;
-    QAction * menu_f4;
-    QAction * menu_open;
-    QAction * menu_f5;
-    QAction * copy_as_path;
-    QAction * menu_f6;
-    QAction * menu_create_file;
-    QAction * menu_f8;
-    QAction * menu_properties;
+    QMenu *cust_menu;
+    QAction *menu_f4;
+    QAction *menu_open;
+    QAction *menu_ctrl_c;
+    QAction *menu_ctrl_x;
+    QAction *menu_ctrl_v;
+    QAction *copy_as_path;
+    QAction *menu_create_file;
+    QAction *menu_f8;
+    QAction *menu_properties;
 
     QString cust_menu_tree;
 
@@ -208,6 +209,12 @@ private slots:
     void treeWidget_l_itemActivated(QTreeWidgetItem *item, int column);
     //двойной клик по файлу/папке
     void treeWidget_r_itemActivated(QTreeWidgetItem *item, int column);
+    //имитация ctrl+c
+    void ctrl_c_clicked();
+    //имитация ctrl+x
+    void ctrl_x_clicked();
+    //имитация ctrl+v
+    void ctrl_v_clicked();
     //контекстное меню левого дерева
     void treeWidget_l_customContextMenuRequested(const QPoint &pos);
     //контекстное меню правого дерева
