@@ -4,6 +4,9 @@
 #include <QPushButton>
 #include <QFontDialog>
 #include <QTextEdit>
+#include <QToolButton>
+#include <QInputDialog>
+#include <QFileDialog>
 
 SettingsWidget::SettingsWidget(AppSettings* appsettings, QWidget *parent) : QTabWidget{parent}
 {
@@ -198,5 +201,162 @@ void SettingsWidget::change_lister_font()
         *lister_font = font;
         lab_lister_font_now->setFont(*lister_font);
         lab_lister_font_now->setText(lister_font->toString());
+    }
+}
+
+SettingsFavWidget::SettingsFavWidget(AppSettings *_appSettings, QToolButton *_menu_l, QToolButton *_menu_r, QWidget *parent)
+{
+    setAttribute(Qt::WA_DeleteOnClose);
+    setAttribute(Qt::WA_ShowModal);
+    setWindowTitle("Избранное");
+    setWindowIcon(QIcon("appIcon.png"));
+
+    menu_l = _menu_l;
+    menu_r = _menu_r;
+    appSettings = _appSettings;
+    float w = appSettings->w;
+    float h = appSettings->h;
+    resize(round(600*w), round(400*h));
+    setFont(*appSettings->main_font);
+
+    gridLayout = new QGridLayout(this);
+    setLayout(gridLayout);
+
+    listWidget = new QListWidget(this);
+    listWidget->setDragDropMode(QAbstractItemView::InternalMove);
+
+    btn_add = new QPushButton("Добавить", this);
+    connect(btn_add, SIGNAL(clicked()), this, SLOT(add_clicked()));
+    btn_del = new QPushButton("Удалить", this);
+    connect(btn_del, SIGNAL(clicked()), this, SLOT(del_clicked()));
+    btn_rename = new QPushButton("Переименовать", this);
+    connect(btn_rename, SIGNAL(clicked()), this, SLOT(rename_clicked()));
+
+    btn_ok = new QPushButton("Ok", this);
+    connect(btn_ok, SIGNAL(clicked()), this, SLOT(ok_clicked()));
+    btn_cancel = new QPushButton("Отмена", this);
+    connect(btn_cancel, SIGNAL(clicked()), this, SLOT(cancel_clicked()));
+
+    verticalSpacer = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+
+    gridLayout->addWidget(listWidget, 0, 0, 6, 1);
+    gridLayout->addWidget(btn_add, 0, 1);
+    gridLayout->addWidget(btn_del, 1, 1);
+    gridLayout->addWidget(btn_rename, 2, 1);
+    gridLayout->addItem(verticalSpacer, 3, 1);
+    gridLayout->addWidget(btn_ok, 4, 1);
+    gridLayout->addWidget(btn_cancel, 5, 1);
+
+    gridLayout->setColumnStretch(0, 1);
+
+    int l_fav =  menu_l->actions().size() - 3;
+    for (int i = 0; i < l_fav; ++i) {
+        QListWidgetItem *item = new QListWidgetItem(listWidget);
+        item->setText(menu_l->actions().at(i)->text());
+        item->setData(Qt::UserRole, menu_l->actions().at(i)->data());
+    }
+}
+
+void SettingsFavWidget::ok_clicked()
+{
+    int l_fav =  menu_l->actions().size() - 3;
+    {
+        QList<QAction*> la = menu_l->actions();
+        for (int i = 0; i < l_fav; ++i)
+            menu_l->removeAction(la.at(i));
+
+        la = menu_r->actions();
+        for (int i = 0; i < l_fav; ++i)
+            menu_r->removeAction(la.at(i));
+    }
+
+    QListWidgetItem *item;
+    QStringList fnames, fpathes;
+    for (int i = 0; i < listWidget->count(); ++i) {
+        item = listWidget->item(i);
+        fnames << item->text();
+        fpathes << item->data(Qt::UserRole).toString();
+    }
+    emit update_menu(fnames, fpathes);
+    this->close();
+}
+
+void SettingsFavWidget::cancel_clicked()
+{
+    this->close();
+}
+
+void SettingsFavWidget::rename_clicked()
+{
+    QListWidgetItem *item = listWidget->currentItem();
+    if (!item)
+        return;
+
+    QString new_name = item->text();
+
+    QInputDialog id;
+    id.setWindowIcon(QIcon("appIcon.png"));
+    id.setFont(*appSettings->main_font);
+    id.resize(QSize(400, 60));
+    id.setCancelButtonText("Отмена");
+    id.setLabelText("Название нового элемента в избранном:");
+    id.setTextValue(new_name);
+    if (!id.exec())
+        return;
+
+    new_name = id.textValue();
+
+    item->setText(new_name);
+}
+
+void SettingsFavWidget::del_clicked()
+{
+    QListWidgetItem *item = listWidget->currentItem();
+    if (!item)
+        return;
+
+    delete listWidget->takeItem(listWidget->row(item));
+}
+
+void SettingsFavWidget::add_clicked()
+{
+    QFileDialog fd(this);
+    fd.setFileMode(QFileDialog::Directory);
+    fd.setDirectory(QDir::homePath());
+
+    QString new_path;
+    if (fd.exec())
+        new_path = fd.selectedFiles()[0];
+
+    if (new_path.isEmpty())
+        return;
+
+    new_path = QFileInfo(new_path).absoluteFilePath() + "/";
+    for (int i = 0; i < listWidget->count(); ++i) {
+        if (listWidget->item(i)->data(Qt::UserRole).toString() == new_path)
+            return;
+    }
+    QString new_name = new_path; new_name = new_name.removeLast().split("/").last();
+
+    QInputDialog id;
+    id.setWindowIcon(QIcon("appIcon.png"));
+    id.setFont(*appSettings->main_font);
+    id.resize(QSize(400, 60));
+    id.setCancelButtonText("Отмена");
+    id.setLabelText("Название нового элемента в избранном:");
+    id.setTextValue(new_name);
+    if (!id.exec())
+        return;
+
+    new_name = id.textValue();
+
+    QListWidgetItem *item = new QListWidgetItem(new_name, listWidget);
+    item->setData(Qt::UserRole, new_path);
+}
+
+void SettingsFavWidget::keyPressEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_Escape) {
+        close();
     }
 }

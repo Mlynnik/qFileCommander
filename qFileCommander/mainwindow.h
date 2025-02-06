@@ -81,6 +81,8 @@ private:
     QAction *act_add_fav_r;
     QAction *act_remove_fav_l;
     QAction *act_remove_fav_r;
+    QAction *act_sett_fav_l;
+    QAction *act_sett_fav_r;
 
     //шрифты
     QFont main_font;
@@ -167,6 +169,10 @@ private slots:
     void add_favourite(bool l);
     //удалить текущий каталог из избранного (true - левый путь, false - правый)
     void remove_favourite(bool l);
+    //настройка избранного
+    void settings_favourite();
+    //добавить каталоги по спискам
+    void add_favourites(QStringList fnames, QStringList fpathes);
 
     //изменилась геометрия левого заголовка
     void change_w_col_l(int logicalIndex, int oldSize, int newSize);
@@ -278,4 +284,5 @@ private slots:
     //групповое переименование
     void on_pushButton_mass_rename_clicked();
 };
+
 #endif // MAINWINDOW_H

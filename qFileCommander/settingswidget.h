@@ -5,6 +5,10 @@
 #include <QWidget>
 #include <QTabWidget>
 #include <QLabel>
+#include <QGridLayout>
+#include <QPushButton>
+#include <QLineEdit>
+#include <QListWidget>
 
 class SettingsWidget : public QTabWidget
 {
@@ -39,6 +43,40 @@ private slots:
     void change_dialog_font();
     void change_lister_font();
 
+};
+
+
+class SettingsFavWidget : public QWidget {
+    Q_OBJECT
+public:
+    explicit SettingsFavWidget(AppSettings* _appSettings, QToolButton *_menu_l, QToolButton *_menu_r, QWidget *parent = nullptr);
+
+signals:
+    void update_menu(QStringList fnames, QStringList fpathes);
+
+public slots:
+    void ok_clicked();
+    void cancel_clicked();
+    void rename_clicked();
+    void del_clicked();
+    void add_clicked();
+
+private:
+    AppSettings *appSettings;
+    QToolButton *menu_l;
+    QToolButton *menu_r;
+    QGridLayout *gridLayout;
+    QListWidget *listWidget;
+    QPushButton *btn_add;
+    QPushButton *btn_del;
+    QPushButton *btn_rename;
+    QSpacerItem *verticalSpacer;
+    QPushButton *btn_ok;
+    QPushButton *btn_cancel;
+    QLineEdit *path;
+
+private slots:
+    void keyPressEvent(QKeyEvent *event);
 };
 
 #endif // SETTINGSWIDGET_H

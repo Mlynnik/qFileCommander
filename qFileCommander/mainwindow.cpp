@@ -267,6 +267,13 @@ MainWindow::MainWindow(QWidget *parent)
     connect(act_remove_fav_r, &QAction::triggered, this, [this](){remove_favourite(false);});
     act_remove_fav_r->setVisible(false);
 
+    act_sett_fav_l = new QAction("Настройка", this);
+    ui->toolButton_favourites_l->addAction(act_sett_fav_l);
+    connect(act_sett_fav_l, SIGNAL(triggered(bool)), this, SLOT(settings_favourite()));
+    act_sett_fav_r = new QAction("Настройка", this);
+    ui->toolButton_favourites_r->addAction(act_sett_fav_r);
+    connect(act_sett_fav_r, SIGNAL(triggered(bool)), this, SLOT(settings_favourite()));
+
     {
         QList<QVariant> n_fav = settings.value("/Settings/Names_Favourites").toList();
         QList<QVariant> p_fav = settings.value("/Settings/Paths_Favourites").toList();
@@ -500,7 +507,7 @@ void MainWindow::save_settings()
 
 
     QList<QVariant> n_fav;
-    int l_fav =  ui->toolButton_favourites_l->actions().size() - 2;
+    int l_fav =  ui->toolButton_favourites_l->actions().size() - 3;
     for (int i = 0; i < l_fav; ++i) {
         n_fav << ui->toolButton_favourites_l->actions().at(i)->text();
     }
@@ -539,7 +546,8 @@ void MainWindow::change_panel_font()
 
 void MainWindow::add_favourite(bool l)
 {
-    QString& path = l ? last_path_l : last_path_r;
+    QString path = l ? last_path_l : last_path_r;
+    path = QFileInfo(path).absoluteFilePath();
     QString new_name = path; new_name = new_name.removeLast().split("/").last();
 
     QInputDialog id;
@@ -566,12 +574,15 @@ void MainWindow::add_favourite(bool l)
     act2->setData(path);
     connect(act2, &QAction::triggered, this, [act2, this]() {ui->path_r->setText(act2->data().toString());on_path_r_returnPressed();});
 
-    if (path == last_path_l) {
+    QString fname = QFileInfo(last_path_l).absoluteFilePath();
+
+    if (path == fname) {
         act->setChecked(true);
         act_add_fav_l->setVisible(false);
         act_remove_fav_l->setVisible(true);
     }
-    if (path == last_path_r) {
+    fname = QFileInfo(last_path_r).absoluteFilePath();
+    if (path == fname) {
         act2->setChecked(true);
         act_add_fav_r->setVisible(false);
         act_remove_fav_r->setVisible(true);
@@ -615,6 +626,32 @@ void MainWindow::remove_favourite(bool l)
             return;
         }
     }
+}
+
+void MainWindow::settings_favourite()
+{
+    SettingsFavWidget *sfw = new SettingsFavWidget(appSettings, ui->toolButton_favourites_l, ui->toolButton_favourites_r);
+    connect(sfw, SIGNAL(update_menu(QStringList,QStringList)), this, SLOT(add_favourites(QStringList,QStringList)));
+    sfw->show();
+}
+
+void MainWindow::add_favourites(QStringList fnames, QStringList fpathes)
+{
+    for (int i = 0; i < fnames.length(); ++i) {
+        QAction *act = new QAction(fnames[i], this);
+        act->setCheckable(true);
+        ui->toolButton_favourites_l->insertAction(act_add_fav_l, act);
+        act->setData(fpathes[i]);
+        connect(act, &QAction::triggered, this, [act, this]() {ui->path_l->setText(act->data().toString());on_path_l_returnPressed();});
+
+        QAction *act2 = new QAction(fnames[i], this);
+        act2->setCheckable(true);
+        ui->toolButton_favourites_r->insertAction(act_add_fav_r, act2);
+        act2->setData(fpathes[i]);
+        connect(act2, &QAction::triggered, this, [act2, this]() {ui->path_r->setText(act2->data().toString());on_path_r_returnPressed();});
+    }
+    on_path_l_returnPressed();
+    on_path_r_returnPressed();
 }
 
 void MainWindow::change_w_col_l(int logicalIndex, int oldSize, int newSize)
@@ -944,7 +981,6 @@ void MainWindow::on_path_l_returnPressed()
             ui->path_l->setText(ui->path_l->text() + "/");
     }
     QDir dir(ui->path_l->text());
-    //if (dir.exists() && ui->path_l->text().endsWith("/")) {
     if (dir.exists()) {
         size_d_l(new_disk);
         combobox_disk_l->setCurrentIndex(combobox_disk_l->findText(new_disk));
@@ -973,8 +1009,9 @@ void MainWindow::on_path_l_returnPressed()
     for (auto a : ui->toolButton_favourites_l->actions())
         a->setChecked(false);
 
+    QString fname = QFileInfo(last_path_l).absoluteFilePath();
     for (auto a : ui->toolButton_favourites_l->actions()) {
-        if (a->data().toString() == last_path_l) {
+        if (a->data().toString() == fname) {
             a->setChecked(true);
             act_add_fav_l->setVisible(false);
             act_remove_fav_l->setVisible(true);
@@ -1036,8 +1073,9 @@ void MainWindow::on_path_r_returnPressed()
     for (auto a : ui->toolButton_favourites_r->actions())
         a->setChecked(false);
 
+    QString fname = QFileInfo(last_path_r).absoluteFilePath();
     for (auto a : ui->toolButton_favourites_r->actions()) {
-        if (a->data().toString() == last_path_r) {
+        if (a->data().toString() == fname) {
             a->setChecked(true);
             act_add_fav_r->setVisible(false);
             act_remove_fav_r->setVisible(true);
