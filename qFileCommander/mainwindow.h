@@ -179,10 +179,12 @@ private slots:
     //изменилась геометрия правого заголовка
     void change_w_col_r(int logicalIndex, int oldSize, int newSize);
 
-    //изменение режима (бастрый просмотр на правой панели)
+    //изменение режима (быстрый просмотр на правой панели)
     void change_fast_view();
+    //пересоздание окна быстрого просмотра
+    void reopen_fast_view();
     //перерисовка виджета быстрого просмотра
-    void reDrawFastView(QTreeWidgetItem *current,QTreeWidgetItem*);
+    void reDrawFastView(QTreeWidgetItem *current);
 
     //вызвает окно ошибки с переданным текстом
     void v_error(QString str_error);

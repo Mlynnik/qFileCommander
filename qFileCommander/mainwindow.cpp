@@ -688,10 +688,10 @@ void MainWindow::change_fast_view()
         ui->path_r->setText(fpath.split("/").last());
         view_widget->show();
         view_widget->setFocusPolicy(Qt::StrongFocus);
-        connect(view_widget, &Lister::closed, this, [this]() {if (ui->pushButton_fast_view->isChecked()) ui->pushButton_fast_view->click();});
-        connect(treeWidget_l, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)), this, SLOT(reDrawFastView(QTreeWidgetItem*,QTreeWidgetItem*)));
+        connect(view_widget, SIGNAL(closed()), this, SLOT(reopen_fast_view()));
+        connect(treeWidget_l, SIGNAL(curItemUpdate(QTreeWidgetItem*)), this, SLOT(reDrawFastView(QTreeWidgetItem*)));
     } else {
-        disconnect(treeWidget_l, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)), this, SLOT(reDrawFastView(QTreeWidgetItem*,QTreeWidgetItem*)));
+        disconnect(treeWidget_l, SIGNAL(curItemUpdate(QTreeWidgetItem*)), this, SLOT(reDrawFastView(QTreeWidgetItem*)));
         if (view_widget) {
             view_widget->close();
         }
@@ -710,7 +710,27 @@ void MainWindow::change_fast_view()
     resizeEvent(nullptr);
 }
 
-void MainWindow::reDrawFastView(QTreeWidgetItem *current, QTreeWidgetItem *)
+void MainWindow::reopen_fast_view()
+{
+    if (ui->pushButton_fast_view->isChecked()) {
+        QString fpath;
+        QTreeWidgetItem *current = treeWidget_l->currentItem();
+        if (current)
+            fpath = treeWidget_l->currentItem()->data(0, Qt::UserRole).toString();
+
+        if (fpath == "")
+            fpath = last_path_l;
+
+        view_widget = new Lister(fpath, appSettings, this);
+        connect(view_widget, SIGNAL(closed()), this, SLOT(reopen_fast_view()));
+        ui->path_r->setText(fpath.split("/").last());
+        view_widget->show();
+        view_widget->setFocusPolicy(Qt::StrongFocus);
+        resizeEvent(nullptr);
+    }
+}
+
+void MainWindow::reDrawFastView(QTreeWidgetItem *current)
 {
     if (!current)
         return;
@@ -718,6 +738,7 @@ void MainWindow::reDrawFastView(QTreeWidgetItem *current, QTreeWidgetItem *)
     QString fpath = current->data(0, Qt::UserRole).toString();
     if (fpath == "")
         fpath = last_path_l;
+
     QString fname = fpath.split("/").last();
     if (fname == ui->path_r->text())
         return;
@@ -992,13 +1013,13 @@ void MainWindow::on_path_l_returnPressed()
             last_dir_l = last_path_l.remove(ui->path_l->text()).replace("/", "");
         }
 
+        last_path_l = ui->path_l->text();
         treeWidget_l->Fill(ui->path_l->text(), hidden_f, last_dir_l);
 
         all_l_v = treeWidget_l->all_v;
         all_f_l = treeWidget_l->all_f;
-        last_path_l = ui->path_l->text();
-        treeWidget_l->path = last_path_l;
         all_l_v = round(all_l_v / 1024);
+        treeWidget_l->path = last_path_l;
 
         ui->inf_dir_l->setText("0 КБ из " + HelperFunctions::HelperFunctions::reformat_size(QString::number(all_l_v, 'g', 20)) + " КБ, файлов: 0 из " + QString::number(all_f_l));
     } else {

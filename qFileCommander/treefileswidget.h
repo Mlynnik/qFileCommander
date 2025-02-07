@@ -33,6 +33,7 @@ public:
 
 signals:
     void drop_signal(QStringList lst, bool remove_after);
+    void curItemUpdate(QTreeWidgetItem*);
 
 public slots:
     ///заполнение дерева по директории
