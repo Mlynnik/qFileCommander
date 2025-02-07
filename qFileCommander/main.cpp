@@ -6,7 +6,7 @@ int main(int argc, char *argv[])
 {
     QCoreApplication::setOrganizationName("qFileCommander");
     QCoreApplication::setOrganizationDomain("qFileCommander.com");
-    QCoreApplication::setApplicationName("qFileCommander 1.0");
+    QCoreApplication::setApplicationName("qFileCommander");
 
     QApplication a(argc, argv);
     MainWindow w;
