@@ -271,6 +271,7 @@ void TreeFilesWidget::current_itemChanged(QTreeWidgetItem *current, QTreeWidgetI
     previous_item_ind = this->indexOfTopLevelItem(previous);
     if (QGuiApplication::keyboardModifiers() != Qt::ShiftModifier)
         flag_shift = false;
+    emit curItemUpdate(current);
 }
 
 void TreeFilesWidget::widget_itemClicked(QTreeWidgetItem *item, int column)
