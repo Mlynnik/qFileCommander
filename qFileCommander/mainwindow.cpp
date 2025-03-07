@@ -250,6 +250,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->toolButton_favourites_r->setIcon(QIcon(":/resources/icons/favourites.png"));
     ui->toolButton_favourites_l->setPopupMode(QToolButton::InstantPopup);
     ui->toolButton_favourites_r->setPopupMode(QToolButton::InstantPopup);
+    ui->toolButton_favourites_l->setToolTip("Избранные каталоги");
+    ui->toolButton_favourites_r->setToolTip("Избранные каталоги");
 
     act_add_fav_l = new QAction("Добавить текущий каталог", this);
     ui->toolButton_favourites_l->addAction(act_add_fav_l);
@@ -389,7 +391,7 @@ void MainWindow::resizeEvent(QResizeEvent *event) {
     ui->horizontalLayoutWidget_2->setGeometry(round(w_now*770), round(h*30), round(w_now*325), round(h*20));
 
     if (view_widget)
-        view_widget->setGeometry(round(w_now*770), round(h*110), round(w_now*765), round(h_now*635 - (h-h_now)*170));
+        view_widget->setGeometry(round(w_now*770), round(h*112), round(w_now*765), round(h_now*633 - (h-h_now)*170));
 
     ui->horizontalLayoutWidget_5->setGeometry(round(w_now*1), 0, round(w_now*750), round(h*27));
     ui->line_3->setGeometry(round(w_now*-5), round(h_now*770 - (h-h_now)*35), round(w_now*1540), round(h*2));
