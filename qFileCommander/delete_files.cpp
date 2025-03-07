@@ -12,7 +12,7 @@ void Delete_Files::Work(const QStringList &selected_dirs, const QStringList &sel
     if (selected_dirs.length() + selected_files.length() > 0) {
         all_count = selected_dirs.length() + selected_files.length();
         QMessageBox q_del;
-        q_del.setWindowIcon(QIcon("appIcon.png"));
+        q_del.setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
         q_del.setFont(*dialog_font);
         q_del.setIcon(QMessageBox::Question);
         q_del.setWindowTitle("Удаление");
@@ -30,7 +30,7 @@ void Delete_Files::Work(const QStringList &selected_dirs, const QStringList &sel
 
         w_progress = new QDialog();
         w_progress->setWindowFlags(Qt::WindowCloseButtonHint | Qt::WindowMinimizeButtonHint);
-        w_progress->setWindowIcon(QIcon("appIcon.png"));
+        w_progress->setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
         w_progress->setWindowTitle("Удаление");
         w_progress->setFixedHeight(170);
         w_progress->setFixedWidth(500);
@@ -108,7 +108,7 @@ void Delete_Files::update_name_progress(QString val)
 void Delete_Files::v_error(QString str_error)
 {
     QMessageBox v_err;
-    v_err.setWindowIcon(QIcon("appIcon.png"));
+    v_err.setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
     v_err.setFont(*dialog_font);
     v_err.setIcon(QMessageBox::Critical);
     v_err.setWindowTitle("Ошибка !");
@@ -120,7 +120,7 @@ void Delete_Files::v_error(QString str_error)
 void Delete_Files::cant_del(QString str_error)
 {
     QMessageBox v_err;
-    v_err.setWindowIcon(QIcon("appIcon.png"));
+    v_err.setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
     v_err.setFont(*dialog_font);
     v_err.setIcon(QMessageBox::Warning);
     v_err.setWindowTitle("Ошибка !");
@@ -135,7 +135,7 @@ void Delete_Files::cancel_clicked()
 {
     emit cancel_clicked_first();
     QMessageBox v_q;
-    v_q.setWindowIcon(QIcon("appIcon.png"));
+    v_q.setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
     v_q.setFont(*dialog_font);
     v_q.setIcon(QMessageBox::Question);
     v_q.setWindowTitle("Ошибка!");

@@ -16,7 +16,7 @@ Lister::Lister(const QString& _fpath, const AppSettings *_appSettings, QWidget *
     fpath = _fpath;
 
     setWindowTitle("Lister - [" + fpath + "]");
-    setWindowIcon(QIcon("appIcon.png"));
+    setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
     resize(round(appSettings->w*800), round(appSettings->h*600));
     setFont(*appSettings->main_font);
 

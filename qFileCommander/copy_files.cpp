@@ -8,7 +8,7 @@
 Copy_files::Copy_files(const AppSettings *appSettings)
 {
     dialog_font = appSettings->dialog_font;
-    msgBox.setWindowIcon(QIcon("appIcon.png"));
+    msgBox.setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
     msgBox.setFont(*dialog_font);
     msgBox.setIcon(QMessageBox::Warning);
     msgBox.setWindowTitle("Внимание !");
@@ -88,7 +88,7 @@ void Copy_files::Work(QString dir_to, const QStringList& selected_dirs, const QS
 
 
         QMessageBox q_copy;
-        q_copy.setWindowIcon(QIcon("appIcon.png"));
+        q_copy.setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
         q_copy.setFont(*dialog_font);
         q_copy.setIcon(QMessageBox::Question);
 
@@ -116,6 +116,7 @@ void Copy_files::Work(QString dir_to, const QStringList& selected_dirs, const QS
             w_progress->setWindowTitle("Перемещение");
         else
             w_progress->setWindowTitle("Копирование");
+        w_progress->setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
         w_progress->setWindowIcon(QIcon("appIcon.png"));
         w_progress->setFixedHeight(170);
         w_progress->setFixedWidth(500);
@@ -191,7 +192,7 @@ void Copy_files::cancel_clicked()
 {
     emit cancel_clicked_first();
     QMessageBox v_q;
-    v_q.setWindowIcon(QIcon("appIcon.png"));
+    v_q.setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
     v_q.setFont(*dialog_font);
     v_q.setIcon(QMessageBox::Question);
     v_q.setWindowTitle("Ошибка!");
@@ -213,7 +214,7 @@ void Copy_files::set_yet_exists_ind(QString val)
     int ind = msgBox.exec();
     if (ind == 6) {
         QMessageBox v_q;
-        v_q.setWindowIcon(QIcon("appIcon.png"));
+        v_q.setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
         v_q.setFont(*dialog_font);
         v_q.setIcon(QMessageBox::Question);
         v_q.setWindowTitle("Ошибка!");
@@ -238,7 +239,7 @@ void Copy_files::set_yet_exists_ind(QString val)
 
 void Copy_files::v_error(QString str_error) {
     QMessageBox v_err;
-    v_err.setWindowIcon(QIcon("appIcon.png"));
+    v_err.setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
     v_err.setFont(*dialog_font);
     v_err.setIcon(QMessageBox::Critical);
     v_err.setWindowTitle("Ошибка !");
@@ -250,7 +251,7 @@ void Copy_files::v_error(QString str_error) {
 
 void Copy_files::cant_copy(QString str_error) {
     QMessageBox v_err;
-    v_err.setWindowIcon(QIcon("appIcon.png"));
+    v_err.setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
     v_err.setFont(*dialog_font);
     v_err.setIcon(QMessageBox::Warning);
     v_err.setWindowTitle("Ошибка !");
@@ -264,7 +265,7 @@ void Copy_files::cant_copy(QString str_error) {
 void Copy_files::cant_del(QString str_error)
 {
     QMessageBox v_err;
-    v_err.setWindowIcon(QIcon("appIcon.png"));
+    v_err.setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
     v_err.setFont(*dialog_font);
     v_err.setIcon(QMessageBox::Warning);
     v_err.setWindowTitle("Ошибка !");

@@ -19,7 +19,7 @@ FindWidget::FindWidget(const AppSettings *appSettings, QWidget *parent) : QWidge
     dialog_font = appSettings->dialog_font;
 
     setWindowTitle("Поиск файлов");
-    setWindowIcon(QIcon("appIcon.png"));
+    setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
     setGeometry(round(w*350), round(h*200), round(w*800), round(h*500));
     setFont(*main_font);
 
@@ -212,7 +212,7 @@ void FindWidget::closeEvent(QCloseEvent *event)
 
 void FindWidget::v_error(QString str_error) {
     QMessageBox v_err;
-    v_err.setWindowIcon(QIcon("appIcon.png"));
+    v_err.setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
     v_err.setFont(*dialog_font);
     v_err.setIcon(QMessageBox::Critical);
     v_err.setWindowTitle("Ошибка !");

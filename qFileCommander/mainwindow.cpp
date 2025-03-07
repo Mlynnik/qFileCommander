@@ -74,7 +74,7 @@ MainWindow::MainWindow(QWidget *parent)
     MainWindow::showMaximized();
     w_max = MainWindow::width();
     h_max = MainWindow::height();
-    MainWindow::setWindowIcon(QIcon("appIcon.png"));
+    MainWindow::setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
     MainWindow::setWindowTitle("qFileCommander");
 
 
@@ -183,8 +183,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->line_2->setGeometry(round(w*-5), round(h*82), round(w*1540), round(h*2));
 
     //иконки кнопок
-    ui->pushButton_settings->setIcon(QIcon("settings.png"));
-    ui->pushButton_fast_view->setIcon(QIcon("fastView.png"));
+    ui->pushButton_settings->setIcon(QIcon(":/resources/icons/settings.png"));
+    ui->pushButton_fast_view->setIcon(QIcon(":/resources/icons/fastView.png"));
     ui->pushButton_fast_view->setCheckable(true);
     ui->pushButton_mass_rename->setText("A");
     ui->pushButton_open_in_exp->setIcon(QIcon(style()->standardIcon(QStyle::SP_DialogOpenButton)));
@@ -197,7 +197,7 @@ MainWindow::MainWindow(QWidget *parent)
         ui->pushButton_admin->setEnabled(false);
         ui->pushButton_admin->setCheckable(false);
     }
-    ui->pushButton_hidden_f->setIcon(QIcon("hiddenf.png"));
+    ui->pushButton_hidden_f->setIcon(QIcon(":/resources/icons/hiddenf.png"));
     ui->pushButton_hidden_f->setCheckable(true);
     if (hidden_f)
         ui->pushButton_hidden_f->setChecked(true);
@@ -246,8 +246,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     //избранное
-    ui->toolButton_favourites_l->setIcon(QIcon("favourites.png"));
-    ui->toolButton_favourites_r->setIcon(QIcon("favourites.png"));
+    ui->toolButton_favourites_l->setIcon(QIcon(":/resources/icons/favourites.png"));
+    ui->toolButton_favourites_r->setIcon(QIcon(":/resources/icons/favourites.png"));
     ui->toolButton_favourites_l->setPopupMode(QToolButton::InstantPopup);
     ui->toolButton_favourites_r->setPopupMode(QToolButton::InstantPopup);
 
@@ -551,7 +551,7 @@ void MainWindow::add_favourite(bool l)
     QString new_name = path; new_name = new_name.removeLast().split("/").last();
 
     QInputDialog id;
-    id.setWindowIcon(QIcon("appIcon.png"));
+    id.setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
     id.setFont(main_font);
     id.resize(QSize(400, 60));
     id.setCancelButtonText("Отмена");
@@ -751,7 +751,7 @@ void MainWindow::reDrawFastView(QTreeWidgetItem *current)
 //вызвает окно ошибки с переданным текстом
 void MainWindow::v_error(QString str_error) {
     QMessageBox v_err;
-    v_err.setWindowIcon(QIcon("appIcon.png"));
+    v_err.setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
     v_err.setFont(dialog_font);
     v_err.setIcon(QMessageBox::Critical);
     v_err.setWindowTitle("Ошибка !");
@@ -1458,7 +1458,7 @@ void MainWindow::on_pushButton_f4_clicked()
         bool flag_dir = false;
 
         QInputDialog id;
-        id.setWindowIcon(QIcon("appIcon.png"));
+        id.setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
         id.setFont(main_font);
         id.resize(QSize(400, 60));
         id.setCancelButtonText("Отмена");
@@ -1603,7 +1603,7 @@ void MainWindow::on_pushButton_f7_clicked()
     }
 
     QInputDialog id;
-    id.setWindowIcon(QIcon("appIcon.png"));
+    id.setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
     id.setFont(dialog_font);
     id.resize(QSize(400, 60));
     id.setCancelButtonText("Отмена");
@@ -1792,7 +1792,7 @@ void MainWindow::on_pushButton_create_file_clicked()
 
 
     QInputDialog id;
-    id.setWindowIcon(QIcon("appIcon.png"));
+    id.setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
     id.setFont(dialog_font);
     id.resize(QSize(400, 60));
     id.setCancelButtonText("Отмена");

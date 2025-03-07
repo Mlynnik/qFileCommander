@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/resources">
+        <file>icons/appIcon.png</file>
+        <file>icons/fastView.png</file>
+        <file>icons/favourites.png</file>
+        <file>icons/hiddenf.png</file>
+        <file>icons/settings.png</file>
+    </qresource>
+</RCC>

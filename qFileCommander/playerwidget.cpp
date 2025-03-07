@@ -15,7 +15,7 @@ PlayerWidget::PlayerWidget(const QString& _fpath, const AppSettings *appSettings
     h = appSettings->h;
     fpath = _fpath;
     dialog_font = appSettings->dialog_font;
-    setWindowIcon(QIcon("appIcon.png"));
+    setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
     setFont(*appSettings->main_font);
     setMinimumWidth(round(w*500));
     setMinimumHeight(round(h*60));
@@ -161,10 +161,10 @@ void PlayerWidget::keyPressEvent(QKeyEvent *e)
         hSlider->setValue(hSlider->value() + 10);
         break;
     case Qt::Key_Down:
-        audioOutput->setVolume(audioOutput->volume() - 0.1);
+        audioOutput->setVolume(roundf((audioOutput->volume() - 0.1)*10)/10);
         break;
     case Qt::Key_Up:
-        audioOutput->setVolume(audioOutput->volume() + 0.1);
+        audioOutput->setVolume(roundf((audioOutput->volume() + 0.1)*10)/10);
         break;
     }
 }
@@ -262,7 +262,7 @@ void PlayerWidget::v_error(QMediaPlayer::Error error, QString errorString)
     }
 
     QMessageBox v_err;
-    v_err.setWindowIcon(QIcon("appIcon.png"));
+    v_err.setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
     v_err.setFont(*dialog_font);
     v_err.setIcon(QMessageBox::Critical);
     v_err.setWindowTitle("Ошибка !");
