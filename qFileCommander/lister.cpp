@@ -105,9 +105,10 @@ void Lister::reFill(const QString &_fpath)
     cod_audio->setDisabled(false);
 
     if (QFileInfo(fpath).isDir()) {
-        if (mode == ListerMode::Dir && widget_now)
+        if (mode == ListerMode::Dir && widget_now) {
+            is_th = true;
             ((DirWidget*)widget_now)->reFill(fpath);
-        else
+        } else
             setMode(ListerMode::Dir);
         return;
     }
@@ -388,6 +389,7 @@ DirWidget::DirWidget(const QString &_fpath, const AppSettings *appSettings, QWid
 
 void DirWidget::closeEvent(QCloseEvent *event)
 {
+    is_break = true;
     event->ignore();
     if (th)
         emit stop();
@@ -405,7 +407,6 @@ void DirWidget::Fill()
     connect(th, SIGNAL(started()), dpp, SLOT(Work()));
     connect(dpp, SIGNAL(setInfo(qlonglong,qlonglong,qlonglong)), this, SLOT(setDirInfo(qlonglong,qlonglong,qlonglong)));
     connect(this, SIGNAL(stop()), dpp, SLOT(stop()), Qt::DirectConnection);
-    connect(dpp, SIGNAL(break_proc()), this, SLOT(break_proc()));
 
     dpp->moveToThread(th);
     th->start();
@@ -427,6 +428,7 @@ void DirWidget::setDirInfo(long long all_size, long long dcnt, long long fcnt)
 {
     if (th) {
         th->wait();
+        th->quit();
         delete th;
         th = nullptr;
     }
@@ -438,11 +440,11 @@ void DirWidget::setDirInfo(long long all_size, long long dcnt, long long fcnt)
         emit parent_close();
     emit th_finished();
     if (is_break) {
-        this->close();
+        //this->close();
         return;
     }
 
-    appendPlainText("\nВсего файлов:     " % reformat_size(QString::number(fcnt)) % ",\nкаталогов:     "
+    setPlainText(fpath % "\n\nВсего файлов:     " % reformat_size(QString::number(fcnt)) % ",\nкаталогов:     "
                     % reformat_size(QString::number(dcnt)) % "\n\nОбщий размер:     "
                     % reformat_size(QString::number(all_size)) % " Б (" % reformat_size_2(all_size) % ")");
 }
@@ -466,8 +468,6 @@ void DirPropProcess::Work()
             }
         }
     }
-    if (is_stop)
-        emit break_proc();
     emit setInfo(all_size, dcnt, fcnt);
 
     this->deleteLater();

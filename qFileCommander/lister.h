@@ -94,7 +94,6 @@ signals:
     void parent_close();
 
 public slots:
-    void break_proc() { is_break = true; }
     void setDirInfo(long long int all_size, long long int dcnt, long long int fcnt);
     void reFill(const QString& _fpath);
 
@@ -118,7 +117,6 @@ public:
     DirPropProcess(const QString& _fpath);
 signals:
     void setInfo(long long int all_size, long long int dcnt, long long int fcnt);
-    void break_proc();
 
 public slots:
     void Work();

@@ -469,7 +469,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
     find_wid->close_wid();
 
     if (view_widget)
-        view_widget->close();
+        ui->pushButton_fast_view->click();
 
     event->accept();
 }
@@ -691,6 +691,7 @@ void MainWindow::change_fast_view()
         connect(view_widget, SIGNAL(closed()), this, SLOT(reopen_fast_view()));
         connect(treeWidget_l, SIGNAL(curItemUpdate(QTreeWidgetItem*)), this, SLOT(reDrawFastView(QTreeWidgetItem*)));
     } else {
+        disconnect(view_widget, SIGNAL(closed()), this, SLOT(reopen_fast_view()));
         disconnect(treeWidget_l, SIGNAL(curItemUpdate(QTreeWidgetItem*)), this, SLOT(reDrawFastView(QTreeWidgetItem*)));
         if (view_widget) {
             view_widget->close();
