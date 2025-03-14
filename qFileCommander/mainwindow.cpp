@@ -393,13 +393,12 @@ void MainWindow::resizeEvent(QResizeEvent *event) {
     if (view_widget)
         view_widget->setGeometry(round(w_now*770), round(h*112), round(w_now*765), round(h_now*633 - (h-h_now)*170));
 
-    ui->horizontalLayoutWidget_5->setGeometry(round(w_now*1), 0, round(w_now*750), round(h*27));
     ui->line_3->setGeometry(round(w_now*-5), round(h_now*770 - (h-h_now)*35), round(w_now*1540), round(h*2));
-    ui->horizontalLayoutWidget_4->setGeometry(round(w_now*1), round(h*54), round(w_now*750), round(h*27));
+    ui->horizontalLayoutWidget_4->setGeometry(round(w_now*1), round(h*58), round(w_now*750), round(h*24));
     disk_progress_l->setMinimumWidth(round(w_now*200));
     disk_progress_l->setMaximumWidth(round(w_now*200));
     disk_progress_l->setMaximumHeight(round(h*15));
-    ui->horizontalLayoutWidget_5->setGeometry(round(w_now*770), round(h*54), round(w_now*750), round(h*27));
+    ui->horizontalLayoutWidget_5->setGeometry(round(w_now*770), round(h*58), round(w_now*750), round(h*24));
     disk_progress_r->setMinimumWidth(round(w_now*200));
     disk_progress_r->setMaximumWidth(round(w_now*200));
     disk_progress_r->setMaximumHeight(round(h*15));
@@ -914,7 +913,7 @@ void MainWindow::size_d_l(QString disk)
         disk_progress_l->setStyleSheet("QProgressBar::chunk {background-color: rgb(38,160,218);}");
     else
         disk_progress_l->setStyleSheet("QProgressBar::chunk {background-color: rgb(218,38,38);}");
-    disk_name_l->setText(st_inf.name() + "  (" + disk.remove("/").toUpper() + ")");
+    disk_name_l->setText("[" % st_inf.name() % "]");
     disk_progress_l->setValue(occup_b);
     disk_free_size_l->setText(HelperFunctions::reformat_size(QString::number(round(float(av_b)/1024), 'g', 20)) + " КБ из " +
                               HelperFunctions::reformat_size(QString::number(round(float(all_b)/1024), 'g', 20)) + " КБ свободно");
@@ -941,7 +940,7 @@ void MainWindow::size_d_r(QString disk)
         disk_progress_r->setStyleSheet("QProgressBar::chunk {background-color: rgb(38,160,218);}");
     else
         disk_progress_r->setStyleSheet("QProgressBar::chunk {background-color: rgb(218,38,38);}");
-    disk_name_r->setText(st_inf.name() + "  (" + disk.remove("/").toUpper() + ")");
+    disk_name_r->setText("[" % st_inf.name() % "]");
     disk_progress_r->setValue(occup_b);
     disk_free_size_r->setText(HelperFunctions::reformat_size(QString::number(round(float(av_b)/1024), 'g', 20)) + " КБ из " +
                               HelperFunctions::reformat_size(QString::number(round(float(all_b)/1024), 'g', 20)) + " КБ свободно");
