@@ -100,7 +100,7 @@ public slots:
 
 private slots:
     ///собирает информацию о директории
-    void get_dir_info(const QString& dir);
+    bool get_dir_info(const QString& dir);
     ///копирование конкретного файла
     int copy_file(const QString& past_name, const QString& new_name);
     ///рекурсивное удаление папки

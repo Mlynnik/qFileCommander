@@ -5,6 +5,7 @@
 #include <QDir>
 #include <QDirIterator>
 #include <QImageReader>
+#include <QMessageBox>
 
 Lister::Lister(const QString& _fpath, const AppSettings *_appSettings, QWidget *parent)
     : QWidget(parent)
@@ -476,10 +477,11 @@ void DirPropProcess::Work()
 
 
 //TextWidget
-TextWidget::TextWidget(const QString &_fpath, const AppSettings *appSettings, QWidget *parent, bool _is_xml, FCodes _cod) : QWidget(parent)
+TextWidget::TextWidget(const QString &_fpath, const AppSettings *_appSettings, QWidget *parent, bool _is_xml, FCodes _cod) : QWidget(parent)
 {
     setAttribute(Qt::WA_DeleteOnClose);
     file = new QFile(_fpath);
+    appSettings = _appSettings;
 
     fpath = _fpath;
     is_xml = _is_xml;
@@ -556,6 +558,17 @@ TextWidget::~TextWidget()
     delete file;
 }
 
+void TextWidget::v_error(QString str_error) {
+    QMessageBox v_err;
+    v_err.setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
+    v_err.setFont(*appSettings->dialog_font);
+    v_err.setIcon(QMessageBox::Critical);
+    v_err.setWindowTitle("Ошибка !");
+    v_err.setText(str_error);
+    v_err.setTextInteractionFlags(Qt::TextSelectableByMouse);
+    v_err.exec();
+}
+
 void TextWidget::reFill(const QString& _fpath, bool _is_xml, FCodes _cod)
 {
     plainTextEdit->clear();
@@ -579,8 +592,10 @@ void TextWidget::reFill(const QString& _fpath, bool _is_xml, FCodes _cod)
 
 void TextWidget::Fill()
 {
-    if (!file->open(QIODevice::ReadOnly))
+    if (!file->open(QIODevice::ReadOnly)) {
+        v_error("Не удалось открыть файл " % fpath % "\n\n" % file->errorString());
         return;
+    }
     //this->close();
 
     if (f_size < 1048576) {

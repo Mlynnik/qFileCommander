@@ -223,6 +223,7 @@ void Delete_Process::Work()
 {
     for (int i = 0; i < selected_dirs.size(); ++i) {
         if (is_final || !QFile::moveToTrash(selected_dirs[i])) {
+            SetFileAttributesA(selected_dirs[i].toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
             if (!removeDir(selected_dirs[i])) {
                 if (wasCanceled_first)
                     func_loop();
@@ -234,7 +235,7 @@ void Delete_Process::Work()
                     goto lab_end;
                 }
                 if (cant_del_ind == 0) {
-                    emit cant_del(selected_files[i]);
+                    emit cant_del(selected_dirs[i]);
                     func_loop();
                 }
                 if (cant_del_ind == 2)
@@ -254,7 +255,9 @@ void Delete_Process::Work()
 
     for (int i = 0; i < selected_files.size(); ++i) {
         if (is_final || !QFile::moveToTrash(selected_files[i])) {
-            if (!QFile::remove(selected_files[i])) {
+            SetFileAttributesA(selected_files[i].toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
+            QFile file(selected_files[i]);
+            if (!file.remove()) {
                 if (wasCanceled_first)
                     func_loop();
                 if (wasCanceled || (cant_del_ind == 2))
@@ -283,7 +286,7 @@ void Delete_Process::Work()
         emit set_comp_count(++complited_count);
     }
 
-    lab_end:
+lab_end:
     this->deleteLater();
     this->thread()->exit();
 }
@@ -297,29 +300,50 @@ bool Delete_Process::removeDir(const QString &dirName)
         Q_FOREACH(QFileInfo info, dir.entryInfoList(QDir::NoDotAndDotDot | QDir::System | QDir::Hidden  | QDir::AllDirs | QDir::Files, QDir::DirsFirst)) {
 
             emit update_name_del(info.absoluteFilePath());
+            SetFileAttributesA(info.absoluteFilePath().toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
             if (info.isDir()) {
                 result = removeDir(info.absoluteFilePath());
+
+                if (!result) {
+                    if (wasCanceled_first)
+                        func_loop();
+                    if (wasCanceled || (cant_del_ind == 2))
+                        return false;
+
+                    if (!QDir(disk).exists()) {
+                        emit error_operation("Операция прервана!\nУстройство извлечено!");
+                        return false;
+                    }
+
+                    if (cant_del_ind == 0) {
+                        emit cant_del(info.absoluteFilePath());
+                        func_loop();
+                    }
+                    if (cant_del_ind == 2)
+                        return result;
+                }
             } else {
-                result = QFile::remove(info.absoluteFilePath());
-            }
+                QFile file(info.absoluteFilePath());
+                if (!file.remove()) {
+                    result = false;
+                    if (wasCanceled_first)
+                        func_loop();
+                    if (wasCanceled || (cant_del_ind == 2))
+                        return false;
 
-            if (!result) {
-                if (wasCanceled_first)
-                    func_loop();
-                if (wasCanceled || (cant_del_ind == 2))
-                    return false;
+                    if (!QDir(disk).exists()) {
+                        emit error_operation("Операция прервана!\nУстройство извлечено!");
+                        return false;
+                    }
 
-                if (!QDir(disk).exists()) {
-                    emit error_operation("Операция прервана!\nУстройство извлечено!");
-                    return false;
+                    if (cant_del_ind == 0) {
+                        emit cant_del(info.absoluteFilePath() % "\n\n" % file.errorString());
+                        func_loop();
+                    }
+                    if (cant_del_ind == 2)
+                        return result;
                 }
-
-                if (cant_del_ind == 0) {
-                    emit cant_del(info.absoluteFilePath());
-                    func_loop();
-                }
-                if (cant_del_ind == 2)
-                    return result;
+                //result = QFile::remove(info.absoluteFilePath());
             }
 
             if (wasCanceled_first)

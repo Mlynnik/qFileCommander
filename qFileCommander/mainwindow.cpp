@@ -1523,7 +1523,11 @@ void MainWindow::on_pushButton_f4_clicked()
             } else if (!flag_dir && QFile(path_new + new_name).exists()) {
                 v_error("Файл с именем " % new_name % " уже существует.");
             } else {
-                if (!(QDir(path_new).rename(past_name, new_name)))
+                if (QFileInfo(path_new  % past_name).isFile()) {
+                    QFile file(path_new  % past_name);
+                    if (!file.rename(path_new  % new_name))
+                        v_error("Не удалось переименовать!\n\n" % file.errorString());
+                } else if (!(QDir(path_new).rename(past_name, new_name)))
                     v_error("Не удалось переименовать!");
                 update_widgets();
                 break;

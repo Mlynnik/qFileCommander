@@ -157,6 +157,7 @@ public slots:
 private:
     bool is_xml;
     FCodes cod;
+    const AppSettings *appSettings;
 
     QString fpath;
     QGridLayout *gridLayout = nullptr;
@@ -176,6 +177,7 @@ private:
 
 private slots:
     void Fill();
+    void v_error(QString str_error);
 };
 
 
