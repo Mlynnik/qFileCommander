@@ -212,7 +212,7 @@ void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, const QStri
         item->setText(1, fileInfo.suffix());
         all_v += fileInfo.size();
         all_f += 1;
-        item->setText(2, HelperFunctions::reformat_size(QString::number(fileInfo.size(), 'g', 20)) + "      ");
+        item->setText(2, HelperFunctions::reformat_size(fileInfo.size()) + "      ");
         item->setText(3, fileInfo.lastModified().toString("dd.MM.yyyy hh:mm"));
         item->setTextAlignment(2, Qt::AlignRight);
         item->setTextAlignment(3, Qt::AlignLeft);

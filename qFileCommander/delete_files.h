@@ -134,8 +134,6 @@ private slots:
     void cancel_clicked();
     ///полное завершение операции
     void end_del();
-
-    QString reformat_size(QString str);
 };
 
 

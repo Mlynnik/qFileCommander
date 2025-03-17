@@ -63,9 +63,6 @@ private slots:
     ///полное завершение операции
     void end_copy();
 
-    QString reformat_size_2(double num_0);
-    QString reformat_size(QString str);
-
 private:
     const QFont *dialog_font;
 

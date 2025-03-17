@@ -138,7 +138,7 @@ void FindWidget::add_item(QString path, QFileInfo fi)
 void FindWidget::end_of_search(int n_f, int n_d)
 {
     find_file->setText("Поиск");
-    find_res_1->setText("Найдено: файлов - " + QString::number(n_f) + ", каталогов - " + QString::number(n_d));
+    find_res_1->setText("Найдено: файлов - " % QString::number(n_f) % ", каталогов - " % QString::number(n_d));
 }
 
 void FindWidget::cancel_clicked()
@@ -176,7 +176,7 @@ void FindWidget::open_find_fid(QString f_name)
 void FindWidget::open_find_fid_exp(QString f_name)
 {
     f_name.replace("/", "\\");
-    f_name = "/select, \"" + f_name + "\"";
+    f_name = "/select, \"" % f_name % "\"";
     std::vector<wchar_t> res(f_name.size() + 1);
     ShellExecute(NULL, L"open", L"explorer.exe", (const wchar_t*)f_name.utf16(), NULL, SW_SHOWDEFAULT);
 }

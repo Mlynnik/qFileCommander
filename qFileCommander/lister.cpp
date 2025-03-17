@@ -1,5 +1,6 @@
 #include "lister.h"
 #include "playerwidget.h"
+#include "helperfunctions.h"
 #include <QScrollBar>
 #include <QFileInfo>
 #include <QDir>
@@ -16,7 +17,7 @@ Lister::Lister(const QString& _fpath, const AppSettings *_appSettings, QWidget *
     appSettings = _appSettings;
     fpath = _fpath;
 
-    setWindowTitle("Lister - [" + fpath + "]");
+    setWindowTitle("Lister - [" % fpath % "]");
     setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
     resize(round(appSettings->w*800), round(appSettings->h*600));
     setFont(*appSettings->main_font);
@@ -348,36 +349,6 @@ void Lister::f3_cod_local()
 }
 
 
-QString reformat_size(QString str)
-{
-    int x = str.length() - 3;
-    while(x > 0) {str.insert(x, QString(" ")); x -= 3;}
-    return str;
-}
-
-QString reformat_size_2(double num_0)
-{
-    QString str1;
-    if (num_0 >= 1000) {
-        num_0 = round(num_0 / 10.24) / 100;
-        str1 = QString::number(num_0) + " КБ";
-        if (num_0 >= 1000) {
-            num_0 = round(num_0 / 10.24) / 100;
-            str1 = QString::number(num_0) + " MБ";
-            if (num_0 >= 1000) {
-                num_0 = round(num_0 / 10.24) / 100;
-                str1 = QString::number(num_0) + " ГБ";
-                if (num_0 >= 1000) {
-                    num_0 = round(num_0 / 10.24) / 100;
-                    str1 = QString::number(num_0) + " ТБ";
-                }
-            }
-        }
-    } else
-        str1 = QString::number(num_0) + " Б";
-    return str1;
-}
-
 
 //DirWidget
 DirWidget::DirWidget(const QString &_fpath, const AppSettings *appSettings, QWidget *parent) : QPlainTextEdit(parent)
@@ -445,9 +416,9 @@ void DirWidget::setDirInfo(long long all_size, long long dcnt, long long fcnt)
         return;
     }
 
-    setPlainText(fpath % "\n\nВсего файлов:     " % reformat_size(QString::number(fcnt)) % ",\nкаталогов:     "
-                    % reformat_size(QString::number(dcnt)) % "\n\nОбщий размер:     "
-                    % reformat_size(QString::number(all_size)) % " Б (" % reformat_size_2(all_size) % ")");
+    setPlainText(fpath % "\n\nВсего файлов:     " % HelperFunctions::reformat_size(fcnt) % ",\nкаталогов:     "
+                    % HelperFunctions::reformat_size(dcnt) % "\n\nОбщий размер:     "
+                    % HelperFunctions::reformat_size(all_size) % " Б (" % HelperFunctions::reformat_size_2(all_size) % ")");
 }
 
 
@@ -526,7 +497,7 @@ TextWidget::TextWidget(const QString &_fpath, const AppSettings *_appSettings, Q
     pushButton_down->setText("down");
     gridLayout->addWidget(pushButton_down, 2, 5);
 
-    label_all_size->setText("из " + QString::number(ceil((double)f_size/1048576.0)) + " МБ");
+    label_all_size->setText("из " % QString::number(ceil((double)f_size/1048576.0)) % " МБ");
     lineEdit_size_now->setText("1");
     verticalSlider->setMinimum(1);
     verticalSlider->setMaximum(ceil((double)f_size/1048576.0));

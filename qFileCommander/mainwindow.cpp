@@ -906,18 +906,17 @@ void MainWindow::size_d_l(QString disk)
     disk += ":/";
 
     QStorageInfo st_inf = QStorageInfo(disk);
-    float av_b = st_inf.bytesAvailable();
-    float all_b = st_inf.bytesTotal();
-    float occup_b = (all_b - av_b)*100 / all_b;
+    qint64 av_b = st_inf.bytesAvailable();
+    qint64 all_b = st_inf.bytesTotal();
+    float occup_b = (all_b - av_b)*100.0 / all_b;
     if (occup_b < 90.0)
         disk_progress_l->setStyleSheet("QProgressBar::chunk {background-color: rgb(38,160,218);}");
     else
         disk_progress_l->setStyleSheet("QProgressBar::chunk {background-color: rgb(218,38,38);}");
     disk_name_l->setText("[" % st_inf.name() % "]");
     disk_progress_l->setValue(occup_b);
-    disk_free_size_l->setText(HelperFunctions::reformat_size(QString::number(round(float(av_b)/1024), 'g', 20)) + " КБ из " +
-                              HelperFunctions::reformat_size(QString::number(round(float(all_b)/1024), 'g', 20)) + " КБ свободно");
-    disk_free_size_l->setToolTip(HelperFunctions::reformat_size_2(av_b) + " из " + HelperFunctions::reformat_size_2(all_b) + " свободно");
+    disk_free_size_l->setText(HelperFunctions::reformat_size(av_b/1024) % " КБ из " % HelperFunctions::reformat_size(all_b/1024) % " КБ свободно");
+    disk_free_size_l->setToolTip(HelperFunctions::reformat_size_2(av_b) % " из " % HelperFunctions::reformat_size_2(all_b) % " свободно");
 }
 
 //изменяет информацию по выбранному правому диску
@@ -933,18 +932,17 @@ void MainWindow::size_d_r(QString disk)
     disk += ":/";
 
     QStorageInfo st_inf = QStorageInfo(disk);
-    float av_b = float(st_inf.bytesAvailable());
-    float all_b = float(st_inf.bytesTotal());
-    float occup_b = (all_b - av_b)*100 / float(all_b);
+    qint64 av_b = float(st_inf.bytesAvailable());
+    qint64 all_b = float(st_inf.bytesTotal());
+    float occup_b = (all_b - av_b)*100.0 / float(all_b);
     if (occup_b < 90.0)
         disk_progress_r->setStyleSheet("QProgressBar::chunk {background-color: rgb(38,160,218);}");
     else
         disk_progress_r->setStyleSheet("QProgressBar::chunk {background-color: rgb(218,38,38);}");
     disk_name_r->setText("[" % st_inf.name() % "]");
     disk_progress_r->setValue(occup_b);
-    disk_free_size_r->setText(HelperFunctions::reformat_size(QString::number(round(float(av_b)/1024), 'g', 20)) + " КБ из " +
-                              HelperFunctions::reformat_size(QString::number(round(float(all_b)/1024), 'g', 20)) + " КБ свободно");
-    disk_free_size_r->setToolTip(HelperFunctions::reformat_size_2(av_b) + " из " + HelperFunctions::reformat_size_2(all_b) + " свободно");
+    disk_free_size_r->setText(HelperFunctions::reformat_size(av_b/1024) % " КБ из " % HelperFunctions::reformat_size(all_b/1024) % " КБ свободно");
+    disk_free_size_r->setToolTip(HelperFunctions::reformat_size_2(av_b) % " из " % HelperFunctions::reformat_size_2(all_b) % " свободно");
 }
 
 
@@ -1023,9 +1021,9 @@ void MainWindow::on_path_l_returnPressed()
         all_l_v = round(all_l_v / 1024);
         treeWidget_l->path = last_path_l;
 
-        ui->inf_dir_l->setText("0 КБ из " + HelperFunctions::HelperFunctions::reformat_size(QString::number(all_l_v, 'g', 20)) + " КБ, файлов: 0 из " + QString::number(all_f_l));
+        ui->inf_dir_l->setText("0 КБ из " % HelperFunctions::reformat_size(all_l_v) % " КБ, файлов: 0 из " % QString::number(all_f_l));
     } else {
-        v_error("Путь " % QString('"') % ui->path_l->text() % QString('"') % " не найден.");
+        v_error("Путь \"" % ui->path_l->text() % "\" не найден.");
         ui->path_l->setText(last_path_l);
     }
 
@@ -1087,9 +1085,9 @@ void MainWindow::on_path_r_returnPressed()
         treeWidget_r->path = last_path_r;
         all_r_v = round(all_r_v / 1024);
 
-        ui->inf_dir_r->setText("0 КБ из " + HelperFunctions::HelperFunctions::reformat_size(QString::number(all_r_v, 'g', 20)) + " КБ, файлов: 0 из " + QString::number(all_f_r));
+        ui->inf_dir_r->setText("0 КБ из " % HelperFunctions::reformat_size(all_r_v) % " КБ, файлов: 0 из " % QString::number(all_f_r));
     } else {
-        v_error("Путь " + QString('"') + ui->path_r->text() + QString('"') + " не найден.");
+        v_error("Путь \"" % ui->path_r->text() % "\" не найден.");
         ui->path_r->setText(last_path_r);
     }
 
@@ -1367,9 +1365,8 @@ void MainWindow::treeWidget_l_itemSelectionChanged()
         now_v_l = round(now_v_l / 1024);
     }
 
-    ui->inf_dir_l->setText(HelperFunctions::HelperFunctions::reformat_size(QString::number(now_v_l, 'g', 20))
-                           + " КБ из " + HelperFunctions::reformat_size(QString::number(all_l_v, 'g', 20)) +
-                           " КБ, файлов: " + QString::number(now_f) + " из " + QString::number(all_f_l));
+    ui->inf_dir_l->setText(HelperFunctions::reformat_size(now_v_l) % " КБ из " % HelperFunctions::reformat_size(all_l_v)
+                          % " КБ, файлов: " % QString::number(now_f) % " из " % QString::number(all_f_l));
 }
 
 //срабатывает при изменении выбора строк
@@ -1387,8 +1384,8 @@ void MainWindow::treeWidget_r_itemSelectionChanged()
         }
         now_v_r = round(now_v_r / 1024);
     }
-    ui->inf_dir_r->setText(HelperFunctions::reformat_size(QString::number(now_v_r, 'g', 20)) + " КБ из " + HelperFunctions::reformat_size(QString::number(all_r_v, 'g', 20)) +
-                           " КБ, файлов: " + QString::number(now_f) + " из " + QString::number(all_f_r));
+    ui->inf_dir_r->setText(HelperFunctions::reformat_size(now_v_r) % " КБ из " % HelperFunctions::reformat_size(all_r_v)
+                           % " КБ, файлов: " % QString::number(now_f) % " из " % QString::number(all_f_r));
 
 }
 

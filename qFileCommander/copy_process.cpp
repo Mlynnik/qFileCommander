@@ -43,9 +43,9 @@ void CopyProcess::Copy()
 
     QString path_old;
     if (selected_dirs.length() > 0)
-        path_old = selected_dirs[0].left(selected_dirs[0].lastIndexOf("/")) + "/";
+        path_old = selected_dirs[0].left(selected_dirs[0].lastIndexOf("/")) % "/";
     else if (selected_files.length() > 0)
-        path_old = selected_files[0].left(selected_files[0].lastIndexOf("/")) + "/";
+        path_old = selected_files[0].left(selected_files[0].lastIndexOf("/")) % "/";
     else
         goto lab_end;
 
@@ -69,7 +69,7 @@ void CopyProcess::Copy()
         int now_count_replace = 0;
         for (int i = 0; i < selected_dirs.length(); i++) {
             past_name = selected_dirs[i].split("/").last();
-            new_name = dir_to + past_name;
+            new_name = dir_to % past_name;
             if (QDir().exists(new_name)) {
                 if (yet_exists_ind == 1) {
                     temp_name = new_name;
@@ -101,7 +101,7 @@ void CopyProcess::Copy()
 
                         while (QDir(new_name).exists()) {
                             j++;
-                            new_name = temp_name + " (" + QString::number(j) + ")";
+                            new_name = temp_name % " (" % QString::number(j) % ")";
                         }
                     }
                     else if (yet_exists_ind == 2)
@@ -180,12 +180,12 @@ void CopyProcess::Copy()
 
         for (int i = 0; i < selected_files.length(); i++) {
             past_name = selected_files[i].split("/").last();
-            new_name = dir_to + past_name;
+            new_name = dir_to % past_name;
             if (QFile().exists(new_name)) {
                 QString name_f = new_name;
                 QString type_f;
                 if (past_name.indexOf(".") != -1) {
-                    type_f = "." + past_name.split(".").last();
+                    type_f = "." % past_name.split(".").last();
                     name_f.remove(type_f);
                 } else {
                     type_f = "";
@@ -306,7 +306,7 @@ void CopyProcess::Copy()
 
     for (int i = 0; i < selected_dirs.length(); i++) {
         past_name = selected_dirs[i].split("/").last();
-        new_name = dir_to + past_name;
+        new_name = dir_to % past_name;
         if (QDir().exists(new_name)) {
             if (yet_exists_ind == 1) {
                 temp_name = new_name;
@@ -338,7 +338,7 @@ void CopyProcess::Copy()
 
                     while (QDir(new_name).exists()) {
                         j++;
-                        new_name = temp_name + " (" + QString::number(j) + ")";
+                        new_name = temp_name % " (" % QString::number(j) % ")";
                     }
                 }
                 else if (yet_exists_ind == 2)
@@ -409,12 +409,12 @@ void CopyProcess::Copy()
 
     for (int i = 0; i < selected_files.length(); i++) {
         past_name = selected_files[i].split("/").last();
-        new_name = dir_to + past_name;
+        new_name = dir_to % past_name;
         if (QFile().exists(new_name)) {
             QString name_f = new_name;
             QString type_f;
             if (past_name.indexOf(".") != -1) {
-                type_f = "." + past_name.split(".").last();
+                type_f = "." % past_name.split(".").last();
                 name_f.remove(type_f);
             } else {
                 type_f = "";

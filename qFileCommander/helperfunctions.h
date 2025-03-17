@@ -7,9 +7,10 @@ class HelperFunctions
 {
 public:
     HelperFunctions();
-    static QString reformat_size(QString str);
+    ///форматированный вывод размера
+    static QString reformat_size(long long int in_n);
+    ///форматированный вывод размера с единицами измерения
     static QString reformat_size_2(float num_0);
-    static QString reform_date(QString date0);
 };
 
 #endif // HELPERFUNCTIONS_H

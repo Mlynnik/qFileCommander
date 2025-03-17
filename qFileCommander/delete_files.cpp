@@ -1,4 +1,5 @@
 #include "delete_files.h"
+#include "helperfunctions.h"
 #include <QDir>
 #include <QEventLoop>
 #include <QThread>
@@ -85,17 +86,10 @@ void Delete_Files::Work(const QStringList &selected_dirs, const QStringList &sel
     }
 }
 
-QString Delete_Files::reformat_size(QString str)
-{
-    int x = str.length() - 3;
-    while(x > 0) {str.insert(x, QString(" ")); x -= 3;}
-    return str;
-}
-
 void Delete_Files::update_value_progress()
 {
     if (b_minimize->isVisible()) {
-        lab_files->setText("Файлов: " % reformat_size(QString::number(comp_count)) % " /" % reformat_size(QString::number(all_count)));
+        lab_files->setText("Файлов: " % HelperFunctions::reformat_size(comp_count) % " /" % HelperFunctions::reformat_size(all_count));
     }
     pb->setValue(((comp_count*100)/all_count));
 }
@@ -214,9 +208,9 @@ Delete_Process::Delete_Process(const QStringList &selected_dirs, const QStringLi
 {
     wasCanceled = false;
     if (selected_dirs.size() > 0)
-        disk = selected_dirs[0].left(selected_dirs[0].lastIndexOf("/")) + "/";
+        disk = selected_dirs[0].left(selected_dirs[0].lastIndexOf("/")) % "/";
     else
-        disk = selected_files[0].left(selected_files[0].lastIndexOf("/")) + "/";
+        disk = selected_files[0].left(selected_files[0].lastIndexOf("/")) % "/";
 }
 
 void Delete_Process::Work()

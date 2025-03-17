@@ -1,5 +1,6 @@
 #include "copy_files.h"
 #include "copy_process.h"
+#include "helperfunctions.h"
 #include <QCoreApplication>
 #include <QThread>
 #include <QPushButton>
@@ -21,48 +22,18 @@ Copy_files::Copy_files(const AppSettings *appSettings)
     msgBox.addButton("Отмена", QMessageBox::NoRole);
 }
 
-QString Copy_files::reformat_size(QString str)
-{
-    int x = str.length() - 3;
-    while(x > 0) {str.insert(x, QString(" ")); x -= 3;}
-    return str;
-}
-
-QString Copy_files::reformat_size_2(double num_0)
-{
-    QString str1;
-    if (num_0 >= 1000) {
-        num_0 = round(num_0 / 10.24) / 100;
-        str1 = QString::number(num_0) + " КБ";
-        if (num_0 >= 1000) {
-            num_0 = round(num_0 / 10.24) / 100;
-            str1 = QString::number(num_0) + " MБ";
-            if (num_0 >= 1000) {
-                num_0 = round(num_0 / 10.24) / 100;
-                str1 = QString::number(num_0) + " ГБ";
-                if (num_0 >= 1000) {
-                    num_0 = round(num_0 / 10.24) / 100;
-                    str1 = QString::number(num_0) + " ТБ";
-                }
-            }
-        }
-    } else
-        str1 = QString::number(num_0) + " Б";
-    return str1;
-}
-
 
 void Copy_files::update_value_progress()
 {
     if (b_minimize->isVisible()) {
         if (all_size == 0) {
             lab_size->setText("0/0 Б");
-            lab_files->setText("Файлов: " % reformat_size(QString::number(comp_count)) % " /" % reformat_size(QString::number(all_count)));
+            lab_files->setText("Файлов: " % HelperFunctions::reformat_size(comp_count) % " /" % HelperFunctions::reformat_size(all_count));
             pb->setValue(((comp_count*100)/all_count));
         } else {
             pb->setValue(((comp_size*100)/all_size));
-            lab_size->setText(reformat_size_2(comp_size) % " /" % reformat_size_2(all_size));
-            lab_files->setText("Файлов: " % reformat_size(QString::number(comp_count)) % " /" % reformat_size(QString::number(all_count)));
+            lab_size->setText(HelperFunctions::reformat_size_2(comp_size) % " /" % HelperFunctions::reformat_size_2(all_size));
+            lab_files->setText("Файлов: " % HelperFunctions::reformat_size(comp_count) % " /" % HelperFunctions::reformat_size(all_count));
         }
     } else if (all_size == 0) {
         pb->setValue(((comp_count*100)/all_count));
