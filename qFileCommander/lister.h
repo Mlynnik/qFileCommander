@@ -27,6 +27,7 @@ public:
     Lister(const QString &_fpath, const AppSettings *_appSettings, QWidget *parent = nullptr);
     ~Lister();
     void reFill(const QString &_fpath);
+    bool is_Fast_View = false;
 
 signals:
     void closed();
@@ -94,7 +95,6 @@ signals:
     void parent_close();
 
 public slots:
-    void break_proc() { is_break = true; }
     void setDirInfo(long long int all_size, long long int dcnt, long long int fcnt);
     void reFill(const QString& _fpath);
 
@@ -118,7 +118,6 @@ public:
     DirPropProcess(const QString& _fpath);
 signals:
     void setInfo(long long int all_size, long long int dcnt, long long int fcnt);
-    void break_proc();
 
 public slots:
     void Work();
@@ -159,6 +158,7 @@ public slots:
 private:
     bool is_xml;
     FCodes cod;
+    const AppSettings *appSettings;
 
     QString fpath;
     QGridLayout *gridLayout = nullptr;
@@ -178,6 +178,7 @@ private:
 
 private slots:
     void Fill();
+    void v_error(QString str_error);
 };
 
 

@@ -277,7 +277,7 @@ void Rename_Widget::on_pushButton_work_clicked()
     QTreeWidgetItem *item;
     qpd = new QProgressDialog(this);
     qpd->setAttribute(Qt::WA_DeleteOnClose);
-    qpd->setWindowIcon(QIcon("appIcon.png"));
+    qpd->setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
     qpd->setModal(true);
     qpd->setMaximum(treeWidget->topLevelItemCount());
     qpd->setFont(*dialog_font);
@@ -435,7 +435,7 @@ void Rename_Widget::end_operation_rename()
 //вызвает окно ошибки с переданным текстом
 void Rename_Widget::v_error(QString str_error) {
     QMessageBox v_err;
-    v_err.setWindowIcon(QIcon("appIcon.png"));
+    v_err.setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
     v_err.setFont(*dialog_font);
     v_err.setIcon(QMessageBox::Critical);
     v_err.setWindowTitle("Ошибка !");

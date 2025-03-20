@@ -5,12 +5,10 @@
 #include <QDragMoveEvent>
 #include <QMenu>
 #include <QApplication>
-#include <QFileIconProvider>
-#include <QMimeDatabase>
 
 TreeFilesWidget::TreeFilesWidget(QWidget *parent) : QTreeWidget{parent}
 {
-    suff_zip = { "zip", "rar", "arc", "tar" };
+    suff_zip = { "7z", "zip", "rar", "arc", "tar", "xz", "gz" };
     suff_temp = { "tmp", "temp",  "dat" };
     suff_sys = { "sys", "drv", "dll", "bin", "dmp", "hlp", "prf", "reg", "rom", "scr" };
 
@@ -41,12 +39,23 @@ QList<QTreeWidgetItem *> TreeFilesWidget::selectedItems() const
     return res;
 }
 
+bool TreeFilesWidget::is_arc(const QString &fname)
+{
+    qsizetype ind = fname.lastIndexOf('.');
+    if (ind == -1)
+        return false;
+    QString suf = fname.last(fname.size() - ind - 1);
+    if (suff_zip.contains(suf))
+        return true;
+    return false;
+}
+
 void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, const QString &last_dir_l)
 {
     QDir dir(dir_str);
-    QFileIconProvider IC_PR;
-    QMimeDatabase DB;
     QFileInfoList list;
+    QFileInfo fileInfo;
+    QString tool_tip;
 
     all_v = 0.0;
     all_f = 0;
@@ -85,10 +94,10 @@ void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, const QStri
         item0->setText(1, "<DIR>");
 
         if (QDir(dir_str + "..").exists()) {
-            QFileInfo fileInfo(dir_str + "..");
+            fileInfo = QFileInfo(dir_str + "..");
             item0->setText(3, fileInfo.lastModified().toString("dd.MM.yyyy hh:mm"));
             item0->setTextAlignment(3, Qt::AlignLeft);
-            QString tool_tip = fileInfo.fileName() % "\nДата создания: " % fileInfo.birthTime().toString("dd.MM.yyyy hh:mm");
+            tool_tip = fileInfo.fileName() % "\nДата создания: " % fileInfo.birthTime().toString("dd.MM.yyyy hh:mm");
             item0->setToolTip(0, tool_tip);
             item0->setToolTip(1, tool_tip);
             item0->setToolTip(2, tool_tip);
@@ -103,7 +112,7 @@ void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, const QStri
 
     QColor color;
     for (int i = 0; i < list.size(); ++i) {
-        QFileInfo fileInfo = list.at(i);
+        fileInfo = list.at(i);
         QTreeWidgetItem *item = new QTreeWidgetItem(this);
         if (fileInfo.isHidden()) {
             color = QColor(120, 120, 120);
@@ -117,7 +126,7 @@ void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, const QStri
         item->setText(3, fileInfo.lastModified().toString("dd.MM.yyyy hh:mm"));
         item->setTextAlignment(2, Qt::AlignRight);
         item->setTextAlignment(3, Qt::AlignLeft);
-        QString tool_tip = fileInfo.fileName() % "\nДата создания: " % fileInfo.birthTime().toString("dd.MM.yyyy hh:mm");
+        tool_tip = fileInfo.fileName() % "\nДата создания: " % fileInfo.birthTime().toString("dd.MM.yyyy hh:mm");
         item->setToolTip(0, tool_tip);
         item->setToolTip(1, tool_tip);
         item->setToolTip(2, tool_tip);
@@ -177,8 +186,10 @@ void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, const QStri
     }
 
     QDateTime time_now = QDateTime::currentDateTime();
+    QMimeType mime;
+    QString m_s;
     for (int i = 0; i < list.size(); ++i) {
-        QFileInfo fileInfo = list.at(i);
+        fileInfo = list.at(i);
         color = QColor(0, 0, 0);
         QTreeWidgetItem *item = new QTreeWidgetItem(this);
         if (fileInfo.isExecutable())
@@ -194,8 +205,8 @@ void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, const QStri
         else if(fileInfo.lastModified().daysTo(time_now) < 4)
             color = QColor(0, 54, 108);
         else {
-            QMimeType mime = DB.mimeTypeForFile(fileInfo);
-            QString m_s = mime.name();
+            mime = DB.mimeTypeForFile(fileInfo);
+            m_s = mime.name();
             if (m_s.contains("text"))
                 color = QColor(43, 94, 0);
             else if (m_s.contains("image"))
@@ -212,11 +223,11 @@ void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, const QStri
         item->setText(1, fileInfo.suffix());
         all_v += fileInfo.size();
         all_f += 1;
-        item->setText(2, HelperFunctions::reformat_size(QString::number(fileInfo.size(), 'g', 20)) + "      ");
+        item->setText(2, HelperFunctions::reformat_size(fileInfo.size()) + "      ");
         item->setText(3, fileInfo.lastModified().toString("dd.MM.yyyy hh:mm"));
         item->setTextAlignment(2, Qt::AlignRight);
         item->setTextAlignment(3, Qt::AlignLeft);
-        QString tool_tip = fileInfo.fileName() % "\nРазмер: " % HelperFunctions::reformat_size_2(fileInfo.size()) % "\nДата создания: "
+        tool_tip = fileInfo.fileName() % "\nРазмер: " % HelperFunctions::reformat_size_2(fileInfo.size()) % "\nДата создания: "
                            % fileInfo.birthTime().toString("dd.MM.yyyy hh:mm");
         item->setToolTip(0, tool_tip);
         item->setToolTip(1, tool_tip);

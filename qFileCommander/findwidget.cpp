@@ -19,7 +19,7 @@ FindWidget::FindWidget(const AppSettings *appSettings, QWidget *parent) : QWidge
     dialog_font = appSettings->dialog_font;
 
     setWindowTitle("Поиск файлов");
-    setWindowIcon(QIcon("appIcon.png"));
+    setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
     setGeometry(round(w*350), round(h*200), round(w*800), round(h*500));
     setFont(*main_font);
 
@@ -138,7 +138,7 @@ void FindWidget::add_item(QString path, QFileInfo fi)
 void FindWidget::end_of_search(int n_f, int n_d)
 {
     find_file->setText("Поиск");
-    find_res_1->setText("Найдено: файлов - " + QString::number(n_f) + ", каталогов - " + QString::number(n_d));
+    find_res_1->setText("Найдено: файлов - " % QString::number(n_f) % ", каталогов - " % QString::number(n_d));
 }
 
 void FindWidget::cancel_clicked()
@@ -176,7 +176,7 @@ void FindWidget::open_find_fid(QString f_name)
 void FindWidget::open_find_fid_exp(QString f_name)
 {
     f_name.replace("/", "\\");
-    f_name = "/select, \"" + f_name + "\"";
+    f_name = "/select, \"" % f_name % "\"";
     std::vector<wchar_t> res(f_name.size() + 1);
     ShellExecute(NULL, L"open", L"explorer.exe", (const wchar_t*)f_name.utf16(), NULL, SW_SHOWDEFAULT);
 }
@@ -212,7 +212,7 @@ void FindWidget::closeEvent(QCloseEvent *event)
 
 void FindWidget::v_error(QString str_error) {
     QMessageBox v_err;
-    v_err.setWindowIcon(QIcon("appIcon.png"));
+    v_err.setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
     v_err.setFont(*dialog_font);
     v_err.setIcon(QMessageBox::Critical);
     v_err.setWindowTitle("Ошибка !");

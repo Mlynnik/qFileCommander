@@ -15,7 +15,11 @@ CopyProcess::CopyProcess(const QString &dir_to, const QStringList &selected_dirs
 void CopyProcess::Copy()
 {
     for (int i = 0; i < selected_dirs.length(); ++i) {
-        get_dir_info(selected_dirs[i]);
+        if (!get_dir_info(selected_dirs[i])) {
+            this->deleteLater();
+            this->thread()->exit();
+            return;
+        }
     }
     for (int i = 0; i < selected_files.length(); ++i) {
         if (QFile().exists(selected_files[i])) {
@@ -39,9 +43,9 @@ void CopyProcess::Copy()
 
     QString path_old;
     if (selected_dirs.length() > 0)
-        path_old = selected_dirs[0].left(selected_dirs[0].lastIndexOf("/")) + "/";
+        path_old = selected_dirs[0].left(selected_dirs[0].lastIndexOf("/")) % "/";
     else if (selected_files.length() > 0)
-        path_old = selected_files[0].left(selected_files[0].lastIndexOf("/")) + "/";
+        path_old = selected_files[0].left(selected_files[0].lastIndexOf("/")) % "/";
     else
         goto lab_end;
 
@@ -65,7 +69,7 @@ void CopyProcess::Copy()
         int now_count_replace = 0;
         for (int i = 0; i < selected_dirs.length(); i++) {
             past_name = selected_dirs[i].split("/").last();
-            new_name = dir_to + past_name;
+            new_name = dir_to % past_name;
             if (QDir().exists(new_name)) {
                 if (yet_exists_ind == 1) {
                     temp_name = new_name;
@@ -74,12 +78,10 @@ void CopyProcess::Copy()
                         j++;
                         new_name = temp_name % " (" % QString::number(j) % ")";
                     }
-                    //TODO v_error exist
                 } else if (yet_exists_ind == 3)
                     continue;
                 else if (yet_exists_ind == 5) {
                     SetFileAttributesA(new_name.toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
-                    //QDir(new_name).removeRecursively();
                     if (!removeDir(new_name)) {
                         if (cant_del_ind == 0) {
                             emit cant_del(new_name);
@@ -89,7 +91,6 @@ void CopyProcess::Copy()
                             goto lab_end;
                         continue;
                     }
-                    //TODO v_error exist
                 } else {
                     emit yet_exists("Каталог с именем '" % past_name % "' уже существует.");
                     func_loop();
@@ -100,10 +101,8 @@ void CopyProcess::Copy()
 
                         while (QDir(new_name).exists()) {
                             j++;
-                            new_name = temp_name + " (" + QString::number(j) + ")";
+                            new_name = temp_name % " (" % QString::number(j) % ")";
                         }
-
-                        //TODO v_error exist
                     }
                     else if (yet_exists_ind == 2)
                         continue;
@@ -111,20 +110,6 @@ void CopyProcess::Copy()
                         continue;
                     } else if (yet_exists_ind == 4) {
                         SetFileAttributesA(new_name.toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
-                        //QDir(new_name).removeRecursively();
-                        if (!removeDir(new_name)) {
-                        if (cant_del_ind == 0) {
-                            emit cant_del(new_name);
-                            func_loop();
-                        }
-                        if (cant_del_ind == 2)
-                            goto lab_end;
-                        continue;
-                    }
-                        //TODO
-                    } else if (yet_exists_ind == 5) {
-                        SetFileAttributesA(new_name.toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
-                        //QDir(new_name).removeRecursively();
                         if (!removeDir(new_name)) {
                             if (cant_del_ind == 0) {
                                 emit cant_del(new_name);
@@ -134,9 +119,18 @@ void CopyProcess::Copy()
                                 goto lab_end;
                             continue;
                         }
-                        //TODO
+                    } else if (yet_exists_ind == 5) {
+                        SetFileAttributesA(new_name.toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
+                        if (!removeDir(new_name)) {
+                            if (cant_del_ind == 0) {
+                                emit cant_del(new_name);
+                                func_loop();
+                            }
+                            if (cant_del_ind == 2)
+                                goto lab_end;
+                            continue;
+                        }
                     } else if (yet_exists_ind == 6) {
-                        //update_widgets();
                         return;
                     } else {
                         temp_name = new_name;
@@ -145,8 +139,6 @@ void CopyProcess::Copy()
                             j++;
                             new_name = temp_name % " (" % QString::number(j) % ")";
                         }
-
-                        //TODO v_error exist
                     }
                 }
             }
@@ -160,7 +152,6 @@ void CopyProcess::Copy()
 
             if (QDir(selected_dirs[i]).exists()) {
                 SetFileAttributesA(selected_dirs[i].toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
-                //QDir(past_name).removeRecursively();
                 if (!removeDir(selected_dirs[i])) {
                     if (wasCanceled_first)
                         func_loop();
@@ -189,12 +180,12 @@ void CopyProcess::Copy()
 
         for (int i = 0; i < selected_files.length(); i++) {
             past_name = selected_files[i].split("/").last();
-            new_name = dir_to + past_name;
+            new_name = dir_to % past_name;
             if (QFile().exists(new_name)) {
                 QString name_f = new_name;
                 QString type_f;
                 if (past_name.indexOf(".") != -1) {
-                    type_f = "." + past_name.split(".").last();
+                    type_f = "." % past_name.split(".").last();
                     name_f.remove(type_f);
                 } else {
                     type_f = "";
@@ -207,21 +198,19 @@ void CopyProcess::Copy()
                         j++;
                         new_name = temp_name % " (" % QString::number(j) % ")" % type_f;
                     }
-                    //TODO v_error exist
                 } else if (yet_exists_ind == 3)
                     continue;
                 else if (yet_exists_ind == 5) {
                     SetFileAttributesA(new_name.toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
-                    //QFile(new_name).remove();
-                    if (!QFile(new_name).remove()) {
+                    QFile file(new_name);
+                    if (!file.remove()) {
                         if (cant_del_ind == 0) {
-                            emit cant_del(selected_files[i]);
+                            emit cant_del(selected_files[i] % "\n\n" % file.errorString());
                             func_loop();
                         }
                         if (cant_del_ind == 2)
                             goto lab_end;
                     }
-                    //TODO v_error exist
                 } else {
                     emit yet_exists("Файл с именем '" % past_name % "' уже существует.");
                     func_loop();
@@ -233,7 +222,6 @@ void CopyProcess::Copy()
                             j++;
                             new_name = temp_name % " (" % QString::number(j) % ")" % type_f;
                         }
-                        //TODO v_error exist
                     }
                     else if (yet_exists_ind == 2)
                         continue;
@@ -241,28 +229,26 @@ void CopyProcess::Copy()
                         continue;
                     } else if (yet_exists_ind == 4) {
                         SetFileAttributesA(new_name.toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
-                        //QFile(new_name).remove();
-                        if (!QFile(new_name).remove()) {
+                        QFile file(new_name);
+                        if (!file.remove()) {
                             if (cant_del_ind == 0) {
-                                emit cant_del(selected_files[i]);
+                                emit cant_del(selected_files[i] % "\n\n" % file.errorString());
                                 func_loop();
                             }
                             if (cant_del_ind == 2)
                                 goto lab_end;
                         }
-                        //TODO
                     } else if (yet_exists_ind == 5) {
                         SetFileAttributesA(new_name.toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
-                        //QFile(new_name).remove();
-                        if (!QFile(new_name).remove()) {
+                        QFile file(new_name);
+                        if (!file.remove()) {
                             if (cant_del_ind == 0) {
-                                emit cant_del(selected_files[i]);
+                                emit cant_del(selected_files[i] % "\n\n" % file.errorString());
                                 func_loop();
                             }
                             if (cant_del_ind == 2)
                                 goto lab_end;
                         }
-                        //TODO
                     } else if (yet_exists_ind == 6) {
                         this->deleteLater();
                         this->thread()->exit();
@@ -274,7 +260,6 @@ void CopyProcess::Copy()
                             j++;
                             new_name = temp_name % " (" % QString::number(j) % ")" % type_f;
                         }
-                        //TODO v_error exist
                     }
                 }
             }
@@ -288,15 +273,15 @@ void CopyProcess::Copy()
 
             if (QFile(selected_files[i]).exists()) {
                 SetFileAttributesA(selected_files[i].toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
-                //QFile(past_name).remove();
-                if (!QFile(selected_files[i]).remove()) {
+                QFile file(selected_files[i]);
+                if (!file.remove()) {
                     if (wasCanceled_first)
                         func_loop();
                     if (wasCanceled || (cant_del_ind == 2))
                         goto lab_end;
 
                     if (cant_del_ind == 0) {
-                        emit cant_del(selected_files[i]);
+                        emit cant_del(selected_files[i] % "\n\n" % file.errorString());
                         func_loop();
                     }
                     if (cant_del_ind == 2)
@@ -321,7 +306,7 @@ void CopyProcess::Copy()
 
     for (int i = 0; i < selected_dirs.length(); i++) {
         past_name = selected_dirs[i].split("/").last();
-        new_name = dir_to + past_name;
+        new_name = dir_to % past_name;
         if (QDir().exists(new_name)) {
             if (yet_exists_ind == 1) {
                 temp_name = new_name;
@@ -330,12 +315,10 @@ void CopyProcess::Copy()
                     j++;
                     new_name = temp_name % " (" % QString::number(j) % ")";
                 }
-
-                //TODO v_error exist
             } else if (yet_exists_ind == 3)
                 continue;
             else if (yet_exists_ind == 5) {
-                //QDir(new_name).removeRecursively();
+                SetFileAttributesA(new_name.toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
                 if (!removeDir(new_name)) {
                     if (cant_del_ind == 0) {
                         emit cant_del(new_name);
@@ -345,8 +328,6 @@ void CopyProcess::Copy()
                         goto lab_end;
                     continue;
                 }
-
-                //TODO v_error exist
             } else {
                 emit yet_exists("Каталог с именем '" % past_name % "' уже существует.");
                 func_loop();
@@ -357,17 +338,15 @@ void CopyProcess::Copy()
 
                     while (QDir(new_name).exists()) {
                         j++;
-                        new_name = temp_name + " (" + QString::number(j) + ")";
+                        new_name = temp_name % " (" % QString::number(j) % ")";
                     }
-
-                    //TODO v_error exist
                 }
                 else if (yet_exists_ind == 2)
                     continue;
                 else if (yet_exists_ind == 3) {
                     continue;
                 } else if (yet_exists_ind == 4) {
-                    //QDir(new_name).removeRecursively();
+                    SetFileAttributesA(new_name.toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
                     if (!removeDir(new_name)) {
                         if (cant_del_ind == 0) {
                             emit cant_del(new_name);
@@ -377,10 +356,8 @@ void CopyProcess::Copy()
                             goto lab_end;
                         continue;
                     }
-                    //TODO v_error exist
-                    //TODO
                 } else if (yet_exists_ind == 5) {
-                    //QDir(new_name).removeRecursively();
+                    SetFileAttributesA(new_name.toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
                     if (!removeDir(new_name)) {
                         if (cant_del_ind == 0) {
                             emit cant_del(new_name);
@@ -390,8 +367,6 @@ void CopyProcess::Copy()
                             goto lab_end;
                         continue;
                     }
-                    //TODO v_error exist
-                    //TODO
                 } else if (yet_exists_ind == 6) {
                     goto lab_end;
                 } else {
@@ -401,8 +376,6 @@ void CopyProcess::Copy()
                         j++;
                         new_name = temp_name % " (" % QString::number(j) % ")";
                     }
-
-                    //TODO v_error exist
                 }
             }
         }
@@ -413,9 +386,6 @@ void CopyProcess::Copy()
                 goto lab_end;
             }
         }
-        //TODO v_error exist
-        //TODO v_error
-
 
         if (dir_iter(selected_dirs[i], new_name, remove_after))
             goto lab_end;
@@ -426,27 +396,25 @@ void CopyProcess::Copy()
 
         if (remove_after) {
             SetFileAttributesA(selected_dirs[i].toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
-            //QDir(selected_dirs[i]).removeRecursively();
             if (!removeDir(selected_dirs[i])) {
                 if (cant_del_ind == 0) {
-                    emit cant_del(new_name);
+                    emit cant_del(selected_dirs[i]);
                     func_loop();
                 }
                 if (cant_del_ind == 2)
                     goto lab_end;
             }
-            //TODO v_error exists
         }
     }
 
     for (int i = 0; i < selected_files.length(); i++) {
         past_name = selected_files[i].split("/").last();
-        new_name = dir_to + past_name;
+        new_name = dir_to % past_name;
         if (QFile().exists(new_name)) {
             QString name_f = new_name;
             QString type_f;
             if (past_name.indexOf(".") != -1) {
-                type_f = "." + past_name.split(".").last();
+                type_f = "." % past_name.split(".").last();
                 name_f.remove(type_f);
             } else {
                 type_f = "";
@@ -460,22 +428,20 @@ void CopyProcess::Copy()
                     j++;
                     new_name = temp_name % " (" % QString::number(j) % ")" % type_f;
                 }
-                //TODO v_error exist
             } else if (yet_exists_ind == 3)
                 continue;
             else if (yet_exists_ind == 5) {
                 SetFileAttributesA(new_name.toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
-                //QFile(new_name).remove();
-                if (!QFile(new_name).remove()) {
+                QFile file(new_name);
+                if (!file.remove()) {
                     if (cant_del_ind == 0) {
-                        emit cant_del(new_name);
+                        emit cant_del(new_name % "\n\n" % file.errorString());
                         func_loop();
                     }
                     if (cant_del_ind == 2)
                         goto lab_end;
                     continue;
                 }
-                //TODO v_error exist
             } else {
                 emit yet_exists("Файл с именем '" % past_name % "' уже существует.");
                 func_loop();
@@ -488,18 +454,19 @@ void CopyProcess::Copy()
                         new_name = temp_name % " (" % QString::number(j) % ")" % type_f;
                     }
                     SetFileAttributesA(new_name.toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
-                    //TODO v_error exist
                 }
                 else if (yet_exists_ind == 2)
                     continue;
                 else if (yet_exists_ind == 3) {
                     continue;
                 } else if (yet_exists_ind == 4) {
-                    SetFileAttributesA(new_name.toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
-                    //QFile(new_name).remove();
-                    if (!QFile(new_name).remove()) {
+                    QString temp_new_name = QFileInfo(new_name).absoluteFilePath();
+                    //SetFileAttributesA(new_name.toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
+                    SetFileAttributesA(temp_new_name.toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
+                    QFile file(new_name);
+                    if (!file.remove()) {
                         if (cant_del_ind == 0) {
-                            emit cant_del(new_name);
+                            emit cant_del(new_name % "\n\n" % file.errorString());
                             func_loop();
                         }
                         if (cant_del_ind == 2)
@@ -508,17 +475,16 @@ void CopyProcess::Copy()
                     }
                 } else if (yet_exists_ind == 5) {
                     SetFileAttributesA(new_name.toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
-                    //QFile(new_name).remove();
-                    if (!QFile(new_name).remove()) {
+                    QFile file(new_name);
+                    if (!file.remove()) {
                         if (cant_del_ind == 0) {
-                            emit cant_del(new_name);
+                            emit cant_del(new_name % "\n\n" % file.errorString());
                             func_loop();
                         }
                         if (cant_del_ind == 2)
                             goto lab_end;
                         continue;
                     }
-                    //TODO
                 } else if (yet_exists_ind == 6) {
                     goto lab_end;
                 } else {
@@ -528,7 +494,6 @@ void CopyProcess::Copy()
                         j++;
                         new_name = temp_name % " (" % QString::number(j) % ")" % type_f;
                     }
-                    //TODO v_error exist
                 }
             }
         }
@@ -538,15 +503,13 @@ void CopyProcess::Copy()
 
         if (copy_file(selected_files[i], new_name))
             goto lab_end;
-        //TODO v_error
-
         if (remove_after) {
             SetFileAttributesA(selected_files[i].toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
-            //QFile(selected_files[i]).remove();
 
-            if (!QFile(selected_files[i]).remove()) {
+            QFile file(new_name);
+            if (!file.remove()) {
                 if (cant_del_ind == 0) {
-                    emit cant_del(selected_files[i]);
+                    emit cant_del(selected_files[i] % "\n\n" % file.errorString());
                     func_loop();
                 }
                 if (cant_del_ind == 2)
@@ -587,28 +550,48 @@ bool CopyProcess::removeDir(const QString & dirName)
 
     if (dir.exists(dirName)) {
         Q_FOREACH(QFileInfo info, dir.entryInfoList(QDir::NoDotAndDotDot | QDir::System | QDir::Hidden  | QDir::AllDirs | QDir::Files, QDir::DirsFirst)) {
+            SetFileAttributesA(info.absoluteFilePath().toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
             if (info.isDir()) {
                 result = removeDir(info.absoluteFilePath());
+
+                if (!result) {
+                    if (wasCanceled_first)
+                        func_loop();
+                    if (wasCanceled || (cant_del_ind == 2))
+                        return false;
+
+                    if (!QDir(dirName.split("/").first()).exists()) {
+                        emit error_operation("Операция прервана!\nУстройство извлечено!");
+                        return false;
+                    }
+                    if (cant_del_ind == 0) {
+                        emit cant_del(info.absoluteFilePath());
+                        func_loop();
+                    }
+                    if (cant_del_ind == 2)
+                        return result;
+                }
             } else {
-                result = QFile::remove(info.absoluteFilePath());
-            }
+                QFile file(info.absoluteFilePath());
 
-            if (!result) {
-                if (wasCanceled_first)
-                    func_loop();
-                if (wasCanceled || (cant_del_ind == 2))
-                    return false;
+                if (!file.remove()) {
+                    result = false;
+                    if (wasCanceled_first)
+                        func_loop();
+                    if (wasCanceled || (cant_del_ind == 2))
+                        return false;
 
-                if (!QDir(dirName.split("/").first()).exists()) {
-                    emit error_operation("Операция прервана!\nУстройство извлечено!");
-                    return false;
+                    if (!QDir(dirName.split("/").first()).exists()) {
+                        emit error_operation("Операция прервана!\nУстройство извлечено!");
+                        return false;
+                    }
+                    if (cant_del_ind == 0) {
+                        emit cant_del(info.absoluteFilePath() % "\n\n" % file.errorString());
+                        func_loop();
+                    }
+                    if (cant_del_ind == 2)
+                        return result;
                 }
-                if (cant_del_ind == 0) {
-                    emit cant_del(info.absoluteFilePath());
-                    func_loop();
-                }
-                if (cant_del_ind == 2)
-                    return result;
             }
         }
         result = dir.rmdir(dirName);
@@ -662,27 +645,25 @@ int CopyProcess::dir_iter(const QString &dir, QString dir_to, bool remove_after)
                     if (!pd.exists() || !nd.exists())
                         return 1;
                 }
-                //TODO v_error exist
-                //TODO v_error
             } else if (it.fileInfo().isFile()) {
                 past_name = it.filePath();
                 new_name = it.filePath().replace(dir, dir_to);
                 if (QFile().exists(new_name)) {
                     SetFileAttributesA(new_name.toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
-                    if (!QFile(new_name).remove()) {
+                    QFile file(new_name);
+                    if (!file.remove()) {
                         if (wasCanceled_first)
                             func_loop();
                         if (wasCanceled || (cant_del_ind == 2))
                             return 1;
 
                         if (cant_del_ind == 0) {
-                            emit cant_del(new_name);
+                            emit cant_del(new_name % "\n\n" % file.errorString());
                             func_loop();
                         }
                         if (cant_del_ind == 2)
                             return 1;
                         continue;
-                        //return;
                     }
                 }
                 int res_copy = copy_file(past_name, new_name);
@@ -690,18 +671,18 @@ int CopyProcess::dir_iter(const QString &dir, QString dir_to, bool remove_after)
                     return 1;
                 if (res_copy == 1)
                     continue;
-                //TODO v_error
 
                 if (remove_after) {
-                    SetFileAttributesA(past_name.toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
-                    if (!QFile(past_name).remove()) {
+                    SetFileAttributesA(QFileInfo(past_name).absoluteFilePath().toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
+                    QFile file(past_name);
+                    if (!file.remove()) {
                         if (wasCanceled_first)
                             func_loop();
                         if (wasCanceled || (cant_del_ind == 2))
                             return 1;
 
                         if (cant_del_ind == 0) {
-                            emit cant_del(past_name);
+                            emit cant_del(past_name % "\n\n" % file.errorString());
                             func_loop();
                         }
                         if (cant_del_ind == 2)
@@ -740,14 +721,12 @@ void CopyProcess::cancel_unclicked_first()
     emit signal_loop();
 }
 
-void CopyProcess::get_dir_info(const QString &dir)
+bool CopyProcess::get_dir_info(const QString &dir)
 {
     if (QDir().exists(dir)) {
-        if (QDir(dir_to).absolutePath().append("/").contains(QDir(dir).absolutePath().append("/"))) {
+        if (QFileInfo(dir_to).absoluteFilePath().append("/").contains(QFileInfo(dir).absoluteFilePath().append("/"))) {
             emit error_operation("Нельзя копировать каталог в его же подкаталог!");
-            this->deleteLater();
-            this->thread()->exit();
-            return;
+            return false;
         }
         QDirIterator it(dir, QDir::Files | QDir::Hidden | QDir::System, QDirIterator::Subdirectories);
         while (it.hasNext()) {
@@ -756,6 +735,7 @@ void CopyProcess::get_dir_info(const QString &dir)
             ++all_count;
         }
     }
+    return true;
 }
 
 int CopyProcess::copy_file(const QString &past_name, const QString &new_name)
@@ -764,6 +744,7 @@ int CopyProcess::copy_file(const QString &past_name, const QString &new_name)
 
     QFile file(past_name);
     QFile dest(new_name);
+
     if (!file.open(QIODevice::ReadOnly)) {
         if (!QDir(past_name.split("/").first()).exists()) {
             emit error_operation("Операция прервана!\nУстройство извлечено!");
@@ -771,7 +752,7 @@ int CopyProcess::copy_file(const QString &past_name, const QString &new_name)
         }
 
         if (cant_copy_ind == 0) {
-            emit cant_copy("Не могу открыть: " + file.fileName());
+            emit cant_copy("Не могу открыть: " % file.fileName() % "\n\n" % file.errorString());
             func_loop();
         }
 
@@ -795,7 +776,7 @@ int CopyProcess::copy_file(const QString &past_name, const QString &new_name)
         }
 
         if (cant_copy_ind == 0) {
-            emit cant_copy("Не могу записать: " + dest.fileName());
+            emit cant_copy("Не могу записать: " % dest.fileName() % "\n\n" % dest.errorString());
             func_loop();
         }
 
@@ -839,10 +820,6 @@ int CopyProcess::copy_file(const QString &past_name, const QString &new_name)
     dest.close();
     DWORD dw_attr = GetFileAttributesA(past_name.toLocal8Bit().data());
     SetFileAttributesA(new_name.toLocal8Bit().data(), dw_attr);
-    /*if (remove_after) {
-        SetFileAttributesA(past_name.toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
-        file.remove();
-    }*/
 
     long long int av_s = st_inf.bytesAvailable();
     if (av_s < 1048576) {

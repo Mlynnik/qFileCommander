@@ -5,6 +5,7 @@
 #include "findwidget.h"
 #include "lister.h"
 #include "appsettings.h"
+#include "archive_tree.h"
 #include <list>
 #include <QMainWindow>
 #include <QGuiApplication>
@@ -66,6 +67,9 @@ private:
     QMenu *cust_menu;
     QAction *menu_f4;
     QAction *menu_open;
+    QAction *menu_arc_view;
+    QAction *menu_arc_compr;
+    QAction *menu_arc_decompr;
     QAction *menu_ctrl_c;
     QAction *menu_ctrl_x;
     QAction *menu_ctrl_v;
@@ -181,8 +185,6 @@ private slots:
 
     //изменение режима (быстрый просмотр на правой панели)
     void change_fast_view();
-    //пересоздание окна быстрого просмотра
-    void reopen_fast_view();
     //перерисовка виджета быстрого просмотра
     void reDrawFastView(QTreeWidgetItem *current);
 
@@ -240,6 +242,12 @@ private slots:
 
     //переименование файла/каталога
     void on_pushButton_f4_clicked();
+    //просмотр архива
+    void view_archive();
+    //создание архива
+    void compress_archive();
+    //извлечение архива
+    void decompress_archive();
     //копировать как путь
     void copy_as_path_clicked();
     //копирование/перемещение

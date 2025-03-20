@@ -91,7 +91,7 @@ private:
     QPushButton *pushButton_work;
     QProgressDialog *qpd;
 
-    QList<char> ban_symb { '<', '>', ':', '"', '/', '\\', '|', '?', '*'};
+    QList<QChar> ban_symb { '<', '>', ':', '"', '/', '\\', '|', '?', '*'};
 
     QString dir;
     QString find_now = "";

@@ -20,7 +20,7 @@ SettingsWidget::SettingsWidget(AppSettings* appsettings, QWidget *parent) : QTab
     SettingsWidget::setAttribute(Qt::WA_DeleteOnClose);
     SettingsWidget::setAttribute(Qt::WA_ShowModal);
     SettingsWidget::setWindowTitle("Настройки");
-    SettingsWidget::setWindowIcon(QIcon("appIcon.png"));
+    SettingsWidget::setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
     setFixedSize(round(400*w), round(500*h));
     setFont(*main_font);
     page_fonts = new QWidget(this);
@@ -209,7 +209,7 @@ SettingsFavWidget::SettingsFavWidget(AppSettings *_appSettings, QToolButton *_me
     setAttribute(Qt::WA_DeleteOnClose);
     setAttribute(Qt::WA_ShowModal);
     setWindowTitle("Избранное");
-    setWindowIcon(QIcon("appIcon.png"));
+    setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
 
     menu_l = _menu_l;
     menu_r = _menu_r;
@@ -295,7 +295,7 @@ void SettingsFavWidget::rename_clicked()
     QString new_name = item->text();
 
     QInputDialog id;
-    id.setWindowIcon(QIcon("appIcon.png"));
+    id.setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
     id.setFont(*appSettings->main_font);
     id.resize(QSize(400, 60));
     id.setCancelButtonText("Отмена");
@@ -339,7 +339,7 @@ void SettingsFavWidget::add_clicked()
     QString new_name = new_path; new_name = new_name.removeLast().split("/").last();
 
     QInputDialog id;
-    id.setWindowIcon(QIcon("appIcon.png"));
+    id.setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
     id.setFont(*appSettings->main_font);
     id.resize(QSize(400, 60));
     id.setCancelButtonText("Отмена");

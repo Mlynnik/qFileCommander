@@ -1,10 +1,12 @@
 #include "lister.h"
 #include "playerwidget.h"
+#include "helperfunctions.h"
 #include <QScrollBar>
 #include <QFileInfo>
 #include <QDir>
 #include <QDirIterator>
 #include <QImageReader>
+#include <QMessageBox>
 
 Lister::Lister(const QString& _fpath, const AppSettings *_appSettings, QWidget *parent)
     : QWidget(parent)
@@ -15,8 +17,8 @@ Lister::Lister(const QString& _fpath, const AppSettings *_appSettings, QWidget *
     appSettings = _appSettings;
     fpath = _fpath;
 
-    setWindowTitle("Lister - [" + fpath + "]");
-    setWindowIcon(QIcon("appIcon.png"));
+    setWindowTitle("Lister - [" % fpath % "]");
+    setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
     resize(round(appSettings->w*800), round(appSettings->h*600));
     setFont(*appSettings->main_font);
 
@@ -85,7 +87,7 @@ void Lister::closeEvent(QCloseEvent *event)
     event->ignore();
     if (is_th)
         emit stop();
-    else
+    else if (!is_Fast_View)
         event->accept();
 }
 
@@ -105,9 +107,10 @@ void Lister::reFill(const QString &_fpath)
     cod_audio->setDisabled(false);
 
     if (QFileInfo(fpath).isDir()) {
-        if (mode == ListerMode::Dir && widget_now)
+        if (mode == ListerMode::Dir && widget_now) {
+            is_th = true;
             ((DirWidget*)widget_now)->reFill(fpath);
-        else
+        } else
             setMode(ListerMode::Dir);
         return;
     }
@@ -346,36 +349,6 @@ void Lister::f3_cod_local()
 }
 
 
-QString reformat_size(QString str)
-{
-    int x = str.length() - 3;
-    while(x > 0) {str.insert(x, QString(" ")); x -= 3;}
-    return str;
-}
-
-QString reformat_size_2(double num_0)
-{
-    QString str1;
-    if (num_0 >= 1000) {
-        num_0 = round(num_0 / 10.24) / 100;
-        str1 = QString::number(num_0) + " КБ";
-        if (num_0 >= 1000) {
-            num_0 = round(num_0 / 10.24) / 100;
-            str1 = QString::number(num_0) + " MБ";
-            if (num_0 >= 1000) {
-                num_0 = round(num_0 / 10.24) / 100;
-                str1 = QString::number(num_0) + " ГБ";
-                if (num_0 >= 1000) {
-                    num_0 = round(num_0 / 10.24) / 100;
-                    str1 = QString::number(num_0) + " ТБ";
-                }
-            }
-        }
-    } else
-        str1 = QString::number(num_0) + " Б";
-    return str1;
-}
-
 
 //DirWidget
 DirWidget::DirWidget(const QString &_fpath, const AppSettings *appSettings, QWidget *parent) : QPlainTextEdit(parent)
@@ -388,6 +361,7 @@ DirWidget::DirWidget(const QString &_fpath, const AppSettings *appSettings, QWid
 
 void DirWidget::closeEvent(QCloseEvent *event)
 {
+    is_break = true;
     event->ignore();
     if (th)
         emit stop();
@@ -405,7 +379,6 @@ void DirWidget::Fill()
     connect(th, SIGNAL(started()), dpp, SLOT(Work()));
     connect(dpp, SIGNAL(setInfo(qlonglong,qlonglong,qlonglong)), this, SLOT(setDirInfo(qlonglong,qlonglong,qlonglong)));
     connect(this, SIGNAL(stop()), dpp, SLOT(stop()), Qt::DirectConnection);
-    connect(dpp, SIGNAL(break_proc()), this, SLOT(break_proc()));
 
     dpp->moveToThread(th);
     th->start();
@@ -427,6 +400,7 @@ void DirWidget::setDirInfo(long long all_size, long long dcnt, long long fcnt)
 {
     if (th) {
         th->wait();
+        th->quit();
         delete th;
         th = nullptr;
     }
@@ -442,9 +416,9 @@ void DirWidget::setDirInfo(long long all_size, long long dcnt, long long fcnt)
         return;
     }
 
-    appendPlainText("\nВсего файлов:     " % reformat_size(QString::number(fcnt)) % ",\nкаталогов:     "
-                    % reformat_size(QString::number(dcnt)) % "\n\nОбщий размер:     "
-                    % reformat_size(QString::number(all_size)) % " Б (" % reformat_size_2(all_size) % ")");
+    setPlainText(fpath % "\n\nВсего файлов:     " % HelperFunctions::reformat_size(fcnt) % ",\nкаталогов:     "
+                    % HelperFunctions::reformat_size(dcnt) % "\n\nОбщий размер:     "
+                    % HelperFunctions::reformat_size(all_size) % " Б (" % HelperFunctions::reformat_size_2(all_size) % ")");
 }
 
 
@@ -466,8 +440,6 @@ void DirPropProcess::Work()
             }
         }
     }
-    if (is_stop)
-        emit break_proc();
     emit setInfo(all_size, dcnt, fcnt);
 
     this->deleteLater();
@@ -476,10 +448,11 @@ void DirPropProcess::Work()
 
 
 //TextWidget
-TextWidget::TextWidget(const QString &_fpath, const AppSettings *appSettings, QWidget *parent, bool _is_xml, FCodes _cod) : QWidget(parent)
+TextWidget::TextWidget(const QString &_fpath, const AppSettings *_appSettings, QWidget *parent, bool _is_xml, FCodes _cod) : QWidget(parent)
 {
     setAttribute(Qt::WA_DeleteOnClose);
     file = new QFile(_fpath);
+    appSettings = _appSettings;
 
     fpath = _fpath;
     is_xml = _is_xml;
@@ -524,7 +497,7 @@ TextWidget::TextWidget(const QString &_fpath, const AppSettings *appSettings, QW
     pushButton_down->setText("down");
     gridLayout->addWidget(pushButton_down, 2, 5);
 
-    label_all_size->setText("из " + QString::number(ceil((double)f_size/1048576.0)) + " МБ");
+    label_all_size->setText("из " % QString::number(ceil((double)f_size/1048576.0)) % " МБ");
     lineEdit_size_now->setText("1");
     verticalSlider->setMinimum(1);
     verticalSlider->setMaximum(ceil((double)f_size/1048576.0));
@@ -556,6 +529,17 @@ TextWidget::~TextWidget()
     delete file;
 }
 
+void TextWidget::v_error(QString str_error) {
+    QMessageBox v_err;
+    v_err.setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
+    v_err.setFont(*appSettings->dialog_font);
+    v_err.setIcon(QMessageBox::Critical);
+    v_err.setWindowTitle("Ошибка !");
+    v_err.setText(str_error);
+    v_err.setTextInteractionFlags(Qt::TextSelectableByMouse);
+    v_err.exec();
+}
+
 void TextWidget::reFill(const QString& _fpath, bool _is_xml, FCodes _cod)
 {
     plainTextEdit->clear();
@@ -579,8 +563,10 @@ void TextWidget::reFill(const QString& _fpath, bool _is_xml, FCodes _cod)
 
 void TextWidget::Fill()
 {
-    if (!file->open(QIODevice::ReadOnly))
+    if (!file->open(QIODevice::ReadOnly)) {
+        v_error("Не удалось открыть файл " % fpath % "\n\n" % file->errorString());
         return;
+    }
     //this->close();
 
     if (f_size < 1048576) {
