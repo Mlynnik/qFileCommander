@@ -27,6 +27,7 @@ public:
     Lister(const QString &_fpath, const AppSettings *_appSettings, QWidget *parent = nullptr);
     ~Lister();
     void reFill(const QString &_fpath);
+    bool is_Fast_View = false;
 
 signals:
     void closed();

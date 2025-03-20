@@ -6,6 +6,8 @@
 #include <QMimeData>
 #include <QUrl>
 #include <QDir>
+#include <QFileIconProvider>
+#include <QMimeDatabase>
 
 class TreeFilesWidget : public QTreeWidget
 {
@@ -30,6 +32,9 @@ public:
 
     ///выделенные item
     QList<QTreeWidgetItem *> selectedItems() const;
+
+    ///проверка - является ли файл арвивом
+    bool is_arc(const QString& fname);
 
 signals:
     void drop_signal(QStringList lst, bool remove_after);
@@ -65,6 +70,9 @@ private:
     QList<QString> suff_zip;
     QList<QString> suff_temp;
     QList<QString> suff_sys;
+
+    QFileIconProvider IC_PR;
+    QMimeDatabase DB;
 
     //drop menu
     QMenu* drop_menu;

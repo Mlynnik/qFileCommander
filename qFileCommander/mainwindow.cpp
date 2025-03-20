@@ -20,6 +20,8 @@
 #include <QClipboard>
 #include <QToolTip>
 #include <QFontDialog>
+#include <QFileDialog>
+#include <QDialogButtonBox>
 #pragma comment(lib, "Shell32.lib")
 
 MainWindow::MainWindow(QWidget *parent)
@@ -35,6 +37,9 @@ MainWindow::MainWindow(QWidget *parent)
     cust_menu = new QMenu(this);
     menu_f4 = new QAction("Переименовать", this);
     menu_open = new QAction("Открыть с помощью", this);
+    menu_arc_view = new QAction(QIcon(":/resources/icons/7z.png"), "Просмотр архива", this);
+    menu_arc_compr = new QAction(QIcon(":/resources/icons/7z.png"), "Добавить в архив...", this);
+    menu_arc_decompr = new QAction(QIcon(":/resources/icons/7z.png"), "Разархивировать в...", this);
     copy_as_path = new QAction("Копировать как путь", this);
     menu_ctrl_c = new QAction("Копировать", this);
     menu_ctrl_x = new QAction("Вырезать", this);
@@ -43,8 +48,12 @@ MainWindow::MainWindow(QWidget *parent)
     menu_f8 = new QAction("Удалить", this);
     menu_properties = new QAction("Свойства", this);
 
+
     connect(menu_f4, SIGNAL(triggered()), this, SLOT(on_pushButton_f4_clicked()));
     connect(menu_open, SIGNAL(triggered()), this, SLOT(menu_open_with_wind()));
+    connect(menu_arc_view, SIGNAL(triggered()), this, SLOT(view_archive()));
+    connect(menu_arc_compr, SIGNAL(triggered()), this, SLOT(compress_archive()));
+    connect(menu_arc_decompr, SIGNAL(triggered()), this, SLOT(decompress_archive()));
     connect(copy_as_path, SIGNAL(triggered()), this, SLOT(copy_as_path_clicked()));
     connect(menu_ctrl_c, SIGNAL(triggered()), this, SLOT(ctrl_c_clicked()));
     connect(menu_ctrl_x, SIGNAL(triggered()), this, SLOT(ctrl_x_clicked()));
@@ -56,6 +65,10 @@ MainWindow::MainWindow(QWidget *parent)
     cust_menu->addAction(menu_f4);
     cust_menu->addSeparator();
     cust_menu->addAction(menu_open);
+    cust_menu->addSeparator();
+    cust_menu->addAction(menu_arc_view);
+    cust_menu->addAction(menu_arc_compr);
+    cust_menu->addAction(menu_arc_decompr);
     cust_menu->addSeparator();
     cust_menu->addAction(copy_as_path);
     cust_menu->addSeparator();
@@ -655,6 +668,7 @@ void MainWindow::add_favourites(QStringList fnames, QStringList fpathes)
     on_path_r_returnPressed();
 }
 
+
 void MainWindow::change_w_col_l(int logicalIndex, int oldSize, int newSize)
 {
     w_col_l[logicalIndex] = trunc(newSize/w_now);
@@ -668,6 +682,7 @@ void MainWindow::change_w_col_r(int logicalIndex, int oldSize, int newSize)
     w_col_r[3] = 760 - w_col_r[0] - w_col_r[1] - w_col_r[2];
     treeWidget_r->header()->resizeSection(3, round(w_now*w_col_r[3]));
 }
+
 
 void MainWindow::change_fast_view()
 {
@@ -686,15 +701,15 @@ void MainWindow::change_fast_view()
             fpath = last_path_l;
 
         view_widget = new Lister(fpath, appSettings, this);
+        view_widget->is_Fast_View = true;
         ui->path_r->setText(fpath.split("/").last());
         view_widget->show();
         view_widget->setFocusPolicy(Qt::StrongFocus);
-        connect(view_widget, SIGNAL(closed()), this, SLOT(reopen_fast_view()));
         connect(treeWidget_l, SIGNAL(curItemUpdate(QTreeWidgetItem*)), this, SLOT(reDrawFastView(QTreeWidgetItem*)));
     } else {
-        disconnect(view_widget, SIGNAL(closed()), this, SLOT(reopen_fast_view()));
         disconnect(treeWidget_l, SIGNAL(curItemUpdate(QTreeWidgetItem*)), this, SLOT(reDrawFastView(QTreeWidgetItem*)));
         if (view_widget) {
+            view_widget->is_Fast_View = false;
             view_widget->close();
         }
         view_widget = nullptr;
@@ -710,26 +725,6 @@ void MainWindow::change_fast_view()
     }
 
     resizeEvent(nullptr);
-}
-
-void MainWindow::reopen_fast_view()
-{
-    if (ui->pushButton_fast_view->isChecked()) {
-        QString fpath;
-        QTreeWidgetItem *current = treeWidget_l->currentItem();
-        if (current)
-            fpath = treeWidget_l->currentItem()->data(0, Qt::UserRole).toString();
-
-        if (fpath == "")
-            fpath = last_path_l;
-
-        view_widget = new Lister(fpath, appSettings, this);
-        connect(view_widget, SIGNAL(closed()), this, SLOT(reopen_fast_view()));
-        ui->path_r->setText(fpath.split("/").last());
-        view_widget->show();
-        view_widget->setFocusPolicy(Qt::StrongFocus);
-        resizeEvent(nullptr);
-    }
 }
 
 void MainWindow::reDrawFastView(QTreeWidgetItem *current)
@@ -749,6 +744,7 @@ void MainWindow::reDrawFastView(QTreeWidgetItem *current)
     view_widget->reFill(fpath);
     view_widget->setFocusPolicy(Qt::StrongFocus);
 }
+
 
 //вызвает окно ошибки с переданным текстом
 void MainWindow::v_error(QString str_error) {
@@ -771,7 +767,7 @@ void MainWindow::find_disk()
         r_l_buttons_disk.clear();
         md_old = mass_disk;
         QStringList list;
-        QString old_disk = last_path_l.split("/").first().removeLast();
+        QString old_disk = last_path_l.split("/").first().removeLast().toLower();
 
         for (int i = 0; i < mass_disk.length(); i++)
             list << mass_disk[i].filePath().remove(":/").toLower();
@@ -818,7 +814,7 @@ void MainWindow::find_disk()
             ui->path_l->setText("c:/");
             on_path_l_returnPressed();
         }
-        old_disk = last_path_r.split("/").first().removeLast();
+        old_disk = last_path_r.split("/").first().removeLast().toLower();
         if (!list.contains(old_disk)) {
             v_error("Устройство было извлечено!");
             ui->path_r->setText("c:/");
@@ -1264,6 +1260,9 @@ void MainWindow::treeWidget_l_customContextMenuRequested(const QPoint &pos)
     if (item == NULL) {
         menu_f4->setVisible(false);
         menu_open->setVisible(false);
+        menu_arc_compr->setVisible(false);
+        menu_arc_view->setVisible(false);
+        menu_arc_decompr->setVisible(false);
         menu_ctrl_c->setVisible(false);
         menu_ctrl_x->setVisible(false);
         menu_ctrl_v->setVisible(true);
@@ -1284,6 +1283,9 @@ void MainWindow::treeWidget_l_customContextMenuRequested(const QPoint &pos)
     }
 
     if (list.length() >= 1) {
+        menu_arc_compr->setVisible(true);
+        menu_arc_view->setVisible(false);
+        menu_arc_decompr->setVisible(false);
         menu_ctrl_c->setVisible(true);
         menu_ctrl_x->setVisible(true);
         menu_ctrl_v->setVisible(false);
@@ -1292,9 +1294,14 @@ void MainWindow::treeWidget_l_customContextMenuRequested(const QPoint &pos)
 
         if (list.length() == 1) {
             menu_f4->setVisible(true);
-            if (item->text(1) != "<DIR>")
+            if (item->text(1) != "<DIR>") {
                 menu_open->setVisible(true);
-            else
+                if (treeWidget_l->is_arc(list.first()->data(0, Qt::UserRole).toString())) {
+                    menu_arc_compr->setVisible(false);
+                    menu_arc_view->setVisible(true);
+                    menu_arc_decompr->setVisible(true);
+                }
+            } else
                 menu_open->setVisible(false);
         } else {
             menu_f4->setVisible(false);
@@ -1310,6 +1317,9 @@ void MainWindow::treeWidget_r_customContextMenuRequested(const QPoint &pos)
     if (item == NULL) {
         menu_f4->setVisible(false);
         menu_open->setVisible(false);
+        menu_arc_compr->setVisible(false);
+        menu_arc_view->setVisible(false);
+        menu_arc_decompr->setVisible(false);
         menu_ctrl_c->setVisible(false);
         menu_ctrl_x->setVisible(false);
         menu_ctrl_v->setVisible(true);
@@ -1330,6 +1340,9 @@ void MainWindow::treeWidget_r_customContextMenuRequested(const QPoint &pos)
     }
 
     if (list.length() >= 1) {
+        menu_arc_compr->setVisible(true);
+        menu_arc_view->setVisible(false);
+        menu_arc_decompr->setVisible(false);
         menu_ctrl_c->setVisible(true);
         menu_ctrl_x->setVisible(true);
         menu_ctrl_v->setVisible(false);
@@ -1338,9 +1351,14 @@ void MainWindow::treeWidget_r_customContextMenuRequested(const QPoint &pos)
 
         if (list.length() == 1) {
             menu_f4->setVisible(true);
-            if (item->text(1) != "<DIR>")
+            if (item->text(1) != "<DIR>") {
                 menu_open->setVisible(true);
-            else
+                if (treeWidget_r->is_arc(list.first()->data(0, Qt::UserRole).toString())) {
+                    menu_arc_compr->setVisible(false);
+                    menu_arc_view->setVisible(true);
+                    menu_arc_decompr->setVisible(true);
+                }
+            } else
                 menu_open->setVisible(false);
         } else {
             menu_f4->setVisible(false);
@@ -1483,7 +1501,7 @@ void MainWindow::on_pushButton_f4_clicked()
                 v_error("недопустимое название");
         }*/
 
-        QList<char> ban_symb { '<', '>', ':', '"', '/', '\\', '|', '?', '*'};
+        QList<QChar> ban_symb { '<', '>', ':', '"', '/', '\\', '|', '?', '*'};
         bool flag = false;
 
         while (id.exec()) {
@@ -1531,6 +1549,163 @@ void MainWindow::on_pushButton_f4_clicked()
             }
         }
     }
+}
+
+void MainWindow::view_archive()
+{
+    QString dir_to; QStringList selected_dirs, selected_files;
+    mass_all_selected(dir_to, selected_dirs, selected_files);
+    if (selected_files.length() != 1)
+        return;
+    Archive_tree *arch_viewer = new Archive_tree(selected_files[0], appSettings);
+    connect(arch_viewer, SIGNAL(destroyed(QObject*)), this, SLOT(update_widgets()));
+    arch_viewer->setWindowModality(Qt::ApplicationModal);
+    arch_viewer->show();
+}
+
+void MainWindow::compress_archive()
+{
+    QString dir_to; QStringList selected_dirs, selected_files;
+    mass_all_selected(dir_to, selected_dirs, selected_files);
+    if (selected_files.size() + selected_dirs.size() < 1)
+        return;
+
+    QString arc_type;
+    QString arc_name, path_new;
+
+    if (selected_dirs.size() == 1 && selected_files.size() == 0) {
+        arc_name = selected_dirs.first().last(selected_dirs.first().size() - selected_dirs.first().lastIndexOf('/') - 1);
+        path_new = selected_dirs.first().left(selected_dirs.first().lastIndexOf('/'));
+    }
+    else if (selected_dirs.size() == 0 && selected_files.size() == 1) {
+        arc_name = selected_files.first().last(selected_files.first().size() - selected_files.first().lastIndexOf('/') - 1);
+        arc_name = arc_name.left(arc_name.lastIndexOf('.'));
+        path_new = selected_files.first().left(selected_files.first().lastIndexOf('/'));
+    } else {
+        QStringList t_list;
+        if (selected_dirs.size() > 0) {
+            t_list = selected_dirs.first().split('/');
+            path_new = selected_dirs.first().left(selected_dirs.first().lastIndexOf('/'));
+        } else {
+            t_list = selected_files.first().split('/');
+            t_list.last() = t_list.last().left(t_list.last().lastIndexOf('.'));
+            path_new = selected_files.first().left(selected_files.first().lastIndexOf('/'));
+        }
+        if (t_list.size() == 2)
+            arc_name = t_list[1];
+        else
+            arc_name = t_list[t_list.size() - 2];
+    }
+    path_new.replace('/', '\\') += '\\';
+
+    QDialog d;
+    d.setWindowModality(Qt::ApplicationModal);
+    d.setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
+    d.setWindowTitle("Создание архива");
+    d.setFont(dialog_font);
+    d.resize(round(600*w), round(200*h));
+    QGridLayout vbox(&d);
+    QComboBox comboBox_type;
+    comboBox_type.addItems({"zip", "7z", "tar"});
+    comboBox_type.setCurrentIndex(0);
+    QComboBox comboBox_ratio;
+    comboBox_ratio.addItems({"1", "2", "3", "4", "5", "6", "7", "8", "9"});
+    comboBox_ratio.setCurrentIndex(5);
+    QLineEdit lineEdit_name;
+
+    QDialogButtonBox buttonBox = QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+
+    QObject::connect(&buttonBox, SIGNAL(accepted()), &d, SLOT(accept()));
+    QObject::connect(&buttonBox, SIGNAL(rejected()), &d, SLOT(reject()));
+
+    QLabel lab_name("Имя");
+    QLabel lab_type("Тип");
+    QLabel lab_ratio("Степень\nсжатия");
+
+    vbox.addWidget(&lineEdit_name, 0, 1);
+    vbox.addWidget(&comboBox_type, 1, 1);
+    vbox.addWidget(&comboBox_ratio, 2, 1);
+    vbox.addWidget(&buttonBox, 3, 1);
+
+    vbox.addWidget(&lab_name, 0, 0);
+    vbox.addWidget(&lab_type, 1, 0);
+    vbox.addWidget(&lab_ratio, 2, 0);
+
+    vbox.setColumnStretch(0, 0);
+    vbox.setColumnStretch(1, 1);
+
+    d.setLayout(&vbox);
+
+    lineEdit_name.setText(arc_name);
+    QList<QChar> ban_symb { '<', '>', ':', '"', '/', '\\', '|', '?', '*'};
+    bool flag = false;
+
+    while (d.exec()) {
+        arc_name = lineEdit_name.text();
+        arc_type = comboBox_type.currentText();
+        if (arc_name.size() > 256) {
+            v_error("Имя файла ограничено 260 символами");
+            continue;
+        }
+
+        for (int i = 0; i < arc_name.size(); ++i) {
+            if (ban_symb.contains(arc_name[i])) {
+                v_error("В названии не могут содержаться знаки: '<, >, :, \", /, \\, |, ?, *");
+                flag = true;
+                break;
+            }
+        }
+
+        if (flag) {
+            flag = false;
+            continue;
+        }
+        if (QFile(path_new % arc_name % '.' % arc_type).exists()) {
+            v_error("Файл с именем " % arc_name % '.' % arc_type % " уже существует.");
+            continue;
+        }
+
+
+        QString comnd = " a -t" % arc_type % " -mx" % comboBox_ratio.currentText() % " \"" % path_new % arc_name % "." % arc_type % "\" ";
+
+        for (int i = 0; i < selected_dirs.size(); ++i) {
+            comnd = comnd % " \"" % selected_dirs[i].replace('/', '\\') % "\"";
+        }
+        for (int i = 0; i < selected_files.size(); ++i) {
+            comnd = comnd % " \"" % selected_files[i].replace('/', '\\') % "\"";
+        }
+        qDebug() << comnd;
+        wchar_t *c_str2 = new wchar_t[comnd.length()+1]; comnd.toWCharArray(c_str2);
+        c_str2[comnd.length()] = 0;
+        ShellExecute(NULL, L"open", L"7zz.exe", c_str2, 0, SW_SHOWNORMAL);
+        break;
+    }
+    Sleep(1000);
+    update_widgets();
+}
+
+void MainWindow::decompress_archive()
+{
+    QStringList selected_files;
+    {
+        QString dir_to; QStringList selected_dirs;
+        mass_all_selected(dir_to, selected_dirs, selected_files);
+        if (selected_files.length() != 1)
+            return;
+    }
+
+    QFileDialog fd(this);
+    fd.setFileMode(QFileDialog::Directory);
+    fd.setDirectory(QDir::homePath());
+    if (!fd.exec() || fd.selectedFiles().size() != 1)
+        return;
+    QString new_path = fd.selectedFiles().at(0);
+
+    QString comnd = "x \"" % selected_files[0].replace('/', '\\') % "\" \"-o" % new_path % "\"";
+
+    wchar_t *c_str2 = new wchar_t[comnd.length()+1]; comnd.toWCharArray(c_str2);
+    c_str2[comnd.length()] = 0;
+    ShellExecute(NULL, L"open", L"7zz.exe", c_str2, 0, SW_SHOWNORMAL);
 }
 
 //копировать как путь
@@ -1613,7 +1788,7 @@ void MainWindow::on_pushButton_f7_clicked()
     id.setLabelText("Создать новый каталог:");
 
     QString new_name;
-    QList<char> ban_symb { '<', '>', ':', '"', '/', '\\', '|', '?', '*'};
+    QList<QChar> ban_symb { '<', '>', ':', '"', '/', '\\', '|', '?', '*'};
     bool flag = false;
 
     while (id.exec()) {
@@ -1802,7 +1977,7 @@ void MainWindow::on_pushButton_create_file_clicked()
     id.setLabelText("Создать новый файл:");
 
     QString new_name;
-    QList<char> ban_symb { '<', '>', ':', '"', '/', '\\', '|', '?', '*'};
+    QList<QChar> ban_symb { '<', '>', ':', '"', '/', '\\', '|', '?', '*'};
     bool flag = false;
 
     while (id.exec()) {
@@ -1859,8 +2034,9 @@ void MainWindow::on_pushButton_admin_clicked()
     if(IsUserAnAdmin()) {
         ui->pushButton_admin->setEnabled(false);
         ui->pushButton_admin->setCheckable(false);
-    }
-    else if ((int)(size_t)ShellExecute(NULL, L"runas", L"qFileCommander.exe", 0, 0, SW_SHOWNORMAL) > 32) {
+    } else if (count_proc > 0) {
+        v_error("Не все процессы еще завершены!");
+    } else if ((int)(size_t)ShellExecute(NULL, L"runas", L"qFileCommander.exe", 0, 0, SW_SHOWNORMAL) > 32) {
         //>32 - значит даны права админа
         //передать данные и
         close();

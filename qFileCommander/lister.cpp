@@ -87,7 +87,7 @@ void Lister::closeEvent(QCloseEvent *event)
     event->ignore();
     if (is_th)
         emit stop();
-    else
+    else if (!is_Fast_View)
         event->accept();
 }
 
@@ -412,7 +412,7 @@ void DirWidget::setDirInfo(long long all_size, long long dcnt, long long fcnt)
         emit parent_close();
     emit th_finished();
     if (is_break) {
-        //this->close();
+        this->close();
         return;
     }
 

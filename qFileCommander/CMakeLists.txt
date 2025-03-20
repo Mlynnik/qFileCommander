@@ -34,6 +34,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         playerwidget.cpp playerwidget.h
         appsettings.h
         resources.qrc
+        archive_tree.cpp archive_tree.h
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET qFileCommander APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
