@@ -42,7 +42,7 @@ private slots:
     void change_panel_font();
     void change_dialog_font();
     void change_lister_font();
-
+    void ref_clicked(int ind);
 };
 
 

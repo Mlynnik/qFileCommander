@@ -7,6 +7,7 @@
 #include <QToolButton>
 #include <QInputDialog>
 #include <QFileDialog>
+#include <QDesktopServices>
 
 SettingsWidget::SettingsWidget(AppSettings* appsettings, QWidget *parent) : QTabWidget{parent}
 {
@@ -137,14 +138,12 @@ SettingsWidget::SettingsWidget(AppSettings* appsettings, QWidget *parent) : QTab
     lay_fonts->setColumnStretch(0, 1);
     lay_fonts->setColumnStretch(1, 0);
 
-    //page_ref = new QWidget(this);
-    QTextEdit *page_ref = new QTextEdit(this);
-    page_ref->setReadOnly(true);
-    page_ref->setText("Когда-нибудь здесь появится информация о приложении...");
+    QWidget *page_ref = new QWidget(this);
 
     page_fonts->setLayout(lay_fonts);
     addTab(page_fonts, "Шрифты");
     addTab(page_ref, "Справка");
+    connect(this, SIGNAL(tabBarClicked(int)), this, SLOT(ref_clicked(int)));
 }
 
 void SettingsWidget::keyPressEvent(QKeyEvent *event)
@@ -202,6 +201,12 @@ void SettingsWidget::change_lister_font()
         lab_lister_font_now->setFont(*lister_font);
         lab_lister_font_now->setText(lister_font->toString());
     }
+}
+
+void SettingsWidget::ref_clicked(int ind)
+{
+    if (ind == 1)
+        QDesktopServices::openUrl(QUrl::fromLocalFile("qFileCommander.chm"));
 }
 
 SettingsFavWidget::SettingsFavWidget(AppSettings *_appSettings, QToolButton *_menu_l, QToolButton *_menu_r, QWidget *parent)
@@ -326,7 +331,7 @@ void SettingsFavWidget::add_clicked()
 
     QString new_path;
     if (fd.exec())
-        new_path = fd.selectedFiles()[0];
+        new_path = fd.selectedFiles().at(0);
 
     if (new_path.isEmpty())
         return;

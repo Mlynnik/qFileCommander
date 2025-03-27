@@ -1,6 +1,6 @@
 # qFileCommander
 
-## файловый менеджер на Qt и C++ в стиле total commander под Windows
+## Двухпанельный файловый менеджер на Qt и C++ под Windows
 
 
 ### Основной функционал
@@ -22,14 +22,15 @@
 ![image](https://github.com/user-attachments/assets/94394f2e-ffc9-43f1-911d-9dcfa462149d)
 
 ## Поиск файлов
-![image](https://github.com/user-attachments/assets/f0bd6a00-55b5-4704-8246-f3c5615fc8c9)
+![image](https://github.com/user-attachments/assets/0434e248-5ec6-4a62-bee8-c0952bb37a95)
 
 ## Групповое переименование
-![image](https://github.com/user-attachments/assets/895b3bf2-63a2-475f-bd28-3a59c867c635)
+![image](https://github.com/user-attachments/assets/20294ef8-78a8-45f3-a705-031a35cc2db2)
 
 ## Просмотр файлов
-![image](https://github.com/user-attachments/assets/f413123f-d002-41da-bde5-f434dbd37fa6)
+![image](https://github.com/user-attachments/assets/f413123f-d002-41da-bde5-f434dbd37fa6)![image](https://github.com/user-attachments/assets/fd74edf0-c54c-4949-8759-0992b1c63fa4)
 ![](https://github.com/user-attachments/assets/be4a38d9-dc9a-4930-8b35-98bd6646d73f)
+
 
 ## Аудиоплеер
 ![image](https://github.com/user-attachments/assets/76e8d4bb-bc5d-4a3c-8312-e08851218b61)

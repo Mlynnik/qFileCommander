@@ -441,6 +441,9 @@ void MainWindow::keyPressEvent(QKeyEvent *event) {
             else
                 treeWidget_l->setFocus();
             break;
+        case Qt::Key_F1:
+            QDesktopServices::openUrl(QUrl::fromLocalFile("qFileCommander.chm"));
+            break;
         case Qt::Key_Delete:
             on_pushButton_f8_clicked();
             break;
