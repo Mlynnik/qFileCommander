@@ -19,6 +19,7 @@ public:
 signals:
     void apply_main_font();
     void apply_panel_font();
+    void apply_arc();
 
 private:
     float w;
@@ -34,6 +35,8 @@ private:
     QFont *panel_font;
     QFont *dialog_font;
     QFont *lister_font;
+    //архивы
+    bool *is_7zz;
 
 private slots:
     void keyPressEvent(QKeyEvent *event);
@@ -42,6 +45,8 @@ private slots:
     void change_panel_font();
     void change_dialog_font();
     void change_lister_font();
+    void change_arc_7zz();
+    void change_arc_system();
     void ref_clicked(int ind);
 };
 

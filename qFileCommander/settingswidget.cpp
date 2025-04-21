@@ -7,6 +7,7 @@
 #include <QToolButton>
 #include <QInputDialog>
 #include <QFileDialog>
+#include <QRadioButton>
 #include <QDesktopServices>
 
 SettingsWidget::SettingsWidget(AppSettings* appsettings, QWidget *parent) : QTabWidget{parent}
@@ -17,6 +18,7 @@ SettingsWidget::SettingsWidget(AppSettings* appsettings, QWidget *parent) : QTab
     panel_font = appsettings->panel_font;
     dialog_font = appsettings->dialog_font;
     lister_font = appsettings->lister_font;
+    is_7zz = appsettings->is_7zz;
 
     SettingsWidget::setAttribute(Qt::WA_DeleteOnClose);
     SettingsWidget::setAttribute(Qt::WA_ShowModal);
@@ -138,10 +140,31 @@ SettingsWidget::SettingsWidget(AppSettings* appsettings, QWidget *parent) : QTab
     lay_fonts->setColumnStretch(0, 1);
     lay_fonts->setColumnStretch(1, 0);
 
+
+    QWidget *page_arc = new QWidget(this);
+
+    QVBoxLayout *lay_arc = new QVBoxLayout(page_arc);
+    QLabel *lab_arc = new QLabel("Выбор архиватора");
+    QRadioButton *rb_7zz = new QRadioButton("Использовать 7zip\n(встроено, ограниченный функционал)");
+    QRadioButton *rb_system = new QRadioButton("Использовать приложение по умолчанию");
+    if (*appsettings->is_7zz)
+        rb_7zz->setChecked(true);
+    else
+        rb_system->setChecked(true);
+    lay_arc->setAlignment(Qt::AlignTop);
+    lay_arc->setSpacing(20);
+    lay_arc->addWidget(lab_arc);
+    lay_arc->addWidget(rb_7zz);
+    lay_arc->addWidget(rb_system);
+    QObject::connect(rb_7zz, &QRadioButton::clicked, this, &SettingsWidget::change_arc_7zz);
+    QObject::connect(rb_system, &QRadioButton::clicked, this, &SettingsWidget::change_arc_system);
+
+
     QWidget *page_ref = new QWidget(this);
 
     page_fonts->setLayout(lay_fonts);
     addTab(page_fonts, "Шрифты");
+    addTab(page_arc, "Архивы");
     addTab(page_ref, "Справка");
     connect(this, SIGNAL(tabBarClicked(int)), this, SLOT(ref_clicked(int)));
 }
@@ -203,9 +226,21 @@ void SettingsWidget::change_lister_font()
     }
 }
 
+void SettingsWidget::change_arc_7zz()
+{
+    *is_7zz = true;
+    emit apply_arc();
+}
+
+void SettingsWidget::change_arc_system()
+{
+    *is_7zz = false;
+    emit apply_arc();
+}
+
 void SettingsWidget::ref_clicked(int ind)
 {
-    if (ind == 1)
+    if (ind == 2)
         QDesktopServices::openUrl(QUrl::fromLocalFile("qFileCommander.chm"));
 }
 
@@ -365,3 +400,4 @@ void SettingsFavWidget::keyPressEvent(QKeyEvent *event)
         close();
     }
 }
+

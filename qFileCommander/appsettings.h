@@ -10,6 +10,7 @@ struct AppSettings {
     QFont* panel_font;
     QFont* dialog_font;
     QFont* lister_font;
+    bool* is_7zz;
 };
 
 #endif // APPSETTINGS_H

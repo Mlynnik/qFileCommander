@@ -95,6 +95,7 @@ MainWindow::MainWindow(QWidget *parent)
     last_path_l = settings.value("/Settings/L_Path", "").toString();
     last_path_r = settings.value("/Settings/R_Path", "").toString();
     hidden_f = settings.value("/Settings/Hidden_F", false).toBool();
+    is_7zz = settings.value("/Settings/Arc_App", true).toBool();
 
     main_font.fromString(settings.value("/Settings/Main_Font", "Times New Roman,12,-1,5,700,0,0,0,0,0,0,0,0,0,0,1").toString());
     panel_font.fromString(settings.value("/Settings/Panel_Font", "Times New Roman,12,-1,5,700,0,0,0,0,0,0,0,0,0,0,1").toString());
@@ -104,6 +105,7 @@ MainWindow::MainWindow(QWidget *parent)
     appSettings = new AppSettings();
     appSettings->w = w; appSettings->h = h; appSettings->main_font = &main_font;
     appSettings->panel_font = &panel_font; appSettings->dialog_font = &dialog_font; appSettings->lister_font = &lister_font;
+    appSettings->is_7zz = &is_7zz;
 
     find_wid = new FindWidget(appSettings);
     connect(find_wid, SIGNAL(open_find_fid_signal(QString)), this, SLOT(open_find_fid(QString)));
@@ -500,6 +502,7 @@ void MainWindow::save_settings()
     settings.setValue("/Settings/Dialog_Font", dialog_font.toString());
     settings.setValue("/Settings/Lister_Font", lister_font.toString());
     settings.setValue("/Settings/Hidden_F", hidden_f);
+    settings.setValue("/Settings/Arc_App", is_7zz);
 
     QList<QVariant> widthColumns;
     for(int i = 0; i < 4; ++i)
@@ -540,6 +543,7 @@ void MainWindow::open_settings()
     SettingsWidget *sw = new SettingsWidget(appSettings);
     connect(sw, SIGNAL(apply_main_font()), this, SLOT(change_main_font()));
     connect(sw, SIGNAL(apply_panel_font()), this, SLOT(change_panel_font()));
+    connect(sw, SIGNAL(apply_arc()), this, SLOT(apply_arc()));
     sw->show();
 }
 
@@ -558,6 +562,11 @@ void MainWindow::change_panel_font()
 {
     treeWidget_l->setFont(panel_font);
     treeWidget_r->setFont(panel_font);
+}
+
+void MainWindow::apply_arc()
+{
+    is_7zz = *appSettings->is_7zz;
 }
 
 
@@ -1198,34 +1207,51 @@ void MainWindow::header_clicked_r(int col)
 //двойной клик по файлу/папке
 void MainWindow::treeWidget_l_itemActivated(QTreeWidgetItem *item, int column)
 {
+    QString f_name = item->data(0, Qt::UserRole).toString();
     if (item->text(1) == "<DIR>"){
         if (item->text(0) == "..") {
             QString str1 = last_path_l.left(last_path_l.lastIndexOf("/"));
             str1 = str1.left(str1.lastIndexOf("/"));
             ui->path_l->setText(str1 + "/");
         } else {
-            ui->path_l->setText(item->data(0, Qt::UserRole).toString());
+            ui->path_l->setText(f_name);
         }
         on_path_l_returnPressed();
-    } else if (QFileInfo(item->data(0, Qt::UserRole).toString()).isFile()) {
-        QDesktopServices::openUrl(QUrl::fromLocalFile(item->data(0, Qt::UserRole).toString()));
+    } else if (QFileInfo(f_name).isFile()) {
+        if (is_7zz && treeWidget_l->is_arc(f_name)) {
+            Archive_tree *arch_viewer = new Archive_tree(f_name, appSettings);
+            connect(arch_viewer, SIGNAL(destroyed(QObject*)), this, SLOT(update_widgets()));
+            arch_viewer->setWindowModality(Qt::ApplicationModal);
+            arch_viewer->show();
+        } else {
+            QDesktopServices::openUrl(QUrl::fromLocalFile(f_name));
+        }
     }
 }
 
 //двойной клик по файлу/папке
 void MainWindow::treeWidget_r_itemActivated(QTreeWidgetItem *item, int column)
 {
+    QString f_name = item->data(0, Qt::UserRole).toString();
     if (item->text(1) == "<DIR>"){
         if (item->text(0) == "..") {
             QString str1 = last_path_r.left(last_path_r.lastIndexOf("/"));
             str1 = str1.left(str1.lastIndexOf("/"));
             ui->path_r->setText(str1 + "/");
         } else {
-            ui->path_r->setText(item->data(0, Qt::UserRole).toString());
+            ui->path_r->setText(f_name);
         }
         on_path_r_returnPressed();
-    } else if (QFileInfo(item->data(0, Qt::UserRole).toString()).isFile()) {
-        QDesktopServices::openUrl(QUrl::fromLocalFile(item->data(0, Qt::UserRole).toString()));
+    } else if (QFileInfo(f_name).isFile()) {
+        if (is_7zz && treeWidget_r->is_arc(f_name)) {
+            Archive_tree *arch_viewer = new Archive_tree(f_name, appSettings);
+            connect(arch_viewer, SIGNAL(destroyed(QObject*)), this, SLOT(update_widgets()));
+            arch_viewer->setWindowModality(Qt::ApplicationModal);
+            arch_viewer->show();
+
+        } else {
+            QDesktopServices::openUrl(QUrl::fromLocalFile(f_name));
+        }
     }
 }
 

@@ -94,6 +94,9 @@ private:
     QFont dialog_font;
     QFont lister_font;
 
+    //использовать ли встроенный архиватор
+    bool is_7zz = true;
+
     //список дисков
     QFileInfoList md_old;
 
@@ -157,6 +160,8 @@ public slots:
     //смена шрифта
     void change_main_font();
     void change_panel_font();
+    //смена архиватора
+    void apply_arc();
 
 private slots:
     void resizeEvent(QResizeEvent *event);
