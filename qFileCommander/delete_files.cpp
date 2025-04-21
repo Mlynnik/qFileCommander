@@ -4,6 +4,7 @@
 #include <QEventLoop>
 #include <QThread>
 #include <QPushButton>
+#include <QDirIterator>
 #include <shlobj.h>
 
 Delete_Files::Delete_Files(const AppSettings *appSettings) : dialog_font(appSettings->dialog_font) {}
@@ -65,6 +66,7 @@ void Delete_Files::Work(const QStringList &selected_dirs, const QStringList &sel
 
         connect(w_progress, SIGNAL(finished(int)), this, SLOT(hard_cancel_clicked()));
 
+        connect(dp, &Delete_Process::set_all_count, this, [this](long long int cnt) {all_count =  cnt;});
         connect(dp, &Delete_Process::set_comp_count, this, [this](long long int cnt) {comp_count = cnt; update_value_progress();});
 
         connect(dp, SIGNAL(update_name_del(QString)), this, SLOT(update_name_progress(QString)));
@@ -215,6 +217,14 @@ Delete_Process::Delete_Process(const QStringList &selected_dirs, const QStringLi
 
 void Delete_Process::Work()
 {
+    all_count = selected_dirs.size();
+    for (int i = 0; i < selected_dirs.size(); ++i) {
+        get_dir_info(selected_dirs[i]);
+    }
+    all_count += selected_files.size();
+    emit set_all_count(all_count);
+
+
     for (int i = 0; i < selected_dirs.size(); ++i) {
         if (is_final || !QFile::moveToTrash(selected_dirs[i])) {
             SetFileAttributesA(selected_dirs[i].toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
@@ -344,6 +354,8 @@ bool Delete_Process::removeDir(const QString &dirName)
                 func_loop();
             if (wasCanceled || (cant_del_ind == 2))
                 return false;
+
+            emit set_comp_count(++complited_count);
         }
         result = dir.rmdir(dirName);
     }
@@ -381,4 +393,13 @@ void Delete_Process::change_cant_del_ind(int val)
     emit signal_loop();
 }
 
-
+void Delete_Process::get_dir_info(const QString &dir)
+{
+    if (QDir().exists(dir)) {
+        QDirIterator it(dir, QDir::Dirs | QDir::Files | QDir::Hidden | QDir::System, QDirIterator::Subdirectories);
+        while (it.hasNext()) {
+            it.next();
+            ++all_count;
+        }
+    }
+}
