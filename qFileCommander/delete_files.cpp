@@ -262,7 +262,7 @@ void Delete_Process::Work()
                     goto lab_end;
                 }
                 if (cant_del_ind == 0) {
-                    emit cant_del(selected_files[i]);
+                    emit cant_del(selected_files[i] % "\n\n" % file.errorString());
                     func_loop();
                 }
                 if (cant_del_ind == 2)
