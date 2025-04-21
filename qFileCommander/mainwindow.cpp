@@ -100,12 +100,16 @@ MainWindow::MainWindow(QWidget *parent)
     panel_font.fromString(settings.value("/Settings/Panel_Font", "Times New Roman,12,-1,5,700,0,0,0,0,0,0,0,0,0,0,1").toString());
     dialog_font.fromString(settings.value("/Settings/Dialog_Font", "Times New Roman,12,-1,5,700,0,0,0,0,0,0,0,0,0,0,1").toString());
     lister_font.fromString(settings.value("/Settings/Lister_Font", "Times New Roman,12,-1,5,700,0,0,0,0,0,0,0,0,0,0,1").toString());
-    change_main_font();
-    change_panel_font();
 
     appSettings = new AppSettings();
     appSettings->w = w; appSettings->h = h; appSettings->main_font = &main_font;
     appSettings->panel_font = &panel_font; appSettings->dialog_font = &dialog_font; appSettings->lister_font = &lister_font;
+
+    find_wid = new FindWidget(appSettings);
+    connect(find_wid, SIGNAL(open_find_fid_signal(QString)), this, SLOT(open_find_fid(QString)));
+
+    change_main_font();
+    change_panel_font();
 
     {
         QList<QVariant> widthColumns = settings.value("/Settings/L_Col_W").toList();
@@ -371,11 +375,6 @@ MainWindow::MainWindow(QWidget *parent)
     connect(treeWidget_r->header(), SIGNAL(sectionResized(int,int,int)), this, SLOT(change_w_col_r(int,int,int)));
 
     timer->start(3000);
-
-
-    find_wid = new FindWidget(appSettings);
-    find_wid->setFont(main_font);
-    connect(find_wid, SIGNAL(open_find_fid_signal(QString)), this, SLOT(open_find_fid(QString)));
 }
 
 MainWindow::~MainWindow()
@@ -441,6 +440,9 @@ void MainWindow::keyPressEvent(QKeyEvent *event) {
                 treeWidget_r->setFocus();
             else
                 treeWidget_l->setFocus();
+            break;
+        case Qt::Key_F1:
+            QDesktopServices::openUrl(QUrl::fromLocalFile("qFileCommander.chm"));
             break;
         case Qt::Key_Delete:
             on_pushButton_f8_clicked();
@@ -549,6 +551,7 @@ void MainWindow::change_main_font()
     treeWidget_r->header()->setFont(main_font);
     ui->path_l->setFont(main_font);
     ui->path_r->setFont(main_font);
+    find_wid->setFont(main_font);
 }
 
 void MainWindow::change_panel_font()

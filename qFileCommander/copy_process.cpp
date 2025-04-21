@@ -506,7 +506,7 @@ void CopyProcess::Copy()
         if (remove_after) {
             SetFileAttributesA(selected_files[i].toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
 
-            QFile file(new_name);
+            QFile file(selected_files[i]);
             if (!file.remove()) {
                 if (cant_del_ind == 0) {
                     emit cant_del(selected_files[i] % "\n\n" % file.errorString());

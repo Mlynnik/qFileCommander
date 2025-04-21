@@ -26,9 +26,39 @@ Rename_Widget::Rename_Widget(const AppSettings *appSettings, QWidget *parent)
     centralwidget->setSizePolicy(sizePolicy);
     verticalLayout = new QVBoxLayout(centralwidget);
     gridLayout = new QGridLayout();
+
+
+    lineEdit_name = new QLineEdit(centralwidget);
+    gridLayout->addWidget(lineEdit_name, 1, 0, 1, 2);
+
+    lineEdit_type = new QLineEdit(centralwidget);
+    gridLayout->addWidget(lineEdit_type, 1, 2, 1, 2);
+
+    label_begin = new QLabel(centralwidget);
+    QSizePolicy sizePolicy1(QSizePolicy::Minimum, QSizePolicy::Fixed);
+    sizePolicy1.setHorizontalStretch(0);
+    sizePolicy1.setVerticalStretch(0);
+    sizePolicy1.setHeightForWidth(label_begin->sizePolicy().hasHeightForWidth());
+    label_begin->setSizePolicy(sizePolicy1);
+    label_begin->setMaximumWidth(round(w*100));
+    lineEdit_begin = new QLineEdit(centralwidget);
+    sizePolicy1.setHeightForWidth(lineEdit_begin->sizePolicy().hasHeightForWidth());
+    lineEdit_begin->setSizePolicy(sizePolicy1);
+    lineEdit_begin->setMaximumWidth(round(w*50));
+    gridLayout->addWidget(lineEdit_begin, 1, 5, 1, 1);
+
+    lineEdit_step = new QLineEdit(centralwidget);
+    sizePolicy1.setHeightForWidth(lineEdit_step->sizePolicy().hasHeightForWidth());
+    lineEdit_step->setSizePolicy(sizePolicy1);
+    lineEdit_step->setMaximumWidth(round(w*50));
+    gridLayout->addWidget(lineEdit_step, 2, 5, 1, 1);
+
+    lineEdit_find = new QLineEdit(centralwidget);
+    lineEdit_find->setMaximumWidth(round(w*300));
+    gridLayout->addWidget(lineEdit_find, 1, 7, 1, 1);
+
     lineEdit_replace = new QLineEdit(centralwidget);
     lineEdit_replace->setMaximumWidth(round(w*300));
-
     gridLayout->addWidget(lineEdit_replace, 2, 7, 1, 1);
 
     pushButton_type_cnt = new QPushButton(centralwidget);
@@ -43,24 +73,7 @@ Rename_Widget::Rename_Widget(const AppSettings *appSettings, QWidget *parent)
 
     gridLayout->addWidget(label_cnt, 0, 4, 1, 1);
 
-    lineEdit_type = new QLineEdit(centralwidget);
-
-    gridLayout->addWidget(lineEdit_type, 1, 2, 1, 2);
-
-    label_begin = new QLabel(centralwidget);
-    QSizePolicy sizePolicy1(QSizePolicy::Minimum, QSizePolicy::Fixed);
-    sizePolicy1.setHorizontalStretch(0);
-    sizePolicy1.setVerticalStretch(0);
-    sizePolicy1.setHeightForWidth(label_begin->sizePolicy().hasHeightForWidth());
-    label_begin->setSizePolicy(sizePolicy1);
-    label_begin->setMaximumWidth(round(w*100));
-
     gridLayout->addWidget(label_begin, 1, 4, 1, 1);
-
-    lineEdit_find = new QLineEdit(centralwidget);
-    lineEdit_find->setMaximumWidth(round(w*300));
-
-    gridLayout->addWidget(lineEdit_find, 1, 7, 1, 1);
 
     label_find = new QLabel(centralwidget);
     sizePolicy1.setHeightForWidth(label_find->sizePolicy().hasHeightForWidth());
@@ -88,23 +101,10 @@ Rename_Widget::Rename_Widget(const AppSettings *appSettings, QWidget *parent)
 
     gridLayout->addWidget(label_type, 0, 2, 1, 2);
 
-    lineEdit_step = new QLineEdit(centralwidget);
-    sizePolicy1.setHeightForWidth(lineEdit_step->sizePolicy().hasHeightForWidth());
-    lineEdit_step->setSizePolicy(sizePolicy1);
-    lineEdit_step->setMaximumWidth(round(w*50));
-
-    gridLayout->addWidget(lineEdit_step, 2, 5, 1, 1);
-
     pushButton_name_cnt = new QPushButton(centralwidget);
 
     gridLayout->addWidget(pushButton_name_cnt, 2, 1, 1, 1);
 
-    lineEdit_begin = new QLineEdit(centralwidget);
-    sizePolicy1.setHeightForWidth(lineEdit_begin->sizePolicy().hasHeightForWidth());
-    lineEdit_begin->setSizePolicy(sizePolicy1);
-    lineEdit_begin->setMaximumWidth(round(w*50));
-
-    gridLayout->addWidget(lineEdit_begin, 1, 5, 1, 1);
 
     label_replace = new QLabel(centralwidget);
     sizePolicy1.setHeightForWidth(label_replace->sizePolicy().hasHeightForWidth());
@@ -113,9 +113,6 @@ Rename_Widget::Rename_Widget(const AppSettings *appSettings, QWidget *parent)
 
     gridLayout->addWidget(label_replace, 2, 6, 1, 1);
 
-    lineEdit_name = new QLineEdit(centralwidget);
-
-    gridLayout->addWidget(lineEdit_name, 1, 0, 1, 2);
 
     label_find_replace = new QLabel(centralwidget);
 
@@ -173,7 +170,7 @@ Rename_Widget::Rename_Widget(const AppSettings *appSettings, QWidget *parent)
     pushButton_name_cnt->setFocusPolicy(Qt::NoFocus);
     pushButton_type->setFocusPolicy(Qt::NoFocus);
     pushButton_type_cnt->setFocusPolicy(Qt::NoFocus);
-    pushButton_work->setFocusPolicy(Qt::NoFocus);
+    //pushButton_work->setFocusPolicy(Qt::NoFocus);
 
     connect(pushButton_name, SIGNAL(clicked(bool)), this, SLOT(on_pushButton_name_clicked()));
     connect(pushButton_name_cnt, SIGNAL(clicked(bool)), this, SLOT(on_pushButton_name_cnt_clicked()));
