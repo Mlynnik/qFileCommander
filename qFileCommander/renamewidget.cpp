@@ -146,6 +146,7 @@ Rename_Widget::Rename_Widget(const AppSettings *appSettings, QWidget *parent)
     pushButton_work = new QPushButton(centralwidget);
     pushButton_work->setMaximumWidth(round(w*200));
     pushButton_work->setLayoutDirection(Qt::RightToLeft);
+    pushButton_work->setAutoDefault(true);
 
     verticalLayout->addWidget(pushButton_work);
 
