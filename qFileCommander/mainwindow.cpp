@@ -5,6 +5,7 @@
 #include "copy_files.h"
 #include "renamewidget.h"
 #include "settingswidget.h"
+#include "shellfuncs.h"
 #include <windows.h>
 #include <shlobj.h>
 #include <QHeaderView>
@@ -1899,50 +1900,7 @@ void MainWindow::show_properties()
     cust_menu_tree = "";
 
     if (selected_files.length() > 0) {
-        for (int i = 0; i < selected_files.length(); ++i) {
-            selected_files[i].replace("/", "\\");
-        }
-
-        if (selected_files.length() == 1) {
-            SHELLEXECUTEINFO info = {0};
-            info.cbSize = sizeof info;
-            info.lpFile = (const wchar_t*) selected_files.first().utf16();
-            info.nShow = SW_SHOW;
-            info.fMask = SEE_MASK_INVOKEIDLIST;
-            info.lpVerb = L"properties";
-            ShellExecuteEx(&info);
-        } else {
-            int nrFiles = selected_files.length();
-            LPITEMIDLIST *pidlDrives = (LPITEMIDLIST *)malloc(sizeof(LPITEMIDLIST)*nrFiles);
-            IShellFolder* psfDesktop;
-            IDataObject* pdata;
-            HRESULT hr;
-            ULONG chEaten=0, dwAttributes=0;
-            int i=0;
-            hr = SHGetSpecialFolderLocation(NULL, CSIDL_DRIVES, pidlDrives);
-            if (SUCCEEDED(hr))
-            {
-                hr = SHGetDesktopFolder(&psfDesktop);
-                for (int i = 0; i < nrFiles; i ++)
-                    psfDesktop->ParseDisplayName(NULL, NULL, (wchar_t*)selected_files[i].utf16(), &chEaten, (LPITEMIDLIST*)&pidlDrives[i], &dwAttributes);
-                if (SUCCEEDED(hr))
-                {
-                    hr = psfDesktop->GetUIObjectOf(NULL, nrFiles, (LPCITEMIDLIST*)pidlDrives, IID_IDataObject, NULL, (void**)&pdata);
-                    if (SUCCEEDED(hr))
-                    {
-                        CoInitialize(NULL);
-                        //hr=SHMultiFileProperties(pdata,0);
-                        SHMultiFileProperties(pdata,0);
-                        pdata->Release();
-                        CoUninitialize();
-                    }
-                    psfDesktop->Release();
-                }
-                for(i=0; i < nrFiles; i++)
-                    ILFree(pidlDrives[i]);
-            }
-            free(pidlDrives);
-        }
+        showProperties(selected_files);
     }
 }
 
