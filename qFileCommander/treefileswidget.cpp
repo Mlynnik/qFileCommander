@@ -224,11 +224,11 @@ void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, const QStri
         item->setText(1, fileInfo.suffix());
         all_v += fileInfo.size();
         all_f += 1;
-        item->setText(2, HelperFunctions::reformat_size(fileInfo.size()) + "      ");
+        item->setText(2, reformat_size(fileInfo.size()) + "      ");
         item->setText(3, l_mod.toString("dd.MM.yyyy hh:mm"));
         item->setTextAlignment(2, Qt::AlignRight);
         item->setTextAlignment(3, Qt::AlignLeft);
-        tool_tip = fileInfo.fileName() % "\nРазмер: " % HelperFunctions::reformat_size_2(fileInfo.size()) % "\nДата создания: "
+        tool_tip = fileInfo.fileName() % "\nРазмер: " % reformat_size_2(fileInfo.size()) % "\nДата создания: "
                            % fileInfo.birthTime().toString("dd.MM.yyyy hh:mm");
         item->setToolTip(0, tool_tip);
         item->setToolTip(1, tool_tip);

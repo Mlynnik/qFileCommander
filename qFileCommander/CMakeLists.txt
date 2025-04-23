@@ -24,7 +24,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         treefileswidget.h treefileswidget.cpp
-        helperfunctions.h helperfunctions.cpp
+        helperfunctions.h
         copy_files.cpp copy_files.h copy_process.cpp copy_process.h
         delete_files.h delete_files.cpp
         findwidget.h findwidget.cpp

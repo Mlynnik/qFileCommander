@@ -291,8 +291,8 @@ void Archive_tree::set_Active_Dir(ANode *n)
             item->setText(0, fname.left(pos_d));
             item->setText(1, fname.right(fname.size() - pos_d - 1));
         }
-        item->setText(2, HelperFunctions::reformat_size((*it)->fsize));
-        item->setText(3, HelperFunctions::reformat_size((*it)->fcompr));
+        item->setText(2, reformat_size((*it)->fsize));
+        item->setText(3, reformat_size((*it)->fcompr));
         item->setText(4, (*it)->fdate);
     }
 }

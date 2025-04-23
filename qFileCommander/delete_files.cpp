@@ -91,7 +91,7 @@ void Delete_Files::Work(const QStringList &selected_dirs, const QStringList &sel
 void Delete_Files::update_value_progress()
 {
     if (b_minimize->isVisible()) {
-        lab_files->setText("Файлов: " % HelperFunctions::reformat_size(comp_count) % " /" % HelperFunctions::reformat_size(all_count));
+        lab_files->setText("Файлов: " % reformat_size(comp_count) % " /" % reformat_size(all_count));
     }
     pb->setValue(((comp_count*100)/all_count));
 }

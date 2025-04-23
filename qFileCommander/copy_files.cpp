@@ -28,12 +28,12 @@ void Copy_files::update_value_progress()
     if (b_minimize->isVisible()) {
         if (all_size == 0) {
             lab_size->setText("0/0 Б");
-            lab_files->setText("Файлов: " % HelperFunctions::reformat_size(comp_count) % " /" % HelperFunctions::reformat_size(all_count));
+            lab_files->setText("Файлов: " % reformat_size(comp_count) % " /" % reformat_size(all_count));
             pb->setValue(((comp_count*100)/all_count));
         } else {
             pb->setValue(((comp_size*100)/all_size));
-            lab_size->setText(HelperFunctions::reformat_size_2(comp_size) % " /" % HelperFunctions::reformat_size_2(all_size));
-            lab_files->setText("Файлов: " % HelperFunctions::reformat_size(comp_count) % " /" % HelperFunctions::reformat_size(all_count));
+            lab_size->setText(reformat_size_2(comp_size) % " /" % reformat_size_2(all_size));
+            lab_files->setText("Файлов: " % reformat_size(comp_count) % " /" % reformat_size(all_count));
         }
     } else if (all_size == 0) {
         pb->setValue(((comp_count*100)/all_count));

@@ -416,9 +416,9 @@ void DirWidget::setDirInfo(long long all_size, long long dcnt, long long fcnt)
         return;
     }
 
-    setPlainText(fpath % "\n\nВсего файлов:     " % HelperFunctions::reformat_size(fcnt) % ",\nкаталогов:     "
-                    % HelperFunctions::reformat_size(dcnt) % "\n\nОбщий размер:     "
-                    % HelperFunctions::reformat_size(all_size) % " Б (" % HelperFunctions::reformat_size_2(all_size) % ")");
+    setPlainText(fpath % "\n\nВсего файлов:     " % reformat_size(fcnt) % ",\nкаталогов:     "
+                    % reformat_size(dcnt) % "\n\nОбщий размер:     "
+                    % reformat_size(all_size) % " Б (" % reformat_size_2(all_size) % ")");
 }
 
 
