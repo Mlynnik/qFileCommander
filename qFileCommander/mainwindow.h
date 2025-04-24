@@ -5,7 +5,6 @@
 #include "findwidget.h"
 #include "lister.h"
 #include "appsettings.h"
-#include "archive_tree.h"
 #include <list>
 #include <QMainWindow>
 #include <QGuiApplication>
@@ -96,6 +95,9 @@ private:
 
     //использовать ли встроенный архиватор
     bool is_7zz = true;
+
+    //использовать функции WinAPI (контекстное меню, буфер обмена)
+    bool is_api = true;
 
     //список дисков
     QFileInfoList md_old;
@@ -241,6 +243,8 @@ private slots:
 
     //drop файла в указанную директорию
     void drop_func(QStringList lst, bool remove_after, bool is_right);
+    //вставка файла в указанную директорию
+    void paste_func(QString destFolder);
 
     //записывает по ссылке папки назначения, выбранные каталоги, выбранные файлы
     void mass_all_selected(QString &dir_to, QStringList &selected_dirs, QStringList &selected_files);

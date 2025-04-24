@@ -6,6 +6,7 @@
 #include "renamewidget.h"
 #include "settingswidget.h"
 #include "shellfuncs.h"
+#include "archive_tree.h"
 #include <windows.h>
 #include <shlobj.h>
 #include <QHeaderView>
@@ -160,6 +161,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(treeWidget_l, SIGNAL(itemActivated(QTreeWidgetItem*,int)), this, SLOT(treeWidget_l_itemActivated(QTreeWidgetItem*,int)));
     connect(treeWidget_l, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(treeWidget_l_customContextMenuRequested(QPoint)));
     connect(treeWidget_l, SIGNAL(itemSelectionChanged()), this, SLOT(treeWidget_l_itemSelectionChanged()));
+    connect(treeWidget_l, SIGNAL(paste_signal(QString)), this, SLOT(paste_func(QString)));
 
     connect(treeWidget_l->header(), &QHeaderView::sectionClicked, this, [this](int logicalIndex) {header_clicked_l(logicalIndex);});
     connect(treeWidget_l, &TreeFilesWidget::drop_signal, this, [this](QStringList lst, bool remove_after) {drop_func(lst, remove_after, false); });
@@ -184,6 +186,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(treeWidget_r, SIGNAL(itemActivated(QTreeWidgetItem*,int)), this, SLOT(treeWidget_r_itemActivated(QTreeWidgetItem*,int)));
     connect(treeWidget_r, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(treeWidget_r_customContextMenuRequested(QPoint)));
     connect(treeWidget_r, SIGNAL(itemSelectionChanged()), this, SLOT(treeWidget_r_itemSelectionChanged()));
+    connect(treeWidget_r, SIGNAL(paste_signal(QString)), this, SLOT(paste_func(QString)));
 
     connect(treeWidget_r->header(), &QHeaderView::sectionClicked, this, [this](int logicalIndex) {header_clicked_r(logicalIndex);});
     connect(treeWidget_r, &TreeFilesWidget::drop_signal, this, [this](QStringList lst, bool remove_after) {drop_func(lst, remove_after, true); });
@@ -1249,7 +1252,6 @@ void MainWindow::treeWidget_r_itemActivated(QTreeWidgetItem *item, int column)
             connect(arch_viewer, SIGNAL(destroyed(QObject*)), this, SLOT(update_widgets()));
             arch_viewer->setWindowModality(Qt::ApplicationModal);
             arch_viewer->show();
-
         } else {
             QDesktopServices::openUrl(QUrl::fromLocalFile(f_name));
         }
@@ -1287,6 +1289,24 @@ void MainWindow::ctrl_v_clicked()
 void MainWindow::treeWidget_l_customContextMenuRequested(const QPoint &pos)
 {
     QTreeWidgetItem *item = treeWidget_l->itemAt(pos);
+    QPoint globPos = treeWidget_l->viewport()->mapToGlobal(pos);
+    if (is_api) {
+        if (item == NULL) {
+            QStringList t { treeWidget_l->path };
+            shellfuncs::get_context_menu(t, globPos.x(), globPos.y(), reinterpret_cast<void*>(winId()));
+            return;
+        }
+
+        QString dir_to; QStringList selected_dirs, selected_files;
+        mass_all_selected(dir_to, selected_dirs, selected_files);
+
+        if (selected_dirs.length() + selected_files.length() > 0) {
+            selected_dirs.append(selected_files);
+            shellfuncs::get_context_menu(selected_dirs, globPos.x(), globPos.y(), reinterpret_cast<void*>(winId()));
+        }
+        return;
+    }
+
     if (item == NULL) {
         menu_f4->setVisible(false);
         menu_open->setVisible(false);
@@ -1299,7 +1319,7 @@ void MainWindow::treeWidget_l_customContextMenuRequested(const QPoint &pos)
         menu_f8->setVisible(false);
         menu_create_file->setVisible(true);
         cust_menu_tree = last_path_l;
-        cust_menu->popup(treeWidget_l->viewport()->mapToGlobal(pos));
+        cust_menu->popup(globPos);
         return;
     }
     cust_menu_tree = "";
@@ -1336,7 +1356,7 @@ void MainWindow::treeWidget_l_customContextMenuRequested(const QPoint &pos)
         } else {
             menu_f4->setVisible(false);
         }
-        cust_menu->popup(treeWidget_l->viewport()->mapToGlobal(pos));
+        cust_menu->popup(globPos);
     }
 }
 
@@ -1344,6 +1364,24 @@ void MainWindow::treeWidget_l_customContextMenuRequested(const QPoint &pos)
 void MainWindow::treeWidget_r_customContextMenuRequested(const QPoint &pos)
 {
     QTreeWidgetItem *item = treeWidget_r->itemAt(pos);
+    QPoint globPos = treeWidget_r->viewport()->mapToGlobal(pos);
+    if (is_api) {
+        if (item == NULL) {
+            QStringList t { treeWidget_r->path };
+            shellfuncs::get_context_menu(t, globPos.x(), globPos.y(), reinterpret_cast<void*>(winId()));
+            return;
+        }
+
+        QString dir_to; QStringList selected_dirs, selected_files;
+        mass_all_selected(dir_to, selected_dirs, selected_files);
+
+        if (selected_dirs.length() + selected_files.length() > 0) {
+            selected_dirs.append(selected_files);
+            shellfuncs::get_context_menu(selected_dirs, globPos.x(), globPos.y(), reinterpret_cast<void*>(winId()));
+        }
+        return;
+    }
+
     if (item == NULL) {
         menu_f4->setVisible(false);
         menu_open->setVisible(false);
@@ -1356,7 +1394,7 @@ void MainWindow::treeWidget_r_customContextMenuRequested(const QPoint &pos)
         menu_f8->setVisible(false);
         menu_create_file->setVisible(true);
         cust_menu_tree = last_path_r;
-        cust_menu->popup(treeWidget_r->viewport()->mapToGlobal(pos));
+        cust_menu->popup(globPos);
         return;
     }
     cust_menu_tree = "";
@@ -1393,7 +1431,7 @@ void MainWindow::treeWidget_r_customContextMenuRequested(const QPoint &pos)
         } else {
             menu_f4->setVisible(false);
         }
-        cust_menu->popup(treeWidget_r->viewport()->mapToGlobal(pos));
+        cust_menu->popup(globPos);
     }
 }
 
@@ -1463,6 +1501,17 @@ void MainWindow::drop_func(QStringList lst, bool remove_after, bool is_right)
         cp->Work(dir_to, selected_dirs, selected_files, remove_after);
         count_proc++;
     }
+}
+
+void MainWindow::paste_func(QString destFolder)
+{
+    count_proc++;
+    QThread *th = new QThread(this);
+    PasteProcess *pp = new PasteProcess(destFolder, reinterpret_cast<void*>(winId()));
+    connect(th, &QThread::started, pp, &PasteProcess::Work);
+    connect(th, &QThread::finished, this, &MainWindow::end_operation);
+    pp->moveToThread(th);
+    th->start();
 }
 
 
@@ -1900,7 +1949,7 @@ void MainWindow::show_properties()
     cust_menu_tree = "";
 
     if (selected_files.length() > 0) {
-        showProperties(selected_files);
+        shellfuncs::showProperties(selected_files);
     }
 }
 

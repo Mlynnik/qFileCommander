@@ -1,5 +1,6 @@
 #include "treefileswidget.h"
 #include "helperfunctions.h"
+#include "shellfuncs.h"
 #include <QClipboard>
 #include <QDrag>
 #include <QDragMoveEvent>
@@ -417,7 +418,7 @@ void TreeFilesWidget::keyPressEvent(QKeyEvent *event)
             }
             return;
         } else if ((event->key() == Qt::Key_C) || (event->key() == Qt::Key_X)) {
-            auto mimeData = new QMimeData;
+            /*auto mimeData = new QMimeData;
 
             const QList<QTreeWidgetItem*> &items = this->selectedItems();
             QList<QUrl> urls;
@@ -441,11 +442,26 @@ void TreeFilesWidget::keyPressEvent(QKeyEvent *event)
             stream << dropEffect;
             mimeData->setData("Preferred DropEffect", data);
 
-            QApplication::clipboard()->setMimeData(mimeData);
+            QApplication::clipboard()->setMimeData(mimeData);*/
+
+            const QList<QTreeWidgetItem*> &items = this->selectedItems();
+            QStringList urls;
+            int i = 0;
+            if ((items[0]->text(0) == "..") && (items[0]->text(1) == "<DIR>"))
+                ++i;
+            for (; i < items.length(); ++i) {
+                urls << items[i]->data(0, Qt::UserRole).toString();
+            }
+
+            if (event->key() == Qt::Key_C)
+                shellfuncs::copy_api(urls, reinterpret_cast<void*>(winId()));
+            else
+                shellfuncs::cut_api(urls, reinterpret_cast<void*>(winId()));
+
             return;
 
         } else if (event->key() == Qt::Key_V) {
-            const QMimeData *mimeData = QApplication::clipboard()->mimeData();
+            /*const QMimeData *mimeData = QApplication::clipboard()->mimeData();
             if (mimeData->hasUrls()) {
                 QByteArray output_data = mimeData->data("Preferred DropEffect");
 
@@ -465,7 +481,9 @@ void TreeFilesWidget::keyPressEvent(QKeyEvent *event)
                 }
                 drop_func_signal(pathList, (data == output_data));
                 return;
-            }
+            }*/
+            emit paste_signal(path);
+            return;
         }
     } else if (event->key() == Qt::Key_Insert) {
         int ind = this->currentIndex().row();

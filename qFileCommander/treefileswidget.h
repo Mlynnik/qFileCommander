@@ -38,6 +38,7 @@ public:
 
 signals:
     void drop_signal(QStringList lst, bool remove_after);
+    void paste_signal(QString destFolder);
     void curItemUpdate(QTreeWidgetItem*);
 
 public slots:
