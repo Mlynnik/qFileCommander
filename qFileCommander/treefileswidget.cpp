@@ -187,11 +187,12 @@ void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, const QStri
     }
 
     QDateTime time_now = QDateTime::currentDateTime();
-    QDateTime l_mod = fileInfo.lastModified();
+    QDateTime l_mod;
     QMimeType mime;
     QString m_s;
     for (int i = 0; i < list.size(); ++i) {
         fileInfo = list.at(i);
+        l_mod = fileInfo.lastModified();
         color = QColor(0, 0, 0);
         QTreeWidgetItem *item = new QTreeWidgetItem(this);
         if (fileInfo.isExecutable())

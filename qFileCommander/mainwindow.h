@@ -37,6 +37,7 @@ private:
     AppSettings *appSettings;
     float w = float(screen->geometry().width()) / float(1536);
     float h = float(screen->geometry().height()) / float(864);
+    float ratio = screen->devicePixelRatio();
     //ширина экрана
     int w_max;
     //высота экрана
