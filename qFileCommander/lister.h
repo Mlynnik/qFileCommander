@@ -49,6 +49,8 @@ private slots:
     void f3_cod_html();
     void f3_cod_img();
     void f3_cod_audio();
+    void f3_cod_wrap();
+    void f3_cod_img_ratio();
     void f3_cod_utf8();
     void f3_cod_local();
 
@@ -70,6 +72,9 @@ private:
     QAction *cod_audio;
     QAction *cod_utf8;
     QAction *cod_local;
+
+    QAction *cod_wrap;
+    QAction *cod_img_ratio;
 
     QVBoxLayout *horizontalLayout = nullptr;
     QWidget *widget_now = nullptr;
@@ -139,6 +144,16 @@ public:
     TextWidget(const QString& _fpath, const AppSettings *appSettings, QWidget* parent = nullptr, bool _is_xml = false, FCodes _cod = FCodes::UTF8);
     ~TextWidget();
 
+    //переносить слова
+    inline static bool wrap_mode;
+
+    inline void change_wrap_mode() {
+        if (wrap_mode)
+            plainTextEdit->setWordWrapMode(QTextOption::WrapAnywhere);
+        else
+            plainTextEdit->setWordWrapMode(QTextOption::NoWrap);
+    }
+
 signals:
     void stop();
 
@@ -187,6 +202,8 @@ class ImageWidget : public QScrollArea {
 
 public:
     ImageWidget(const QString& _fpath, QWidget* parent = nullptr);
+    //масштабировать картинку
+    inline static bool img_ratio;
 
 public slots:
     void reFill(const QString& _fpath);

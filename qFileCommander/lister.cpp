@@ -37,10 +37,14 @@ Lister::Lister(const QString& _fpath, const AppSettings *_appSettings, QWidget *
     cod_audio = new QAction("Аудио", this);
     cod_utf8 = new QAction("UTF-8", this);
     cod_local = new QAction("Local", this);
+    cod_wrap = new QAction("Переносить строки", this);
+    cod_img_ratio = new QAction("Изображения в размер окна", this);
     cod_only_text->setCheckable(true);
     cod_html->setCheckable(true);
     cod_img->setCheckable(true);
     cod_audio->setCheckable(true);
+    cod_wrap->setCheckable(true);
+    cod_img_ratio->setCheckable(true);
     cod_utf8->setCheckable(true);
     cod_local->setCheckable(true);
 
@@ -50,12 +54,19 @@ Lister::Lister(const QString& _fpath, const AppSettings *_appSettings, QWidget *
     menu_view->addAction(cod_html);
     menu_view->addAction(cod_img);
     menu_view->addAction(cod_audio);
+    menu_view->addSeparator();
+    menu_view->addAction(cod_wrap);
+    menu_view->addAction(cod_img_ratio);
 
     menu_cod = new QMenu(menubar);
     menu_cod->setTitle("Кодировка");
     menu_cod->addAction(cod_utf8);
     menu_cod->addAction(cod_local);
     cod_utf8->setChecked(true);
+    if (TextWidget::wrap_mode)
+        cod_wrap->setChecked(true);
+    if (ImageWidget::img_ratio)
+        cod_img_ratio->setChecked(true);
 
     menubar->addAction(menu_view->menuAction());
     menubar->addAction(menu_cod->menuAction());
@@ -64,6 +75,8 @@ Lister::Lister(const QString& _fpath, const AppSettings *_appSettings, QWidget *
     connect(cod_html, SIGNAL(triggered()), this, SLOT(f3_cod_html()));
     connect(cod_img, SIGNAL(triggered()), this, SLOT(f3_cod_img()));
     connect(cod_audio, SIGNAL(triggered()), this, SLOT(f3_cod_audio()));
+    connect(cod_wrap, SIGNAL(triggered()), this, SLOT(f3_cod_wrap()));
+    connect(cod_img_ratio, SIGNAL(triggered()), this, SLOT(f3_cod_img_ratio()));
     connect(cod_utf8, SIGNAL(triggered()), this, SLOT(f3_cod_utf8()));
     connect(cod_local, SIGNAL(triggered()), this, SLOT(f3_cod_local()));
 
@@ -324,6 +337,25 @@ void Lister::f3_cod_audio()
     setMode(ListerMode::Player);
 }
 
+void Lister::f3_cod_wrap()
+{
+    if (cod_wrap->isChecked())
+        TextWidget::wrap_mode = true;
+    else
+        TextWidget::wrap_mode = false;
+
+    if (mode == ListerMode::Text)
+        ((TextWidget*)widget_now)->change_wrap_mode();
+}
+
+void Lister::f3_cod_img_ratio()
+{
+    if (cod_wrap->isChecked())
+        ImageWidget::img_ratio = true;
+    else
+        ImageWidget::img_ratio = false;
+}
+
 void Lister::f3_cod_utf8()
 {
     cod_utf8->setChecked(true);
@@ -463,7 +495,7 @@ TextWidget::TextWidget(const QString &_fpath, const AppSettings *_appSettings, Q
 
     plainTextEdit = new QPlainTextEdit(this);
     plainTextEdit->setReadOnly(true);
-    plainTextEdit->setWordWrapMode(QTextOption::NoWrap);
+    change_wrap_mode();
     plainTextEdit->setFont(*appSettings->lister_font);
     gridLayout->addWidget(plainTextEdit, 1, 0, 1, 6);
 

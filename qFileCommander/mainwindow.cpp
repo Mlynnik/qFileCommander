@@ -99,6 +99,8 @@ MainWindow::MainWindow(QWidget *parent)
     hidden_f = settings.value("/Settings/Hidden_F", false).toBool();
     is_7zz = settings.value("/Settings/Arc_App", true).toBool();
     is_api = settings.value("/Settings/Use_Api", true).toBool();
+    TextWidget::wrap_mode = settings.value("/Settings/Wrap_Mode", false).toBool();
+    ImageWidget::img_ratio = settings.value("/Settings/Img_Ratio", true).toBool();
 
     main_font.fromString(settings.value("/Settings/Main_Font", "Times New Roman,12,-1,5,700,0,0,0,0,0,0,0,0,0,0,1").toString());
     panel_font.fromString(settings.value("/Settings/Panel_Font", "Times New Roman,12,-1,5,700,0,0,0,0,0,0,0,0,0,0,1").toString());
@@ -511,6 +513,8 @@ void MainWindow::save_settings()
     settings.setValue("/Settings/Hidden_F", hidden_f);
     settings.setValue("/Settings/Arc_App", is_7zz);
     settings.setValue("/Settings/Use_Api", is_api);
+    settings.setValue("/Settings/Wrap_Mode", TextWidget::wrap_mode);
+    settings.setValue("/Settings/Img_Ratio", ImageWidget::img_ratio);
 
     QList<QVariant> widthColumns;
     for(int i = 0; i < 4; ++i)
@@ -1342,7 +1346,7 @@ void MainWindow::treeWidget_l_customContextMenuRequested(const QPoint &pos)
     if (is_api) {
         if (item == NULL) {
             QStringList t { treeWidget_l->path };
-            shellfuncs::get_context_menu(t, globPos.x(), globPos.y(), reinterpret_cast<void*>(winId()));
+            shellfuncs::get_context_menu(t, round(globPos.x() * ratio), round(globPos.y() * ratio), reinterpret_cast<void*>(winId()));
             return;
         }
 
@@ -1351,7 +1355,7 @@ void MainWindow::treeWidget_l_customContextMenuRequested(const QPoint &pos)
 
         if (selected_dirs.length() + selected_files.length() > 0) {
             selected_dirs.append(selected_files);
-            shellfuncs::get_context_menu(selected_dirs, globPos.x(), globPos.y(), reinterpret_cast<void*>(winId()));
+            shellfuncs::get_context_menu(selected_dirs, round(globPos.x() * ratio), round(globPos.y() * ratio), reinterpret_cast<void*>(winId()));
         }
         return;
     }
