@@ -8,6 +8,7 @@
 #include <QInputDialog>
 #include <QFileDialog>
 #include <QRadioButton>
+#include <QButtonGroup>
 #include <QDesktopServices>
 
 SettingsWidget::SettingsWidget(AppSettings* appsettings, QWidget *parent) : QTabWidget{parent}
@@ -19,6 +20,7 @@ SettingsWidget::SettingsWidget(AppSettings* appsettings, QWidget *parent) : QTab
     dialog_font = appsettings->dialog_font;
     lister_font = appsettings->lister_font;
     is_7zz = appsettings->is_7zz;
+    is_api = appsettings->is_api;
 
     SettingsWidget::setAttribute(Qt::WA_DeleteOnClose);
     SettingsWidget::setAttribute(Qt::WA_ShowModal);
@@ -141,30 +143,69 @@ SettingsWidget::SettingsWidget(AppSettings* appsettings, QWidget *parent) : QTab
     lay_fonts->setColumnStretch(1, 0);
 
 
-    QWidget *page_arc = new QWidget(this);
+    QWidget *page_main = new QWidget(this);
+    QVBoxLayout *lay_main = new QVBoxLayout(page_main);
+    lay_main->setAlignment(Qt::AlignTop);
+    lay_main->setSpacing(20);
 
-    QVBoxLayout *lay_arc = new QVBoxLayout(page_arc);
-    QLabel *lab_arc = new QLabel("Выбор архиватора");
-    QRadioButton *rb_7zz = new QRadioButton("Использовать 7zip\n(встроено, ограниченный функционал)");
-    QRadioButton *rb_system = new QRadioButton("Использовать приложение по умолчанию");
+    QFrame *l40 = new QFrame(page_fonts);
+    l40->setFrameShape(QFrame::HLine);
+    l40->setLineWidth(1);
+    l40->setFixedHeight(10);
+    lay_main->addWidget(l40);
+
+    QLabel *lab_api = new QLabel("Файловые операции", page_main);
+    QRadioButton *rb_api = new QRadioButton("Использовать возможности проводника\n(контекстное меню, буфер обмена)", page_main);
+    QRadioButton *rb_non_api = new QRadioButton("Использовать встроенные возможности", page_main);
+    QButtonGroup *btnGroup_api = new QButtonGroup(page_main);
+    btnGroup_api->addButton(rb_api);
+    btnGroup_api->addButton(rb_non_api);
+    if (*appsettings->is_api)
+        rb_api->setChecked(true);
+    else
+        rb_non_api->setChecked(true);
+
+    lay_main->addWidget(lab_api);
+    lay_main->addWidget(rb_api);
+    lay_main->addWidget(rb_non_api);
+    QObject::connect(rb_api, &QRadioButton::clicked, this, &SettingsWidget::change_api);
+    QObject::connect(rb_non_api, &QRadioButton::clicked, this, &SettingsWidget::change_non_api);
+
+    QFrame *l41 = new QFrame(page_fonts);
+    l41->setFrameShape(QFrame::HLine);
+    l41->setLineWidth(1);
+    l41->setFixedHeight(10);
+    lay_main->addWidget(l41);
+
+
+    QLabel *lab_arc = new QLabel("Архиватор", page_main);
+    QRadioButton *rb_7zz = new QRadioButton("Использовать 7zip\n(встроено, ограниченный функционал)", page_main);
+    QRadioButton *rb_system = new QRadioButton("Использовать приложение по умолчанию", page_main);
+    QButtonGroup *btnGroup_arc = new QButtonGroup(page_main);
+    btnGroup_arc->addButton(rb_7zz);
+    btnGroup_arc->addButton(rb_system);
     if (*appsettings->is_7zz)
         rb_7zz->setChecked(true);
     else
         rb_system->setChecked(true);
-    lay_arc->setAlignment(Qt::AlignTop);
-    lay_arc->setSpacing(20);
-    lay_arc->addWidget(lab_arc);
-    lay_arc->addWidget(rb_7zz);
-    lay_arc->addWidget(rb_system);
+
+    lay_main->addWidget(lab_arc);
+    lay_main->addWidget(rb_7zz);
+    lay_main->addWidget(rb_system);
     QObject::connect(rb_7zz, &QRadioButton::clicked, this, &SettingsWidget::change_arc_7zz);
     QObject::connect(rb_system, &QRadioButton::clicked, this, &SettingsWidget::change_arc_system);
 
+    QFrame *l42 = new QFrame(page_fonts);
+    l42->setFrameShape(QFrame::HLine);
+    l42->setLineWidth(1);
+    l42->setFixedHeight(10);
+    lay_main->addWidget(l42);
 
     QWidget *page_ref = new QWidget(this);
 
     page_fonts->setLayout(lay_fonts);
+    addTab(page_main, "Основные");
     addTab(page_fonts, "Шрифты");
-    addTab(page_arc, "Архивы");
     addTab(page_ref, "Справка");
     connect(this, SIGNAL(tabBarClicked(int)), this, SLOT(ref_clicked(int)));
 }
@@ -229,13 +270,21 @@ void SettingsWidget::change_lister_font()
 void SettingsWidget::change_arc_7zz()
 {
     *is_7zz = true;
-    emit apply_arc();
 }
 
 void SettingsWidget::change_arc_system()
 {
     *is_7zz = false;
-    emit apply_arc();
+}
+
+void SettingsWidget::change_api()
+{
+    *is_api = true;
+}
+
+void SettingsWidget::change_non_api()
+{
+    *is_api = false;
 }
 
 void SettingsWidget::ref_clicked(int ind)

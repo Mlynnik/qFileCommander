@@ -98,6 +98,7 @@ MainWindow::MainWindow(QWidget *parent)
     last_path_r = settings.value("/Settings/R_Path", "").toString();
     hidden_f = settings.value("/Settings/Hidden_F", false).toBool();
     is_7zz = settings.value("/Settings/Arc_App", true).toBool();
+    is_api = settings.value("/Settings/Use_Api", true).toBool();
 
     main_font.fromString(settings.value("/Settings/Main_Font", "Times New Roman,12,-1,5,700,0,0,0,0,0,0,0,0,0,0,1").toString());
     panel_font.fromString(settings.value("/Settings/Panel_Font", "Times New Roman,12,-1,5,700,0,0,0,0,0,0,0,0,0,0,1").toString());
@@ -107,7 +108,7 @@ MainWindow::MainWindow(QWidget *parent)
     appSettings = new AppSettings();
     appSettings->w = w; appSettings->h = h; appSettings->main_font = &main_font;
     appSettings->panel_font = &panel_font; appSettings->dialog_font = &dialog_font; appSettings->lister_font = &lister_font;
-    appSettings->is_7zz = &is_7zz;
+    appSettings->is_7zz = &is_7zz; appSettings->is_api = &is_api;
 
     find_wid = new FindWidget(appSettings);
     connect(find_wid, SIGNAL(open_find_fid_signal(QString)), this, SLOT(open_find_fid(QString)));
@@ -162,9 +163,10 @@ MainWindow::MainWindow(QWidget *parent)
     connect(treeWidget_l, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(treeWidget_l_customContextMenuRequested(QPoint)));
     connect(treeWidget_l, SIGNAL(itemSelectionChanged()), this, SLOT(treeWidget_l_itemSelectionChanged()));
     connect(treeWidget_l, SIGNAL(paste_signal(QString)), this, SLOT(paste_func(QString)));
+    connect(treeWidget_l, SIGNAL(put_to_clipboard(bool,QList<QTreeWidgetItem*>)), this, SLOT(put_to_clipboard(bool,QList<QTreeWidgetItem*>)));
 
     connect(treeWidget_l->header(), &QHeaderView::sectionClicked, this, [this](int logicalIndex) {header_clicked_l(logicalIndex);});
-    connect(treeWidget_l, &TreeFilesWidget::drop_signal, this, [this](QStringList lst, bool remove_after) {drop_func(lst, remove_after, false); });
+    connect(treeWidget_l, &TreeFilesWidget::drop_signal, this, &MainWindow::drop_func);
 
     //правое дерево
     treeWidget_r->setObjectName("treeWidget_r");
@@ -187,9 +189,10 @@ MainWindow::MainWindow(QWidget *parent)
     connect(treeWidget_r, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(treeWidget_r_customContextMenuRequested(QPoint)));
     connect(treeWidget_r, SIGNAL(itemSelectionChanged()), this, SLOT(treeWidget_r_itemSelectionChanged()));
     connect(treeWidget_r, SIGNAL(paste_signal(QString)), this, SLOT(paste_func(QString)));
+    connect(treeWidget_r, SIGNAL(put_to_clipboard(bool,QList<QTreeWidgetItem*>)), this, SLOT(put_to_clipboard(bool,QList<QTreeWidgetItem*>)));
 
     connect(treeWidget_r->header(), &QHeaderView::sectionClicked, this, [this](int logicalIndex) {header_clicked_r(logicalIndex);});
-    connect(treeWidget_r, &TreeFilesWidget::drop_signal, this, [this](QStringList lst, bool remove_after) {drop_func(lst, remove_after, true); });
+    connect(treeWidget_r, &TreeFilesWidget::drop_signal, this, &MainWindow::drop_func);
 
     //верхняя панель
     ui->pushButton_settings->setGeometry(round(w*2), 0, round(w*25), round(h*25));
@@ -507,6 +510,7 @@ void MainWindow::save_settings()
     settings.setValue("/Settings/Lister_Font", lister_font.toString());
     settings.setValue("/Settings/Hidden_F", hidden_f);
     settings.setValue("/Settings/Arc_App", is_7zz);
+    settings.setValue("/Settings/Use_Api", is_api);
 
     QList<QVariant> widthColumns;
     for(int i = 0; i < 4; ++i)
@@ -547,7 +551,6 @@ void MainWindow::open_settings()
     SettingsWidget *sw = new SettingsWidget(appSettings);
     connect(sw, SIGNAL(apply_main_font()), this, SLOT(change_main_font()));
     connect(sw, SIGNAL(apply_panel_font()), this, SLOT(change_panel_font()));
-    connect(sw, SIGNAL(apply_arc()), this, SLOT(apply_arc()));
     sw->show();
 }
 
@@ -566,11 +569,6 @@ void MainWindow::change_panel_font()
 {
     treeWidget_l->setFont(panel_font);
     treeWidget_r->setFont(panel_font);
-}
-
-void MainWindow::apply_arc()
-{
-    is_7zz = *appSettings->is_7zz;
 }
 
 
@@ -1258,31 +1256,82 @@ void MainWindow::treeWidget_r_itemActivated(QTreeWidgetItem *item, int column)
     }
 }
 
+void MainWindow::put_to_clipboard(bool is_move, const QList<QTreeWidgetItem*>& items)
+{
+    if (is_api) {
+        QStringList urls;
+        int i = 0;
+        if ((items[0]->text(0) == "..") && (items[0]->text(1) == "<DIR>"))
+            ++i;
+        for (; i < items.length(); ++i) {
+            urls << items[i]->data(0, Qt::UserRole).toString();
+        }
+
+        if (is_move)
+            shellfuncs::cut_api(urls, reinterpret_cast<void*>(winId()));
+        else
+            shellfuncs::copy_api(urls, reinterpret_cast<void*>(winId()));
+    } else {
+        auto mimeData = new QMimeData;
+
+        QList<QUrl> urls;
+        int i = 0;
+        if ((items[0]->text(0) == "..") && (items[0]->text(1) == "<DIR>"))
+            ++i;
+        for (; i < items.length(); ++i) {
+            urls << QUrl::fromLocalFile(items[i]->data(0, Qt::UserRole).toString());
+        }
+        mimeData->setUrls(urls);
+
+        int dropEffect;
+        if (is_move)
+            dropEffect = 2;
+        else
+            dropEffect = 5;
+
+        QByteArray data;
+        QDataStream stream(&data, QIODevice::WriteOnly);
+        stream.setByteOrder(QDataStream::LittleEndian);
+        stream << dropEffect;
+        mimeData->setData("Preferred DropEffect", data);
+
+        QApplication::clipboard()->setMimeData(mimeData);
+    }
+}
+
 void MainWindow::ctrl_c_clicked()
 {
-    QKeyEvent e(QEvent::KeyPress, Qt::Key_C, Qt::ControlModifier);
+    TreeFilesWidget *tree;
     if (treeWidget_l->hasFocus())
-        QApplication::sendEvent(treeWidget_l, &e);
+        tree = treeWidget_l;
     else
-        QApplication::sendEvent(treeWidget_r, &e);
+        tree = treeWidget_r;
+
+    const QList<QTreeWidgetItem*> &items = tree->selectedItems();
+    put_to_clipboard(false, items);
 }
 
 void MainWindow::ctrl_x_clicked()
 {
-    QKeyEvent e(QEvent::KeyPress, Qt::Key_X, Qt::ControlModifier);
+    TreeFilesWidget *tree;
     if (treeWidget_l->hasFocus())
-        QApplication::sendEvent(treeWidget_l, &e);
+        tree = treeWidget_l;
     else
-        QApplication::sendEvent(treeWidget_r, &e);
+        tree = treeWidget_r;
+
+    const QList<QTreeWidgetItem*> &items = tree->selectedItems();
+    put_to_clipboard(true, items);
 }
 
 void MainWindow::ctrl_v_clicked()
 {
-    QKeyEvent e(QEvent::KeyPress, Qt::Key_V, Qt::ControlModifier);
+    TreeFilesWidget *tree;
     if (treeWidget_l->hasFocus())
-        QApplication::sendEvent(treeWidget_l, &e);
+        tree = treeWidget_l;
     else
-        QApplication::sendEvent(treeWidget_r, &e);
+        tree = treeWidget_r;
+
+    paste_func(tree->path);
 }
 
 //контекстное меню левого дерева
@@ -1478,11 +1527,10 @@ void MainWindow::treeWidget_r_itemSelectionChanged()
 
 
 //drop файла в указанную директорию
-void MainWindow::drop_func(QStringList lst, bool remove_after, bool is_right)
+void MainWindow::drop_func(QStringList lst, QString dir_to, bool remove_after)
 {
     if (lst.length() < 1)
         return;
-    QString dir_to = is_right ? last_path_r : last_path_l;
 
     if (QFileInfo(lst.first()).absoluteDir() == QDir(dir_to))
         return;
@@ -1503,15 +1551,39 @@ void MainWindow::drop_func(QStringList lst, bool remove_after, bool is_right)
     }
 }
 
-void MainWindow::paste_func(QString destFolder)
+void MainWindow::paste_func(QString dir_to)
 {
-    count_proc++;
-    QThread *th = new QThread(this);
-    PasteProcess *pp = new PasteProcess(destFolder, reinterpret_cast<void*>(winId()));
-    connect(th, &QThread::started, pp, &PasteProcess::Work);
-    connect(th, &QThread::finished, this, &MainWindow::end_operation);
-    pp->moveToThread(th);
-    th->start();
+    if (is_api) {
+        count_proc++;
+        QThread *th = new QThread(this);
+        PasteProcess *pp = new PasteProcess(dir_to, reinterpret_cast<void*>(winId()));
+        connect(th, &QThread::started, pp, &PasteProcess::Work);
+        connect(th, &QThread::finished, this, &MainWindow::end_operation);
+        pp->moveToThread(th);
+        th->start();
+    } else {
+        const QMimeData *mimeData = QApplication::clipboard()->mimeData();
+        if (mimeData->hasUrls()) {
+            QByteArray output_data = mimeData->data("Preferred DropEffect");
+
+            int dropEffect = 2;
+
+            QByteArray data;
+            QDataStream stream(&data, QIODevice::WriteOnly);
+            stream.setByteOrder(QDataStream::LittleEndian);
+            stream << dropEffect;
+
+            QStringList pathList;
+            QList<QUrl> urlList = mimeData->urls();
+
+            for (int i = 0; i < urlList.size();++i)
+            {
+                pathList.append(urlList.at(i).toLocalFile());
+            }
+            drop_func(pathList, dir_to, (data == output_data));
+            return;
+        }
+    }
 }
 
 

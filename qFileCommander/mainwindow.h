@@ -162,8 +162,6 @@ public slots:
     //смена шрифта
     void change_main_font();
     void change_panel_font();
-    //смена архиватора
-    void apply_arc();
 
 private slots:
     void resizeEvent(QResizeEvent *event);
@@ -226,6 +224,8 @@ private slots:
     void treeWidget_l_itemActivated(QTreeWidgetItem *item, int column);
     //двойной клик по файлу/папке
     void treeWidget_r_itemActivated(QTreeWidgetItem *item, int column);
+    //положить файлы в буфер
+    void put_to_clipboard(bool is_move, const QList<QTreeWidgetItem *> &items);
     //имитация ctrl+c
     void ctrl_c_clicked();
     //имитация ctrl+x
@@ -242,7 +242,7 @@ private slots:
     void treeWidget_r_itemSelectionChanged();
 
     //drop файла в указанную директорию
-    void drop_func(QStringList lst, bool remove_after, bool is_right);
+    void drop_func(QStringList lst, QString dir_to, bool remove_after);
     //вставка файла в указанную директорию
     void paste_func(QString destFolder);
 

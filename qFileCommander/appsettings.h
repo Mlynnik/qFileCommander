@@ -11,6 +11,7 @@ struct AppSettings {
     QFont* dialog_font;
     QFont* lister_font;
     bool* is_7zz;
+    bool* is_api;
 };
 
 #endif // APPSETTINGS_H

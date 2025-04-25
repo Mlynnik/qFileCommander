@@ -418,70 +418,15 @@ void TreeFilesWidget::keyPressEvent(QKeyEvent *event)
             }
             return;
         } else if ((event->key() == Qt::Key_C) || (event->key() == Qt::Key_X)) {
-            /*auto mimeData = new QMimeData;
 
             const QList<QTreeWidgetItem*> &items = this->selectedItems();
-            QList<QUrl> urls;
-            int i = 0;
-            if ((items[0]->text(0) == "..") && (items[0]->text(1) == "<DIR>"))
-                ++i;
-            for (; i < items.length(); ++i) {
-                urls << QUrl::fromLocalFile(items[i]->data(0, Qt::UserRole).toString());
-            }
-            mimeData->setUrls(urls);
-
-            int dropEffect;
             if (event->key() == Qt::Key_C)
-                dropEffect = 5;
+                emit put_to_clipboard(false, items);
             else
-                dropEffect = 2;
-
-            QByteArray data;
-            QDataStream stream(&data, QIODevice::WriteOnly);
-            stream.setByteOrder(QDataStream::LittleEndian);
-            stream << dropEffect;
-            mimeData->setData("Preferred DropEffect", data);
-
-            QApplication::clipboard()->setMimeData(mimeData);*/
-
-            const QList<QTreeWidgetItem*> &items = this->selectedItems();
-            QStringList urls;
-            int i = 0;
-            if ((items[0]->text(0) == "..") && (items[0]->text(1) == "<DIR>"))
-                ++i;
-            for (; i < items.length(); ++i) {
-                urls << items[i]->data(0, Qt::UserRole).toString();
-            }
-
-            if (event->key() == Qt::Key_C)
-                shellfuncs::copy_api(urls, reinterpret_cast<void*>(winId()));
-            else
-                shellfuncs::cut_api(urls, reinterpret_cast<void*>(winId()));
-
+                emit put_to_clipboard(true, items);
             return;
 
         } else if (event->key() == Qt::Key_V) {
-            /*const QMimeData *mimeData = QApplication::clipboard()->mimeData();
-            if (mimeData->hasUrls()) {
-                QByteArray output_data = mimeData->data("Preferred DropEffect");
-
-                int dropEffect = 2;
-
-                QByteArray data;
-                QDataStream stream(&data, QIODevice::WriteOnly);
-                stream.setByteOrder(QDataStream::LittleEndian);
-                stream << dropEffect;
-
-                QStringList pathList;
-                QList<QUrl> urlList = mimeData->urls();
-
-                for (int i = 0; i < urlList.size();++i)
-                {
-                    pathList.append(urlList.at(i).toLocalFile());
-                }
-                drop_func_signal(pathList, (data == output_data));
-                return;
-            }*/
             emit paste_signal(path);
             return;
         }
@@ -603,6 +548,6 @@ void TreeFilesWidget::dropEvent(QDropEvent* event)
 
 void TreeFilesWidget::drop_func_signal(const QStringList& lst, bool remove_after)
 {
-    emit drop_signal(lst, remove_after);
+    emit drop_signal(lst, path, remove_after);
 }
 
