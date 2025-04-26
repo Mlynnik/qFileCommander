@@ -205,6 +205,8 @@ public:
     //масштабировать картинку
     inline static bool img_ratio;
 
+    void change_ratio_mode();
+
 public slots:
     void reFill(const QString& _fpath);
 

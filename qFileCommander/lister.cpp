@@ -350,10 +350,13 @@ void Lister::f3_cod_wrap()
 
 void Lister::f3_cod_img_ratio()
 {
-    if (cod_wrap->isChecked())
+    if (cod_img_ratio->isChecked())
         ImageWidget::img_ratio = true;
     else
         ImageWidget::img_ratio = false;
+
+    if (mode == ListerMode::Image)
+        ((ImageWidget*)widget_now)->change_ratio_mode();
 }
 
 void Lister::f3_cod_utf8()
@@ -691,7 +694,6 @@ ImageWidget::ImageWidget(const QString &_fpath, QWidget *parent)
     setWidget(label_image);
     Fill();
 }
-
 void ImageWidget::reFill(const QString &_fpath)
 {
     fpath = _fpath;
@@ -704,8 +706,23 @@ void ImageWidget::Fill()
     if (!QFileInfo(fpath).isFile())
         return;
 
-    QImage image = QImageReader(fpath).read();
-    image = image.scaled(image.size(), Qt::KeepAspectRatio);
-    label_image->setFixedSize(image.size());
-    label_image->setPixmap(QPixmap::fromImage(image));
+    setWidgetResizable(true);
+    if (img_ratio) {
+        label_image->setFixedSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+        label_image->setSizePolicy( QSizePolicy::Ignored, QSizePolicy::Ignored );
+        label_image->setScaledContents(true);
+        label_image->setStyleSheet("image:url(" % fpath % ");image-position:center center;");
+    } else {
+        QImage image = QImageReader(fpath).read();
+        image = image.scaled(image.size(), Qt::KeepAspectRatio);
+        setWidgetResizable(false);
+        label_image->setFixedSize(image.size());
+        label_image->setPixmap(QPixmap::fromImage(image));
+    }
 }
+
+void ImageWidget::change_ratio_mode()
+{
+    reFill(fpath);
+}
+
