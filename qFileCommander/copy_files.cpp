@@ -88,7 +88,6 @@ void Copy_files::Work(QString dir_to, const QStringList& selected_dirs, const QS
         else
             w_progress->setWindowTitle("Копирование");
         w_progress->setWindowIcon(QIcon(":/resources/icons/appIcon.png"));
-        w_progress->setWindowIcon(QIcon("appIcon.png"));
         w_progress->setFixedHeight(170);
         w_progress->setFixedWidth(500);
         pb = new QProgressBar(w_progress);
