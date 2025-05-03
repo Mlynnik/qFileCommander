@@ -16,10 +16,11 @@
 
 
 ## Главный экран
-![image](https://github.com/user-attachments/assets/488203f0-a5d9-4f44-bf9b-3bdd037698db)
+![image](https://github.com/user-attachments/assets/295de30a-b625-4aa7-8c47-188f7d29dd3f)
 
 ## Файловые операции
-![image](https://github.com/user-attachments/assets/94394f2e-ffc9-43f1-911d-9dcfa462149d)
+![image](https://github.com/user-attachments/assets/e8e1c60b-ff69-4f6d-ab73-434927cef067)
+
 
 ## Поиск файлов
 ![image](https://github.com/user-attachments/assets/0434e248-5ec6-4a62-bee8-c0952bb37a95)

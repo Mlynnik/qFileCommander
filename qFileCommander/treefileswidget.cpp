@@ -219,7 +219,7 @@ void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, const QStri
         }
 
         item->setIcon(0, IC_PR.icon(fileInfo));
-        item->setText(0, fileInfo.baseName());
+        item->setText(0, fileInfo.fileName().left(fileInfo.fileName().lastIndexOf(".")));
 
         item->setData(0, Qt::UserRole, fileInfo.filePath());
 
