@@ -20,6 +20,8 @@ private:
     ///окончательное удаление
     bool is_final;
 
+    ///кол-во всех файлов
+    long long int all_count = 0;
     ///кол-во удаленных файлов
     long long int complited_count = 0;
 
@@ -38,6 +40,8 @@ public:
     Delete_Process(const QStringList& selected_dirs, const QStringList& selected_files, bool is_final);
 
 public: signals:
+    ///устанавливает кол-во файлов
+    void set_all_count(long long int);
     ///устанавливает compiled кол-во файлов
     void set_comp_count(long long int);
 
@@ -68,6 +72,7 @@ public slots:
 private:
     ///рекурсивное удаление папки
     bool removeDir(const QString & dirName);
+    void get_dir_info(const QString &dir);
 };
 
 

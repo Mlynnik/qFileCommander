@@ -37,7 +37,10 @@ public:
     bool is_arc(const QString& fname);
 
 signals:
-    void drop_signal(QStringList lst, bool remove_after);
+    void drop_signal(QStringList lst, QString dir_to, bool remove_after);
+    void paste_signal(QString destFolder);
+    void put_to_clipboard(bool is_move, QList<QTreeWidgetItem*> items);
+    void ctrl_v();
     void curItemUpdate(QTreeWidgetItem*);
 
 public slots:

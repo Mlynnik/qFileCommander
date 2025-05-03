@@ -1,5 +1,6 @@
 #include "treefileswidget.h"
 #include "helperfunctions.h"
+#include "shellfuncs.h"
 #include <QClipboard>
 #include <QDrag>
 #include <QDragMoveEvent>
@@ -121,7 +122,7 @@ void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, const QStri
         }
         item->setIcon(0, IC_PR.icon(fileInfo));
         item->setText(0, fileInfo.fileName());
-        item->setData(0, Qt::UserRole, fileInfo.absoluteFilePath());
+        item->setData(0, Qt::UserRole, fileInfo.filePath());
         item->setText(1, "<DIR>");
         item->setText(3, fileInfo.lastModified().toString("dd.MM.yyyy hh:mm"));
         item->setTextAlignment(2, Qt::AlignRight);
@@ -186,10 +187,12 @@ void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, const QStri
     }
 
     QDateTime time_now = QDateTime::currentDateTime();
+    QDateTime l_mod;
     QMimeType mime;
     QString m_s;
     for (int i = 0; i < list.size(); ++i) {
         fileInfo = list.at(i);
+        l_mod = fileInfo.lastModified();
         color = QColor(0, 0, 0);
         QTreeWidgetItem *item = new QTreeWidgetItem(this);
         if (fileInfo.isExecutable())
@@ -200,9 +203,9 @@ void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, const QStri
             color = QColor(126, 126, 126);
         else if (suff_sys.contains(fileInfo.suffix()))
             color = QColor(88, 61, 83);
-        else if(fileInfo.lastModified().daysTo(time_now) < 2)
+        else if(l_mod.daysTo(time_now) < 2)
             color = QColor(0, 85, 170);
-        else if(fileInfo.lastModified().daysTo(time_now) < 4)
+        else if(l_mod.daysTo(time_now) < 4)
             color = QColor(0, 54, 108);
         else {
             mime = DB.mimeTypeForFile(fileInfo);
@@ -216,18 +219,18 @@ void TreeFilesWidget::Fill(const QString &dir_str, bool hidden_file, const QStri
         }
 
         item->setIcon(0, IC_PR.icon(fileInfo));
-        item->setText(0, fileInfo.fileName().left(fileInfo.fileName().lastIndexOf(".")));
+        item->setText(0, fileInfo.baseName());
 
-        item->setData(0, Qt::UserRole, fileInfo.absoluteFilePath());
+        item->setData(0, Qt::UserRole, fileInfo.filePath());
 
         item->setText(1, fileInfo.suffix());
         all_v += fileInfo.size();
         all_f += 1;
-        item->setText(2, HelperFunctions::reformat_size(fileInfo.size()) + "      ");
-        item->setText(3, fileInfo.lastModified().toString("dd.MM.yyyy hh:mm"));
+        item->setText(2, reformat_size(fileInfo.size()) + "      ");
+        item->setText(3, l_mod.toString("dd.MM.yyyy hh:mm"));
         item->setTextAlignment(2, Qt::AlignRight);
         item->setTextAlignment(3, Qt::AlignLeft);
-        tool_tip = fileInfo.fileName() % "\nРазмер: " % HelperFunctions::reformat_size_2(fileInfo.size()) % "\nДата создания: "
+        tool_tip = fileInfo.fileName() % "\nРазмер: " % reformat_size_2(fileInfo.size()) % "\nДата создания: "
                            % fileInfo.birthTime().toString("dd.MM.yyyy hh:mm");
         item->setToolTip(0, tool_tip);
         item->setToolTip(1, tool_tip);
@@ -416,55 +419,17 @@ void TreeFilesWidget::keyPressEvent(QKeyEvent *event)
             }
             return;
         } else if ((event->key() == Qt::Key_C) || (event->key() == Qt::Key_X)) {
-            auto mimeData = new QMimeData;
 
             const QList<QTreeWidgetItem*> &items = this->selectedItems();
-            QList<QUrl> urls;
-            int i = 0;
-            if ((items[0]->text(0) == "..") && (items[0]->text(1) == "<DIR>"))
-                ++i;
-            for (; i < items.length(); ++i) {
-                urls << QUrl::fromLocalFile(items[i]->data(0, Qt::UserRole).toString());
-            }
-            mimeData->setUrls(urls);
-
-            int dropEffect;
             if (event->key() == Qt::Key_C)
-                dropEffect = 5;
+                emit put_to_clipboard(false, items);
             else
-                dropEffect = 2;
-
-            QByteArray data;
-            QDataStream stream(&data, QIODevice::WriteOnly);
-            stream.setByteOrder(QDataStream::LittleEndian);
-            stream << dropEffect;
-            mimeData->setData("Preferred DropEffect", data);
-
-            QApplication::clipboard()->setMimeData(mimeData);
+                emit put_to_clipboard(true, items);
             return;
 
         } else if (event->key() == Qt::Key_V) {
-            const QMimeData *mimeData = QApplication::clipboard()->mimeData();
-            if (mimeData->hasUrls()) {
-                QByteArray output_data = mimeData->data("Preferred DropEffect");
-
-                int dropEffect = 2;
-
-                QByteArray data;
-                QDataStream stream(&data, QIODevice::WriteOnly);
-                stream.setByteOrder(QDataStream::LittleEndian);
-                stream << dropEffect;
-
-                QStringList pathList;
-                QList<QUrl> urlList = mimeData->urls();
-
-                for (int i = 0; i < urlList.size();++i)
-                {
-                    pathList.append(urlList.at(i).toLocalFile());
-                }
-                drop_func_signal(pathList, (data == output_data));
-                return;
-            }
+            emit paste_signal(path);
+            return;
         }
     } else if (event->key() == Qt::Key_Insert) {
         int ind = this->currentIndex().row();
@@ -584,6 +549,6 @@ void TreeFilesWidget::dropEvent(QDropEvent* event)
 
 void TreeFilesWidget::drop_func_signal(const QStringList& lst, bool remove_after)
 {
-    emit drop_signal(lst, remove_after);
+    emit drop_signal(lst, path, remove_after);
 }
 

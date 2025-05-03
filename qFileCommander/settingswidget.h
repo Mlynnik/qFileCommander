@@ -34,6 +34,10 @@ private:
     QFont *panel_font;
     QFont *dialog_font;
     QFont *lister_font;
+    //архивы
+    bool *is_7zz;
+    //api
+    bool *is_api;
 
 private slots:
     void keyPressEvent(QKeyEvent *event);
@@ -42,6 +46,10 @@ private slots:
     void change_panel_font();
     void change_dialog_font();
     void change_lister_font();
+    void change_arc_7zz();
+    void change_arc_system();
+    void change_api();
+    void change_non_api();
     void ref_clicked(int ind);
 };
 

@@ -5,6 +5,8 @@
 #include "copy_files.h"
 #include "renamewidget.h"
 #include "settingswidget.h"
+#include "shellfuncs.h"
+#include "archive_tree.h"
 #include <windows.h>
 #include <shlobj.h>
 #include <QHeaderView>
@@ -22,6 +24,7 @@
 #include <QFontDialog>
 #include <QFileDialog>
 #include <QDialogButtonBox>
+#include <QPainter>
 #pragma comment(lib, "Shell32.lib")
 
 MainWindow::MainWindow(QWidget *parent)
@@ -95,6 +98,10 @@ MainWindow::MainWindow(QWidget *parent)
     last_path_l = settings.value("/Settings/L_Path", "").toString();
     last_path_r = settings.value("/Settings/R_Path", "").toString();
     hidden_f = settings.value("/Settings/Hidden_F", false).toBool();
+    is_7zz = settings.value("/Settings/Arc_App", true).toBool();
+    is_api = settings.value("/Settings/Use_Api", true).toBool();
+    TextWidget::wrap_mode = settings.value("/Settings/Wrap_Mode", false).toBool();
+    ImageWidget::img_ratio = settings.value("/Settings/Img_Ratio", true).toBool();
 
     main_font.fromString(settings.value("/Settings/Main_Font", "Times New Roman,12,-1,5,700,0,0,0,0,0,0,0,0,0,0,1").toString());
     panel_font.fromString(settings.value("/Settings/Panel_Font", "Times New Roman,12,-1,5,700,0,0,0,0,0,0,0,0,0,0,1").toString());
@@ -104,6 +111,7 @@ MainWindow::MainWindow(QWidget *parent)
     appSettings = new AppSettings();
     appSettings->w = w; appSettings->h = h; appSettings->main_font = &main_font;
     appSettings->panel_font = &panel_font; appSettings->dialog_font = &dialog_font; appSettings->lister_font = &lister_font;
+    appSettings->is_7zz = &is_7zz; appSettings->is_api = &is_api;
 
     find_wid = new FindWidget(appSettings);
     connect(find_wid, SIGNAL(open_find_fid_signal(QString)), this, SLOT(open_find_fid(QString)));
@@ -157,9 +165,11 @@ MainWindow::MainWindow(QWidget *parent)
     connect(treeWidget_l, SIGNAL(itemActivated(QTreeWidgetItem*,int)), this, SLOT(treeWidget_l_itemActivated(QTreeWidgetItem*,int)));
     connect(treeWidget_l, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(treeWidget_l_customContextMenuRequested(QPoint)));
     connect(treeWidget_l, SIGNAL(itemSelectionChanged()), this, SLOT(treeWidget_l_itemSelectionChanged()));
+    connect(treeWidget_l, SIGNAL(paste_signal(QString)), this, SLOT(paste_func(QString)));
+    connect(treeWidget_l, SIGNAL(put_to_clipboard(bool,QList<QTreeWidgetItem*>)), this, SLOT(put_to_clipboard(bool,QList<QTreeWidgetItem*>)));
 
     connect(treeWidget_l->header(), &QHeaderView::sectionClicked, this, [this](int logicalIndex) {header_clicked_l(logicalIndex);});
-    connect(treeWidget_l, &TreeFilesWidget::drop_signal, this, [this](QStringList lst, bool remove_after) {drop_func(lst, remove_after, false); });
+    connect(treeWidget_l, &TreeFilesWidget::drop_signal, this, &MainWindow::drop_func);
 
     //правое дерево
     treeWidget_r->setObjectName("treeWidget_r");
@@ -181,9 +191,11 @@ MainWindow::MainWindow(QWidget *parent)
     connect(treeWidget_r, SIGNAL(itemActivated(QTreeWidgetItem*,int)), this, SLOT(treeWidget_r_itemActivated(QTreeWidgetItem*,int)));
     connect(treeWidget_r, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(treeWidget_r_customContextMenuRequested(QPoint)));
     connect(treeWidget_r, SIGNAL(itemSelectionChanged()), this, SLOT(treeWidget_r_itemSelectionChanged()));
+    connect(treeWidget_r, SIGNAL(paste_signal(QString)), this, SLOT(paste_func(QString)));
+    connect(treeWidget_r, SIGNAL(put_to_clipboard(bool,QList<QTreeWidgetItem*>)), this, SLOT(put_to_clipboard(bool,QList<QTreeWidgetItem*>)));
 
     connect(treeWidget_r->header(), &QHeaderView::sectionClicked, this, [this](int logicalIndex) {header_clicked_r(logicalIndex);});
-    connect(treeWidget_r, &TreeFilesWidget::drop_signal, this, [this](QStringList lst, bool remove_after) {drop_func(lst, remove_after, true); });
+    connect(treeWidget_r, &TreeFilesWidget::drop_signal, this, &MainWindow::drop_func);
 
     //верхняя панель
     ui->pushButton_settings->setGeometry(round(w*2), 0, round(w*25), round(h*25));
@@ -192,14 +204,20 @@ MainWindow::MainWindow(QWidget *parent)
     ui->pushButton_admin->setGeometry(round(w*92), 0, round(w*25), round(h*25));
     ui->pushButton_open_in_exp->setGeometry(round(w*122), 0, round(w*25), round(h*25));
     ui->pushButton_notepad->setGeometry(round(w*152), 0, round(w*25), round(h*25));
-    ui->pushButton_create_file->setGeometry(round(w*182), 0, round(w*25), round(h*25));
-    ui->pushButton_mass_rename->setGeometry(round(w*212), 0, round(w*25), round(h*25));
-    ui->pushButton_find->setGeometry(round(w*242), 0, round(w*25), round(h*25));
+    ui->pushButton_zip->setGeometry(round(w*192), 0, round(w*25), round(h*25));
+    ui->pushButton_unzip->setGeometry(round(w*222), 0, round(w*25), round(h*25));
+    ui->pushButton_create_file->setGeometry(round(w*262), 0, round(w*25), round(h*25));
+    ui->pushButton_mass_rename->setGeometry(round(w*292), 0, round(w*25), round(h*25));
+    ui->pushButton_find->setGeometry(round(w*322), 0, round(w*25), round(h*25));
     ui->line_0->setGeometry(round(w*-5), round(h*25), round(w*1540), round(h*2));
     ui->line_1->setGeometry(round(w*-5), round(h*54), round(w*1540), round(h*2));
     ui->line_2->setGeometry(round(w*-5), round(h*82), round(w*1540), round(h*2));
+    ui->line_btn_h1->setGeometry(round(w*182), 0, round(w*5), round(h*25));
+    ui->line_btn_h2->setGeometry(round(w*250), 0, round(w*5), round(h*25));
 
     //иконки кнопок
+    ui->pushButton_zip->setIcon(QIcon(":/resources/icons/7z_c.png"));
+    ui->pushButton_unzip->setIcon(QIcon(":/resources/icons/7z_u.png"));
     ui->pushButton_settings->setIcon(QIcon(":/resources/icons/settings.png"));
     ui->pushButton_fast_view->setIcon(QIcon(":/resources/icons/fastView.png"));
     ui->pushButton_fast_view->setCheckable(true);
@@ -221,6 +239,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->pushButton_settings, SIGNAL(clicked()), this, SLOT(open_settings()));
     connect(ui->pushButton_fast_view, SIGNAL(clicked()), this, SLOT(change_fast_view()));
     connect(ui->pushButton_hidden_f, SIGNAL(clicked()), this, SLOT(show_hidden_func()));
+    connect(ui->pushButton_zip, SIGNAL(clicked()), this, SLOT(compress_archive()));
+    connect(ui->pushButton_unzip, SIGNAL(clicked()), this, SLOT(decompress_archive()));
 
     //диски
     ui->horizontalLayout_l->setAlignment(Qt::AlignLeft);
@@ -253,6 +273,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->pushButton_admin->setFocusPolicy(Qt::NoFocus);
     ui->pushButton_open_in_exp->setFocusPolicy(Qt::NoFocus);
     ui->pushButton_notepad->setFocusPolicy(Qt::NoFocus);
+    ui->pushButton_zip->setFocusPolicy(Qt::NoFocus);
+    ui->pushButton_unzip->setFocusPolicy(Qt::NoFocus);
     ui->pushButton_create_file->setFocusPolicy(Qt::NoFocus);
     ui->pushButton_mass_rename->setFocusPolicy(Qt::NoFocus);
     ui->pushButton_find->setFocusPolicy(Qt::NoFocus);
@@ -500,6 +522,10 @@ void MainWindow::save_settings()
     settings.setValue("/Settings/Dialog_Font", dialog_font.toString());
     settings.setValue("/Settings/Lister_Font", lister_font.toString());
     settings.setValue("/Settings/Hidden_F", hidden_f);
+    settings.setValue("/Settings/Arc_App", is_7zz);
+    settings.setValue("/Settings/Use_Api", is_api);
+    settings.setValue("/Settings/Wrap_Mode", TextWidget::wrap_mode);
+    settings.setValue("/Settings/Img_Ratio", ImageWidget::img_ratio);
 
     QList<QVariant> widthColumns;
     for(int i = 0; i < 4; ++i)
@@ -914,8 +940,8 @@ void MainWindow::size_d_l(QString disk)
         disk_progress_l->setStyleSheet("QProgressBar::chunk {background-color: rgb(218,38,38);}");
     disk_name_l->setText("[" % st_inf.name() % "]");
     disk_progress_l->setValue(occup_b);
-    disk_free_size_l->setText(HelperFunctions::reformat_size(av_b/1024) % " КБ из " % HelperFunctions::reformat_size(all_b/1024) % " КБ свободно");
-    disk_free_size_l->setToolTip(HelperFunctions::reformat_size_2(av_b) % " из " % HelperFunctions::reformat_size_2(all_b) % " свободно");
+    disk_free_size_l->setText(reformat_size(av_b/1024) % " КБ из " % reformat_size(all_b/1024) % " КБ свободно");
+    disk_free_size_l->setToolTip(reformat_size_2(av_b) % " из " % reformat_size_2(all_b) % " свободно");
 }
 
 //изменяет информацию по выбранному правому диску
@@ -940,8 +966,8 @@ void MainWindow::size_d_r(QString disk)
         disk_progress_r->setStyleSheet("QProgressBar::chunk {background-color: rgb(218,38,38);}");
     disk_name_r->setText("[" % st_inf.name() % "]");
     disk_progress_r->setValue(occup_b);
-    disk_free_size_r->setText(HelperFunctions::reformat_size(av_b/1024) % " КБ из " % HelperFunctions::reformat_size(all_b/1024) % " КБ свободно");
-    disk_free_size_r->setToolTip(HelperFunctions::reformat_size_2(av_b) % " из " % HelperFunctions::reformat_size_2(all_b) % " свободно");
+    disk_free_size_r->setText(reformat_size(av_b/1024) % " КБ из " % reformat_size(all_b/1024) % " КБ свободно");
+    disk_free_size_r->setToolTip(reformat_size_2(av_b) % " из " % reformat_size_2(all_b) % " свободно");
 }
 
 
@@ -1020,7 +1046,7 @@ void MainWindow::on_path_l_returnPressed()
         all_l_v = round(all_l_v / 1024);
         treeWidget_l->path = last_path_l;
 
-        ui->inf_dir_l->setText("0 КБ из " % HelperFunctions::reformat_size(all_l_v) % " КБ, файлов: 0 из " % QString::number(all_f_l));
+        ui->inf_dir_l->setText("0 КБ из " % reformat_size(all_l_v) % " КБ, файлов: 0 из " % QString::number(all_f_l));
     } else {
         v_error("Путь \"" % ui->path_l->text() % "\" не найден.");
         ui->path_l->setText(last_path_l);
@@ -1084,7 +1110,7 @@ void MainWindow::on_path_r_returnPressed()
         treeWidget_r->path = last_path_r;
         all_r_v = round(all_r_v / 1024);
 
-        ui->inf_dir_r->setText("0 КБ из " % HelperFunctions::reformat_size(all_r_v) % " КБ, файлов: 0 из " % QString::number(all_f_r));
+        ui->inf_dir_r->setText("0 КБ из " % reformat_size(all_r_v) % " КБ, файлов: 0 из " % QString::number(all_f_r));
     } else {
         v_error("Путь \"" % ui->path_r->text() % "\" не найден.");
         ui->path_r->setText(last_path_r);
@@ -1198,68 +1224,153 @@ void MainWindow::header_clicked_r(int col)
 //двойной клик по файлу/папке
 void MainWindow::treeWidget_l_itemActivated(QTreeWidgetItem *item, int column)
 {
+    QString f_name = item->data(0, Qt::UserRole).toString();
     if (item->text(1) == "<DIR>"){
         if (item->text(0) == "..") {
             QString str1 = last_path_l.left(last_path_l.lastIndexOf("/"));
             str1 = str1.left(str1.lastIndexOf("/"));
             ui->path_l->setText(str1 + "/");
         } else {
-            ui->path_l->setText(item->data(0, Qt::UserRole).toString());
+            ui->path_l->setText(f_name);
         }
         on_path_l_returnPressed();
-    } else if (QFileInfo(item->data(0, Qt::UserRole).toString()).isFile()) {
-        QDesktopServices::openUrl(QUrl::fromLocalFile(item->data(0, Qt::UserRole).toString()));
+    } else if (QFileInfo(f_name).isFile()) {
+        if (is_7zz && treeWidget_l->is_arc(f_name)) {
+            Archive_tree *arch_viewer = new Archive_tree(f_name, appSettings);
+            connect(arch_viewer, SIGNAL(destroyed(QObject*)), this, SLOT(update_widgets()));
+            arch_viewer->setWindowModality(Qt::ApplicationModal);
+            arch_viewer->show();
+        } else {
+            QDesktopServices::openUrl(QUrl::fromLocalFile(f_name));
+        }
     }
 }
 
 //двойной клик по файлу/папке
 void MainWindow::treeWidget_r_itemActivated(QTreeWidgetItem *item, int column)
 {
+    QString f_name = item->data(0, Qt::UserRole).toString();
     if (item->text(1) == "<DIR>"){
         if (item->text(0) == "..") {
             QString str1 = last_path_r.left(last_path_r.lastIndexOf("/"));
             str1 = str1.left(str1.lastIndexOf("/"));
             ui->path_r->setText(str1 + "/");
         } else {
-            ui->path_r->setText(item->data(0, Qt::UserRole).toString());
+            ui->path_r->setText(f_name);
         }
         on_path_r_returnPressed();
-    } else if (QFileInfo(item->data(0, Qt::UserRole).toString()).isFile()) {
-        QDesktopServices::openUrl(QUrl::fromLocalFile(item->data(0, Qt::UserRole).toString()));
+    } else if (QFileInfo(f_name).isFile()) {
+        if (is_7zz && treeWidget_r->is_arc(f_name)) {
+            Archive_tree *arch_viewer = new Archive_tree(f_name, appSettings);
+            connect(arch_viewer, SIGNAL(destroyed(QObject*)), this, SLOT(update_widgets()));
+            arch_viewer->setWindowModality(Qt::ApplicationModal);
+            arch_viewer->show();
+        } else {
+            QDesktopServices::openUrl(QUrl::fromLocalFile(f_name));
+        }
+    }
+}
+
+void MainWindow::put_to_clipboard(bool is_move, const QList<QTreeWidgetItem*>& items)
+{
+    if (is_api) {
+        QStringList urls;
+        int i = 0;
+        if ((items[0]->text(0) == "..") && (items[0]->text(1) == "<DIR>"))
+            ++i;
+        for (; i < items.length(); ++i) {
+            urls << items[i]->data(0, Qt::UserRole).toString();
+        }
+
+        if (is_move)
+            shellfuncs::cut_api(urls, reinterpret_cast<void*>(winId()));
+        else
+            shellfuncs::copy_api(urls, reinterpret_cast<void*>(winId()));
+    } else {
+        auto mimeData = new QMimeData;
+
+        QList<QUrl> urls;
+        int i = 0;
+        if ((items[0]->text(0) == "..") && (items[0]->text(1) == "<DIR>"))
+            ++i;
+        for (; i < items.length(); ++i) {
+            urls << QUrl::fromLocalFile(items[i]->data(0, Qt::UserRole).toString());
+        }
+        mimeData->setUrls(urls);
+
+        int dropEffect;
+        if (is_move)
+            dropEffect = 2;
+        else
+            dropEffect = 5;
+
+        QByteArray data;
+        QDataStream stream(&data, QIODevice::WriteOnly);
+        stream.setByteOrder(QDataStream::LittleEndian);
+        stream << dropEffect;
+        mimeData->setData("Preferred DropEffect", data);
+
+        QApplication::clipboard()->setMimeData(mimeData);
     }
 }
 
 void MainWindow::ctrl_c_clicked()
 {
-    QKeyEvent e(QEvent::KeyPress, Qt::Key_C, Qt::ControlModifier);
+    TreeFilesWidget *tree;
     if (treeWidget_l->hasFocus())
-        QApplication::sendEvent(treeWidget_l, &e);
+        tree = treeWidget_l;
     else
-        QApplication::sendEvent(treeWidget_r, &e);
+        tree = treeWidget_r;
+
+    const QList<QTreeWidgetItem*> &items = tree->selectedItems();
+    put_to_clipboard(false, items);
 }
 
 void MainWindow::ctrl_x_clicked()
 {
-    QKeyEvent e(QEvent::KeyPress, Qt::Key_X, Qt::ControlModifier);
+    TreeFilesWidget *tree;
     if (treeWidget_l->hasFocus())
-        QApplication::sendEvent(treeWidget_l, &e);
+        tree = treeWidget_l;
     else
-        QApplication::sendEvent(treeWidget_r, &e);
+        tree = treeWidget_r;
+
+    const QList<QTreeWidgetItem*> &items = tree->selectedItems();
+    put_to_clipboard(true, items);
 }
 
 void MainWindow::ctrl_v_clicked()
 {
-    QKeyEvent e(QEvent::KeyPress, Qt::Key_V, Qt::ControlModifier);
+    TreeFilesWidget *tree;
     if (treeWidget_l->hasFocus())
-        QApplication::sendEvent(treeWidget_l, &e);
+        tree = treeWidget_l;
     else
-        QApplication::sendEvent(treeWidget_r, &e);
+        tree = treeWidget_r;
+
+    paste_func(tree->path);
 }
 
 //контекстное меню левого дерева
 void MainWindow::treeWidget_l_customContextMenuRequested(const QPoint &pos)
 {
     QTreeWidgetItem *item = treeWidget_l->itemAt(pos);
+    QPoint globPos = treeWidget_l->viewport()->mapToGlobal(pos);
+    if (is_api) {
+        if (item == NULL) {
+            QStringList t { treeWidget_l->path };
+            shellfuncs::get_context_menu(t, round(globPos.x() * ratio), round(globPos.y() * ratio), reinterpret_cast<void*>(winId()));
+            return;
+        }
+
+        QString dir_to; QStringList selected_dirs, selected_files;
+        mass_all_selected(dir_to, selected_dirs, selected_files);
+
+        if (selected_dirs.length() + selected_files.length() > 0) {
+            selected_dirs.append(selected_files);
+            shellfuncs::get_context_menu(selected_dirs, round(globPos.x() * ratio), round(globPos.y() * ratio), reinterpret_cast<void*>(winId()));
+        }
+        return;
+    }
+
     if (item == NULL) {
         menu_f4->setVisible(false);
         menu_open->setVisible(false);
@@ -1272,7 +1383,7 @@ void MainWindow::treeWidget_l_customContextMenuRequested(const QPoint &pos)
         menu_f8->setVisible(false);
         menu_create_file->setVisible(true);
         cust_menu_tree = last_path_l;
-        cust_menu->popup(treeWidget_l->viewport()->mapToGlobal(pos));
+        cust_menu->popup(globPos);
         return;
     }
     cust_menu_tree = "";
@@ -1309,7 +1420,7 @@ void MainWindow::treeWidget_l_customContextMenuRequested(const QPoint &pos)
         } else {
             menu_f4->setVisible(false);
         }
-        cust_menu->popup(treeWidget_l->viewport()->mapToGlobal(pos));
+        cust_menu->popup(globPos);
     }
 }
 
@@ -1317,6 +1428,24 @@ void MainWindow::treeWidget_l_customContextMenuRequested(const QPoint &pos)
 void MainWindow::treeWidget_r_customContextMenuRequested(const QPoint &pos)
 {
     QTreeWidgetItem *item = treeWidget_r->itemAt(pos);
+    QPoint globPos = treeWidget_r->viewport()->mapToGlobal(pos);
+    if (is_api) {
+        if (item == NULL) {
+            QStringList t { treeWidget_r->path };
+            shellfuncs::get_context_menu(t, round(globPos.x() * ratio), round(globPos.y() * ratio), reinterpret_cast<void*>(winId()));
+            return;
+        }
+
+        QString dir_to; QStringList selected_dirs, selected_files;
+        mass_all_selected(dir_to, selected_dirs, selected_files);
+
+        if (selected_dirs.length() + selected_files.length() > 0) {
+            selected_dirs.append(selected_files);
+            shellfuncs::get_context_menu(selected_dirs, round(globPos.x() * ratio), round(globPos.y() * ratio), reinterpret_cast<void*>(winId()));
+        }
+        return;
+    }
+
     if (item == NULL) {
         menu_f4->setVisible(false);
         menu_open->setVisible(false);
@@ -1329,7 +1458,7 @@ void MainWindow::treeWidget_r_customContextMenuRequested(const QPoint &pos)
         menu_f8->setVisible(false);
         menu_create_file->setVisible(true);
         cust_menu_tree = last_path_r;
-        cust_menu->popup(treeWidget_r->viewport()->mapToGlobal(pos));
+        cust_menu->popup(globPos);
         return;
     }
     cust_menu_tree = "";
@@ -1366,7 +1495,7 @@ void MainWindow::treeWidget_r_customContextMenuRequested(const QPoint &pos)
         } else {
             menu_f4->setVisible(false);
         }
-        cust_menu->popup(treeWidget_r->viewport()->mapToGlobal(pos));
+        cust_menu->popup(globPos);
     }
 }
 
@@ -1386,7 +1515,7 @@ void MainWindow::treeWidget_l_itemSelectionChanged()
         now_v_l = round(now_v_l / 1024);
     }
 
-    ui->inf_dir_l->setText(HelperFunctions::reformat_size(now_v_l) % " КБ из " % HelperFunctions::reformat_size(all_l_v)
+    ui->inf_dir_l->setText(reformat_size(now_v_l) % " КБ из " % reformat_size(all_l_v)
                           % " КБ, файлов: " % QString::number(now_f) % " из " % QString::number(all_f_l));
 }
 
@@ -1405,7 +1534,7 @@ void MainWindow::treeWidget_r_itemSelectionChanged()
         }
         now_v_r = round(now_v_r / 1024);
     }
-    ui->inf_dir_r->setText(HelperFunctions::reformat_size(now_v_r) % " КБ из " % HelperFunctions::reformat_size(all_r_v)
+    ui->inf_dir_r->setText(reformat_size(now_v_r) % " КБ из " % reformat_size(all_r_v)
                            % " КБ, файлов: " % QString::number(now_f) % " из " % QString::number(all_f_r));
 
 }
@@ -1413,11 +1542,10 @@ void MainWindow::treeWidget_r_itemSelectionChanged()
 
 
 //drop файла в указанную директорию
-void MainWindow::drop_func(QStringList lst, bool remove_after, bool is_right)
+void MainWindow::drop_func(QStringList lst, QString dir_to, bool remove_after)
 {
     if (lst.length() < 1)
         return;
-    QString dir_to = is_right ? last_path_r : last_path_l;
 
     if (QFileInfo(lst.first()).absoluteDir() == QDir(dir_to))
         return;
@@ -1435,6 +1563,41 @@ void MainWindow::drop_func(QStringList lst, bool remove_after, bool is_right)
         connect(cp, SIGNAL(end_operation()), this, SLOT(end_operation()));
         cp->Work(dir_to, selected_dirs, selected_files, remove_after);
         count_proc++;
+    }
+}
+
+void MainWindow::paste_func(QString dir_to)
+{
+    if (is_api) {
+        count_proc++;
+        QThread *th = new QThread(this);
+        PasteProcess *pp = new PasteProcess(dir_to, reinterpret_cast<void*>(winId()));
+        connect(th, &QThread::started, pp, &PasteProcess::Work);
+        connect(th, &QThread::finished, this, &MainWindow::end_operation);
+        pp->moveToThread(th);
+        th->start();
+    } else {
+        const QMimeData *mimeData = QApplication::clipboard()->mimeData();
+        if (mimeData->hasUrls()) {
+            QByteArray output_data = mimeData->data("Preferred DropEffect");
+
+            int dropEffect = 2;
+
+            QByteArray data;
+            QDataStream stream(&data, QIODevice::WriteOnly);
+            stream.setByteOrder(QDataStream::LittleEndian);
+            stream << dropEffect;
+
+            QStringList pathList;
+            QList<QUrl> urlList = mimeData->urls();
+
+            for (int i = 0; i < urlList.size();++i)
+            {
+                pathList.append(urlList.at(i).toLocalFile());
+            }
+            drop_func(pathList, dir_to, (data == output_data));
+            return;
+        }
     }
 }
 
@@ -1677,7 +1840,6 @@ void MainWindow::compress_archive()
         for (int i = 0; i < selected_files.size(); ++i) {
             comnd = comnd % " \"" % selected_files[i].replace('/', '\\') % "\"";
         }
-        qDebug() << comnd;
         wchar_t *c_str2 = new wchar_t[comnd.length()+1]; comnd.toWCharArray(c_str2);
         c_str2[comnd.length()] = 0;
         ShellExecute(NULL, L"open", L"7zz.exe", c_str2, 0, SW_SHOWNORMAL);
@@ -1693,13 +1855,13 @@ void MainWindow::decompress_archive()
     {
         QString dir_to; QStringList selected_dirs;
         mass_all_selected(dir_to, selected_dirs, selected_files);
-        if (selected_files.length() != 1)
+        if (selected_files.length() != 1 || !treeWidget_l->is_arc(selected_files.first()))
             return;
     }
 
     QFileDialog fd(this);
     fd.setFileMode(QFileDialog::Directory);
-    fd.setDirectory(QDir::homePath());
+    fd.setDirectory(QDir(selected_files[0].left(selected_files[0].lastIndexOf('/'))));
     if (!fd.exec() || fd.selectedFiles().size() != 1)
         return;
     QString new_path = fd.selectedFiles().at(0);
@@ -1873,50 +2035,7 @@ void MainWindow::show_properties()
     cust_menu_tree = "";
 
     if (selected_files.length() > 0) {
-        for (int i = 0; i < selected_files.length(); ++i) {
-            selected_files[i].replace("/", "\\");
-        }
-
-        if (selected_files.length() == 1) {
-            SHELLEXECUTEINFO info = {0};
-            info.cbSize = sizeof info;
-            info.lpFile = (const wchar_t*) selected_files.first().utf16();
-            info.nShow = SW_SHOW;
-            info.fMask = SEE_MASK_INVOKEIDLIST;
-            info.lpVerb = L"properties";
-            ShellExecuteEx(&info);
-        } else {
-            int nrFiles = selected_files.length();
-            LPITEMIDLIST *pidlDrives = (LPITEMIDLIST *)malloc(sizeof(LPITEMIDLIST)*nrFiles);
-            IShellFolder* psfDesktop;
-            IDataObject* pdata;
-            HRESULT hr;
-            ULONG chEaten=0, dwAttributes=0;
-            int i=0;
-            hr = SHGetSpecialFolderLocation(NULL, CSIDL_DRIVES, pidlDrives);
-            if (SUCCEEDED(hr))
-            {
-                hr = SHGetDesktopFolder(&psfDesktop);
-                for (int i = 0; i < nrFiles; i ++)
-                    psfDesktop->ParseDisplayName(NULL, NULL, (wchar_t*)selected_files[i].utf16(), &chEaten, (LPITEMIDLIST*)&pidlDrives[i], &dwAttributes);
-                if (SUCCEEDED(hr))
-                {
-                    hr = psfDesktop->GetUIObjectOf(NULL, nrFiles, (LPCITEMIDLIST*)pidlDrives, IID_IDataObject, NULL, (void**)&pdata);
-                    if (SUCCEEDED(hr))
-                    {
-                        CoInitialize(NULL);
-                        //hr=SHMultiFileProperties(pdata,0);
-                        SHMultiFileProperties(pdata,0);
-                        pdata->Release();
-                        CoUninitialize();
-                    }
-                    psfDesktop->Release();
-                }
-                for(i=0; i < nrFiles; i++)
-                    ILFree(pidlDrives[i]);
-            }
-            free(pidlDrives);
-        }
+        shellfuncs::showProperties(selected_files);
     }
 }
 
@@ -2115,4 +2234,5 @@ void MainWindow::on_pushButton_mass_rename_clicked()
         count_proc++;
     }
 }
+
 

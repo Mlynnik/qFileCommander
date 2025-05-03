@@ -5,7 +5,6 @@
 #include "findwidget.h"
 #include "lister.h"
 #include "appsettings.h"
-#include "archive_tree.h"
 #include <list>
 #include <QMainWindow>
 #include <QGuiApplication>
@@ -38,6 +37,7 @@ private:
     AppSettings *appSettings;
     float w = float(screen->geometry().width()) / float(1536);
     float h = float(screen->geometry().height()) / float(864);
+    float ratio = screen->devicePixelRatio();
     //ширина экрана
     int w_max;
     //высота экрана
@@ -93,6 +93,12 @@ private:
     QFont panel_font;
     QFont dialog_font;
     QFont lister_font;
+
+    //использовать ли встроенный архиватор
+    bool is_7zz = true;
+
+    //использовать функции WinAPI (контекстное меню, буфер обмена)
+    bool is_api = true;
 
     //список дисков
     QFileInfoList md_old;
@@ -219,6 +225,8 @@ private slots:
     void treeWidget_l_itemActivated(QTreeWidgetItem *item, int column);
     //двойной клик по файлу/папке
     void treeWidget_r_itemActivated(QTreeWidgetItem *item, int column);
+    //положить файлы в буфер
+    void put_to_clipboard(bool is_move, const QList<QTreeWidgetItem *> &items);
     //имитация ctrl+c
     void ctrl_c_clicked();
     //имитация ctrl+x
@@ -235,7 +243,9 @@ private slots:
     void treeWidget_r_itemSelectionChanged();
 
     //drop файла в указанную директорию
-    void drop_func(QStringList lst, bool remove_after, bool is_right);
+    void drop_func(QStringList lst, QString dir_to, bool remove_after);
+    //вставка файла в указанную директорию
+    void paste_func(QString destFolder);
 
     //записывает по ссылке папки назначения, выбранные каталоги, выбранные файлы
     void mass_all_selected(QString &dir_to, QStringList &selected_dirs, QStringList &selected_files);
