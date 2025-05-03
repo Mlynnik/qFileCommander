@@ -24,6 +24,7 @@
 #include <QFontDialog>
 #include <QFileDialog>
 #include <QDialogButtonBox>
+#include <QPainter>
 #pragma comment(lib, "Shell32.lib")
 
 MainWindow::MainWindow(QWidget *parent)
@@ -203,14 +204,20 @@ MainWindow::MainWindow(QWidget *parent)
     ui->pushButton_admin->setGeometry(round(w*92), 0, round(w*25), round(h*25));
     ui->pushButton_open_in_exp->setGeometry(round(w*122), 0, round(w*25), round(h*25));
     ui->pushButton_notepad->setGeometry(round(w*152), 0, round(w*25), round(h*25));
-    ui->pushButton_create_file->setGeometry(round(w*182), 0, round(w*25), round(h*25));
-    ui->pushButton_mass_rename->setGeometry(round(w*212), 0, round(w*25), round(h*25));
-    ui->pushButton_find->setGeometry(round(w*242), 0, round(w*25), round(h*25));
+    ui->pushButton_zip->setGeometry(round(w*192), 0, round(w*25), round(h*25));
+    ui->pushButton_unzip->setGeometry(round(w*222), 0, round(w*25), round(h*25));
+    ui->pushButton_create_file->setGeometry(round(w*262), 0, round(w*25), round(h*25));
+    ui->pushButton_mass_rename->setGeometry(round(w*292), 0, round(w*25), round(h*25));
+    ui->pushButton_find->setGeometry(round(w*322), 0, round(w*25), round(h*25));
     ui->line_0->setGeometry(round(w*-5), round(h*25), round(w*1540), round(h*2));
     ui->line_1->setGeometry(round(w*-5), round(h*54), round(w*1540), round(h*2));
     ui->line_2->setGeometry(round(w*-5), round(h*82), round(w*1540), round(h*2));
+    ui->line_btn_h1->setGeometry(round(w*182), 0, round(w*5), round(h*25));
+    ui->line_btn_h2->setGeometry(round(w*250), 0, round(w*5), round(h*25));
 
     //иконки кнопок
+    ui->pushButton_zip->setIcon(QIcon(":/resources/icons/7z_c.png"));
+    ui->pushButton_unzip->setIcon(QIcon(":/resources/icons/7z_u.png"));
     ui->pushButton_settings->setIcon(QIcon(":/resources/icons/settings.png"));
     ui->pushButton_fast_view->setIcon(QIcon(":/resources/icons/fastView.png"));
     ui->pushButton_fast_view->setCheckable(true);
@@ -232,6 +239,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->pushButton_settings, SIGNAL(clicked()), this, SLOT(open_settings()));
     connect(ui->pushButton_fast_view, SIGNAL(clicked()), this, SLOT(change_fast_view()));
     connect(ui->pushButton_hidden_f, SIGNAL(clicked()), this, SLOT(show_hidden_func()));
+    connect(ui->pushButton_zip, SIGNAL(clicked()), this, SLOT(compress_archive()));
+    connect(ui->pushButton_unzip, SIGNAL(clicked()), this, SLOT(decompress_archive()));
 
     //диски
     ui->horizontalLayout_l->setAlignment(Qt::AlignLeft);
@@ -264,6 +273,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->pushButton_admin->setFocusPolicy(Qt::NoFocus);
     ui->pushButton_open_in_exp->setFocusPolicy(Qt::NoFocus);
     ui->pushButton_notepad->setFocusPolicy(Qt::NoFocus);
+    ui->pushButton_zip->setFocusPolicy(Qt::NoFocus);
+    ui->pushButton_unzip->setFocusPolicy(Qt::NoFocus);
     ui->pushButton_create_file->setFocusPolicy(Qt::NoFocus);
     ui->pushButton_mass_rename->setFocusPolicy(Qt::NoFocus);
     ui->pushButton_find->setFocusPolicy(Qt::NoFocus);
@@ -1829,7 +1840,6 @@ void MainWindow::compress_archive()
         for (int i = 0; i < selected_files.size(); ++i) {
             comnd = comnd % " \"" % selected_files[i].replace('/', '\\') % "\"";
         }
-        qDebug() << comnd;
         wchar_t *c_str2 = new wchar_t[comnd.length()+1]; comnd.toWCharArray(c_str2);
         c_str2[comnd.length()] = 0;
         ShellExecute(NULL, L"open", L"7zz.exe", c_str2, 0, SW_SHOWNORMAL);
@@ -1845,13 +1855,13 @@ void MainWindow::decompress_archive()
     {
         QString dir_to; QStringList selected_dirs;
         mass_all_selected(dir_to, selected_dirs, selected_files);
-        if (selected_files.length() != 1)
+        if (selected_files.length() != 1 || !treeWidget_l->is_arc(selected_files.first()))
             return;
     }
 
     QFileDialog fd(this);
     fd.setFileMode(QFileDialog::Directory);
-    fd.setDirectory(QDir::homePath());
+    fd.setDirectory(QDir(selected_files[0].left(selected_files[0].lastIndexOf('/'))));
     if (!fd.exec() || fd.selectedFiles().size() != 1)
         return;
     QString new_path = fd.selectedFiles().at(0);
@@ -2224,4 +2234,5 @@ void MainWindow::on_pushButton_mass_rename_clicked()
         count_proc++;
     }
 }
+
 

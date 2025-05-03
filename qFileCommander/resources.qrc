@@ -6,5 +6,7 @@
         <file>icons/hiddenf.png</file>
         <file>icons/settings.png</file>
         <file>icons/7z.png</file>
+        <file>icons/7z_c.png</file>
+        <file>icons/7z_u.png</file>
     </qresource>
 </RCC>
