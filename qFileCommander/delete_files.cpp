@@ -1,5 +1,6 @@
 #include "delete_files.h"
 #include "helperfunctions.h"
+#include "shellfuncs.h"
 #include <QDir>
 #include <QEventLoop>
 #include <QThread>
@@ -217,11 +218,10 @@ Delete_Process::Delete_Process(const QStringList &selected_dirs, const QStringLi
 
 void Delete_Process::Work()
 {
-    all_count = selected_dirs.size();
+    all_count = selected_dirs.size() + selected_files.size();
     for (int i = 0; i < selected_dirs.size(); ++i) {
         get_dir_info(selected_dirs[i]);
     }
-    all_count += selected_files.size();
     emit set_all_count(all_count);
 
 
@@ -239,8 +239,10 @@ void Delete_Process::Work()
                     goto lab_end;
                 }
                 if (cant_del_ind == 0) {
-                    emit cant_del(selected_dirs[i]);
-                    func_loop();
+                    if (!shellfuncs::delete_files_api(selected_dirs[i], !is_final, GetDesktopWindow())) {
+                        emit cant_del(selected_dirs[i]);
+                        func_loop();
+                    }
                 }
                 if (cant_del_ind == 2)
                     goto lab_end;
@@ -272,8 +274,10 @@ void Delete_Process::Work()
                     goto lab_end;
                 }
                 if (cant_del_ind == 0) {
-                    emit cant_del(selected_files[i] % "\n\n" % file.errorString());
-                    func_loop();
+                    if (!shellfuncs::delete_files_api(selected_files[i], !is_final, GetDesktopWindow())) {
+                        emit cant_del(selected_files[i] % "\n\n" % file.errorString());
+                        func_loop();
+                    }
                 }
                 if (cant_del_ind == 2)
                     goto lab_end;
@@ -303,7 +307,7 @@ bool Delete_Process::removeDir(const QString &dirName)
     if (dir.exists(dirName)) {
         Q_FOREACH(QFileInfo info, dir.entryInfoList(QDir::NoDotAndDotDot | QDir::System | QDir::Hidden  | QDir::AllDirs | QDir::Files, QDir::DirsFirst)) {
 
-            emit update_name_del(info.absoluteFilePath());
+            emit update_name_del(info.filePath());
             SetFileAttributesA(info.absoluteFilePath().toLocal8Bit().data(), FILE_ATTRIBUTE_NORMAL);
             if (info.isDir()) {
                 result = removeDir(info.absoluteFilePath());
@@ -320,8 +324,10 @@ bool Delete_Process::removeDir(const QString &dirName)
                     }
 
                     if (cant_del_ind == 0) {
-                        emit cant_del(info.absoluteFilePath());
-                        func_loop();
+                        if (!shellfuncs::delete_files_api(info.absoluteFilePath(), !is_final, GetDesktopWindow())) {
+                            emit cant_del(info.absoluteFilePath());
+                            func_loop();
+                        }
                     }
                     if (cant_del_ind == 2)
                         return result;
@@ -341,8 +347,10 @@ bool Delete_Process::removeDir(const QString &dirName)
                     }
 
                     if (cant_del_ind == 0) {
-                        emit cant_del(info.absoluteFilePath() % "\n\n" % file.errorString());
-                        func_loop();
+                        if (!shellfuncs::delete_files_api(info.absoluteFilePath(), !is_final, GetDesktopWindow())) {
+                            emit cant_del(info.absoluteFilePath() % "\n\n" % file.errorString());
+                            func_loop();
+                        }
                     }
                     if (cant_del_ind == 2)
                         return result;

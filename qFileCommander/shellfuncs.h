@@ -19,7 +19,7 @@ bool cut_api(QStringList& files, void * parentWind);
 bool paste_api(QString& dir_to, void * parentWind);
 
 ///удалить файлы
-bool delete_files_api(QStringList& items, bool moveToTrash, void * parentWind);
+bool delete_files_api(QString fname, bool moveToTrash, void * parentWind);
 
 ///отобразить свойства
 void showProperties(QStringList selected_files);

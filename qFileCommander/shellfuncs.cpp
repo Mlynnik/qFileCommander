@@ -154,29 +154,18 @@ bool shellfuncs::paste_api(QString& dir_to, void * parentWind)
 }
 
 
-bool shellfuncs::delete_files_api(QStringList& items, bool moveToTrash, void * parentWind)
+bool shellfuncs::delete_files_api(QString fname, bool moveToTrash, void * parentWind)
 {
-    std::vector<ITEMIDLIST*> idLists;
-    for (auto& path: items)
+    __unaligned ITEMIDLIST* idl = ILCreateFromPathW(fname.replace('/', '\\').toStdWString().c_str());
+    if (!idl)
     {
-        __unaligned ITEMIDLIST* idl = ILCreateFromPathW(path.toStdWString().c_str());
-        if (!idl)
-        {
-            for (auto& pid : idLists)
-                ILFree(pid);
-            return false;
-        }
-        idLists.push_back(idl);
+        ILFree(idl);
+        return false;
     }
+    IShellItem *psi;
+    HRESULT res = SHCreateShellItem(NULL, NULL, idl, &psi);
 
-    IShellItemArray * iArray = 0;
-    HRESULT res = SHCreateShellItemArrayFromIDLists((UINT)idLists.size(), (LPCITEMIDLIST*)idLists.data(), &iArray);
-
-    for (auto& pid: idLists)
-        ILFree(pid);
-    idLists.clear();
-
-    if (!SUCCEEDED(res) || !iArray)
+    if (!SUCCEEDED(res) || !psi)
     {
         return false;
     }
@@ -188,7 +177,7 @@ bool shellfuncs::delete_files_api(QStringList& items, bool moveToTrash, void * p
         return false;
     }
 
-    res = iOperation->DeleteItems(iArray);
+    res = iOperation->DeleteItem(psi, NULL);
     if (SUCCEEDED(res))
     {
         if (moveToTrash)
@@ -204,7 +193,7 @@ bool shellfuncs::delete_files_api(QStringList& items, bool moveToTrash, void * p
     }
 
     iOperation->Release();
-    iArray->Release();
+    psi->Release();
     return SUCCEEDED(res);
 }
 

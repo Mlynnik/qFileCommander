@@ -1421,7 +1421,7 @@ void MainWindow::treeWidget_r_customContextMenuRequested(const QPoint &pos)
     if (is_api) {
         if (item == NULL) {
             QStringList t { treeWidget_r->path };
-            shellfuncs::get_context_menu(t, globPos.x(), globPos.y(), reinterpret_cast<void*>(winId()));
+            shellfuncs::get_context_menu(t, round(globPos.x() * ratio), round(globPos.y() * ratio), reinterpret_cast<void*>(winId()));
             return;
         }
 
@@ -1430,7 +1430,7 @@ void MainWindow::treeWidget_r_customContextMenuRequested(const QPoint &pos)
 
         if (selected_dirs.length() + selected_files.length() > 0) {
             selected_dirs.append(selected_files);
-            shellfuncs::get_context_menu(selected_dirs, globPos.x(), globPos.y(), reinterpret_cast<void*>(winId()));
+            shellfuncs::get_context_menu(selected_dirs, round(globPos.x() * ratio), round(globPos.y() * ratio), reinterpret_cast<void*>(winId()));
         }
         return;
     }
